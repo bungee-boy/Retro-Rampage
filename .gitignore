@@ -1,4 +1,5 @@
 .DS_Store
+.idea
 __pycache__
 controller_test.py
 settings.json

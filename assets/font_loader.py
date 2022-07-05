@@ -1,7 +1,7 @@
 # Handles font requests and returns appropriate directory path to parent file
 # NOTE: Only returns directory path as STRING and does NOT return FONT data.
 
-assets = 'assets\\fonts\\'
+assets = 'assets/fonts/'
 
 
 def load(bold=False, italic=False, bar=False, outline=False, three_d=False):

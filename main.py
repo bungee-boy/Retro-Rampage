@@ -11,10 +11,11 @@ import json
 try:
     import pygame
 except ImportError:  # Attempt to install pygame if it doesn't exist with tkinter UI
-    from tkinter import messagebox
+    from tkinter import messagebox, Toplevel, Message
     import subprocess
     import sys
     loop = True
+
     while loop:
         user = messagebox.askyesno('Install Pygame?', 'Pygame is required for this game.\n'
                                                       'Would you like to install Pygame?')
@@ -25,8 +26,10 @@ except ImportError:  # Attempt to install pygame if it doesn't exist with tkinte
                 messagebox.showinfo('Success', 'Pygame was successfully installed.')
                 loop = None
                 user = None
-            except subprocess.CalledProcessError as error:
+            except subprocess.CalledProcessError or ModuleNotFoundError as error:
                 user = messagebox.askretrycancel('Could not Install', 'There was an error installing pygame.\n'
+                                                                      'If the problem persists, you may have to'
+                                                                      ' manually install it.\n\n'
                                                                       'Would you like to retry?', icon='error')
                 if not user:
                     quit()

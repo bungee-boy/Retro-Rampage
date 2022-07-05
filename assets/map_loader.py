@@ -4,11 +4,11 @@
 bg_layer = 'bg.png'
 obj_layer = 'obj.png'
 track_layer = 'trk.png'
-maps_dir = 'assets\\maps\\'
-racetrack_dir = maps_dir + 'racetrack\\'
-snake_dir = maps_dir + 'snake\\'
-dog_bone_dir = maps_dir + 'dog_bone\\'
-hairpin_dir = maps_dir + 'hairpin\\'
+maps_dir = 'assets/maps/'
+racetrack_dir = maps_dir + 'racetrack/'
+snake_dir = maps_dir + 'snake/'
+dog_bone_dir = maps_dir + 'dog_bone/'
+hairpin_dir = maps_dir + 'hairpin/'
 map_index = ['racetrack', 'snake', 'dog bone', 'hairpin']
 
 

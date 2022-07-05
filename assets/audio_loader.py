@@ -1,7 +1,7 @@
 # Handles audio file request and returns appropriate directory path to parent file.
 # NOTE: Only returns directory path as STRING and does NOT return AUDIO data!
 
-assets = 'assets\\audio'
+assets = 'assets/audio'
 effects = assets + '\\effects\\'
 music = assets + '\\music\\'
 menu_music = music + '\\menus\\'

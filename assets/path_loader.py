@@ -16,9 +16,9 @@ def diversion(ver):
 class Racetrack:
     def __init__(self):
         if __name__ == '__main__':
-            self.file_dir = 'maps\\racetrack\\pth.json'
+            self.file_dir = 'maps/racetrack/pth.json'
         elif __name__ == 'assets.path_loader':
-            self.file_dir = 'assets\\maps\\racetrack\\pth.json'
+            self.file_dir = 'assets/maps/racetrack/pth.json'
         with open(self.file_dir, 'r') as paths:
             self.paths = json.load(paths)
 
@@ -63,9 +63,9 @@ class Racetrack:
 class Snake:
     def __init__(self):
         if __name__ == '__main__':
-            self.file_dir = 'maps\\snake\\pth.json'
+            self.file_dir = 'maps/snake/pth.json'
         elif __name__ == 'assets.path_loader':
-            self.file_dir = 'assets\\maps\\snake\\pth.json'
+            self.file_dir = 'assets/maps/snake/pth.json'
         with open(self.file_dir, 'r') as paths:
             self.paths = json.load(paths)
 
@@ -110,9 +110,9 @@ class Snake:
 class DogBone:
     def __init__(self):
         if __name__ == '__main__':
-            self.file_dir = 'maps\\dog_bone\\pth.json'
+            self.file_dir = 'maps/dog_bone/pth.json'
         elif __name__ == 'assets.path_loader':
-            self.file_dir = 'assets\\maps\\dog_bone\\pth.json'
+            self.file_dir = 'assets/maps/dog_bone/pth.json'
         with open(self.file_dir, 'r') as paths:
             self.paths = json.load(paths)
 
@@ -157,9 +157,9 @@ class DogBone:
 class Hairpin:
     def __init__(self):
         if __name__ == '__main__':
-            self.file_dir = 'maps\\hairpin\\pth.json'
+            self.file_dir = 'maps/hairpin/pth.json'
         elif __name__ == 'assets.path_loader':
-            self.file_dir = 'assets\\maps\\hairpin\\pth.json'
+            self.file_dir = 'assets/maps/hairpin/pth.json'
         with open(self.file_dir, 'r') as paths:
             self.paths = json.load(paths)
 

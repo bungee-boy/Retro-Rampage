@@ -54,7 +54,7 @@ Each car also has a choice of 5 colours:
 
 NPCs can also be forced to pick a car and colour if the player wants a better contrast between players and non-players.
 
-![Choose vehicle screenshot](/docs/Screenshots/Choose_players_new_2.PNG 'Screenshot of a player choosing their vehicle')
+![Choose vehicle screenshot](/docs/Screenshots/Choose_players_new_2.gif 'Screenshot of a player choosing their vehicle')
 
 ### Powerups
 As mentioned above, powerups can only be used by the player(s) and spawn randomly on the track during a race (if enabled).

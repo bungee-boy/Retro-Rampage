@@ -5,10 +5,12 @@ Welcome to Retro Rampage! A 2D multiplayer racing game developed using [pygame](
 ### Index
 - Game summary
 - Installation
+- Credits
 
 ## Game summary
 Retro Rampage is a 2D racing game that can be played with friends or race against the built-in NPCs.  
-The game was created as a Computer Science A-level project, but was always intended to be supported long after the course had finished.
+The game was created as a Computer Science A-level project,  
+but was always intended to be supported long after the course had finished.
 
 It can handle a maximum of 6 players simultaneously and offers a mix of controllers and/or keyboard for controls  
 (eg. One person could use WASD/Arrow controls while 3 others use controllers).  
@@ -62,3 +64,10 @@ however the 'main' or release version of the game (will) contain an installer th
 .exe file for Windows or .py version for other plaforms. However as python is commonly already installed on most OSs,  
 it should run without the installation of python. Furthermore, if the game is launched and fails to `import pygame` then  
 a prompt or the user will show and ask them to try and automatically install it for them to minimise hassle.
+
+## Credits
+- Development and code -> [Anthony Guy](https://github.com/bungee-boy/)
+- Game art -> [Kenney Vleugels](www.kenney.nl)
+- Menu music -> [Trevor Lentz](https://open.spotify.com/album/0ZYysBEAHvv1QKIYszmvrk)
+- Gameplay music & Sonund effects -> [Juhani Junkala](https://juhanijunkala.com/)
+- Guidance & Support -> [Jonny Farmer]() & [Keith Brown]()

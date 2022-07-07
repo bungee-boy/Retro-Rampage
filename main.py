@@ -789,13 +789,13 @@ class Car(pygame.sprite.Sprite):
             self.rotation = 270
         self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
             self._image_dir).convert(), self.size), self.rotation)  # Rotate image
+        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.image.set_colorkey(BLACK)
         if 0 < self.damage <= self.durability:
             self._dmg_img = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
                 assets.car_damage(self.vehicle, self.damage)), self.size), self.rotation)  # Load and rotate damage
             self._dmg_img.set_colorkey(WHITE)
             self.image.blit(self._dmg_img, (0, 0))  # Overlay damage on top of image
-        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.rect = self.image.get_rect()  # Set surface size to image size
         if Debug:
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)
@@ -1300,8 +1300,8 @@ class NPCCar(pygame.sprite.Sprite):
             self.rotation = 270
         self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
             self.image_dir).convert(), self.size), self.rotation)  # Rotate image
-        self.image.set_colorkey(BLACK)
         self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
+        self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()  # Set surface size to image size
         if Debug:
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)
@@ -5012,8 +5012,9 @@ def game():  # All variables that are not constant
                     player_list[player].check_car_collision(player_list[player + 1])  # Collisions between players
                 elif len(player_list) == 2 and player == 1:
                     player_list[player].check_car_collision(player_list[player - 1])
-                for power_up in power_ups:
-                    if player_list[player].rect.colliderect(power_up[1]):  # Powerup collisions
+                for power_up in power_ups:  # Check powerup collisions for each player
+                    if player_list[player].mask.overlap(power_up[3], (power_up[1][0] - player_list[player].rect.left,
+                                                                      power_up[1][1] - player_list[player].rect.top)):
                         if power_up[4] == 'lightning':  # Choose random NPC for lightning powerup
                             player_list[player].power_up('lightning')
                             if Npc_amount > 1:

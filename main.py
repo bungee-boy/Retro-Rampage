@@ -540,7 +540,7 @@ class Car(pygame.sprite.Sprite):
     def set_rotation_speed(self, speed):
         self._rotation_speed = global_car_rotation_speed + speed
 
-    def set_controls(self, control: str):  # Set controls to appropriate keys
+    def set_controls(self, control: str or pygame.joystick.Joystick):  # Set controls to appropriate keys
         if control == 'wasd':
             self.input_type = 'keyboard'
             self._up = pygame.K_w
@@ -557,7 +557,7 @@ class Car(pygame.sprite.Sprite):
             self.input_type = 'controller'
             self.controller = control
         else:
-            raise ValueError("Car | controls is not == 'wasd', 'arrows' or a controller. : " + str(control))
+            raise ValueError("Car | controls is not == 'wasd' or 'arrows' or controller. : " + str(control))
 
     def check_laps(self, lap_rect: pygame.rect.Rect, halfway_rect: pygame.rect.Rect):  # Track amount of laps
         # Uses flip-flop and triggers to count how many laps the car has gone round the track
@@ -4116,6 +4116,7 @@ def controller_added():
     controller_prompts.append((short_controller_name(controller.get_name()),
                                True, pygame.time.get_ticks() + 4000))
     play_sound('controller connect')
+    print('Controller connected ID: ' + str(controller.get_id()))
 
 
 def controller_removed(instance_id):

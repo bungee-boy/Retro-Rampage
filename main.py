@@ -68,7 +68,7 @@ Music_volume = 0.5  # Set default Volume level for music
 Sfx_volume = 0.5  # Set default Volume level for all sounds effects
 FPS = 60  # Controls the speed of the game ***changing from 60 will break a lot of things!***
 Intro_screen = False  # Enables the intro screen on game boot
-Countdown = True  # Enables the traffic light countdown on game start
+Countdown = False  # Enables the traffic light countdown on game start
 Load_settings = True  # Enables setting loading + saving
 Game_end = False  # Lets the game know if the game finished or if the player quit
 
@@ -108,26 +108,47 @@ def load_settings():
             print('Successfully loaded settings from file.')
 
 
+if Load_settings:
+    try:
+        load_settings()
+    except FileNotFoundError:
+        with open('settings.json', 'w') as settings:
+            default_settings = {'Debug': False,
+                                'Resolution': 0,
+                                'Screen': 0,
+                                'Menu animations': True,
+                                'Mute volume': False,
+                                'Music volume': 0.5,
+                                'Sfx volume': 0.5}
+            json.dump(default_settings, settings, indent=2)
+
 Desktop_info = pygame.display.get_desktop_sizes()
 if not Force_resolution:  # Automatically detect screen resolution and set display size
     if len(Desktop_info) < Screen + 1:  # Always default to 1st screen if previously set to other and only have one
         Screen = 0
     Display_resolution = Desktop_info[Screen]
-
 else:
     if len(Desktop_info) < Screen + 1:  # Always default to 1st screen if previously set to second and only have one
         Screen = 0
         save_settings()
     Display_resolution = Force_resolution
 
+if Desktop_info[Screen] != Display_resolution:
+    Display = pygame.display.set_mode(Display_resolution, display=Screen)
+else:
+    Display = pygame.display.set_mode(Display_resolution, display=Screen, flags=pygame.FULLSCREEN)
+
 print('Running at ' + str(Display_resolution[0]) + ' x ' + str(Display_resolution[1]))
-Display = pygame.display.set_mode(Display_resolution, display=Screen)
 pygame.display.set_caption('Retro Rampage')  # Set display name
 try:
     pygame.display.set_icon(pygame.image.load(assets.icon()))  # Set display icon
 except FileNotFoundError:
     Display.fill(BLACK)
-    Display.blit(pygame.font.Font(fonts.load(), 50).render("ERR: 'icon.ico' not found in files", True, WHITE), (0, 50))
+    try:
+        Display.blit(pygame.font.Font(fonts.load(), 50).render("ERR: 'icon.ico' not found in files",
+                                                               True, WHITE), (0, 0))
+    except FileNotFoundError:
+        Display.blit(pygame.font.Font(None, 50).render("ERR: 'icon.ico' not found in files", True, WHITE), (0, 0))
     pygame.time.wait(3000)
     pygame.quit()
     quit()
@@ -204,20 +225,6 @@ sfx_queue = []
 loaded_assets = []
 loaded_sounds = []
 recorded_keys = []  # Empty list for creating NPC paths
-
-if Load_settings:
-    try:
-        load_settings()
-    except FileNotFoundError:
-        with open('settings.json', 'w') as settings:
-            default_settings = {'Debug': False,
-                                'Resolution': 0,
-                                'Screen': 0,
-                                'Menu animations': True,
-                                'Mute volume': False,
-                                'Music volume': 0.5,
-                                'Sfx volume': 0.5}
-            json.dump(default_settings, settings, indent=2)
 
 
 # -------- CLASSES -------- #
@@ -778,14 +785,14 @@ class Car(pygame.sprite.Sprite):
     def rotate(self, degree):  # Rotate car to new angle
         self.rotation = degree  # Set current rotation as rotation
         if global_car_rotation_speed + 1 >= self.rotation:  # Create snapping points to drive in straight lines
-            self.rotation = 360
-        elif self.rotation >= 360 - global_car_rotation_speed + 1:
             self.rotation = 0
-        elif 90 - global_car_rotation_speed + 1 <= self.rotation <= 90 + global_car_rotation_speed + 1:
+        elif self.rotation >= 360 - (global_car_rotation_speed + 1):
+            self.rotation = 0
+        elif 90 - (global_car_rotation_speed + 1) <= self.rotation <= 90 + (global_car_rotation_speed + 1):
             self.rotation = 90
-        elif 180 - global_car_rotation_speed + 1 <= self.rotation <= 180 + global_car_rotation_speed + 1:
+        elif 180 - (global_car_rotation_speed + 1) <= self.rotation <= 180 + (global_car_rotation_speed + 1):
             self.rotation = 180
-        elif 270 - global_car_rotation_speed + 1 <= self.rotation <= 270 + global_car_rotation_speed + 1:
+        elif 270 - (global_car_rotation_speed + 1) <= self.rotation <= 270 + (global_car_rotation_speed + 1):
             self.rotation = 270
         self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
             self._image_dir).convert(), self.size), self.rotation)  # Rotate image
@@ -4001,7 +4008,8 @@ def menu_music_loop():
 def increase_resolution():
     # Cycles up through supported resolutions
     global Display, Display_resolution, Display_scaling
-    if Desktop_info[Screen][0] >= 854 >= Display_resolution[1] and Desktop_info[Screen][1] >= 360 >= Display_resolution[1]:
+    if Desktop_info[Screen][0] >= 854 >= Display_resolution[1] and \
+            Desktop_info[Screen][1] >= 360 >= Display_resolution[1]:
         Display_resolution = 854, 480  # 480p
     elif Desktop_info[Screen][1] >= 480 >= Display_resolution[1]:
         Display_resolution = 1280, 720  # 720p
@@ -4508,10 +4516,10 @@ def game():  # All variables that are not constant
                             fade_from_black(paused=True, speed=15, window=current_window)
                             current_window = ''
 
-                elif event.key == pygame.K_DELETE:  # DEBUGGING
+                elif event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:  # DEBUGGING
                     Music_loop = False
-                    print(get_mouse_pos())  # DEBUGGING
-                    print(recorded_keys)  # DEBUGGING
+                    print(get_mouse_pos())
+                    print(recorded_keys)
                     music_thread.join(timeout=0.25)
                     pygame.quit()
                     quit()
@@ -8249,8 +8257,12 @@ if __name__ == '__main__':
             Display.fill(BLACK)
             play_sound('error')
             error_type = str(type(error)).replace("<class '", '').replace("'>", '')
-            draw_text(0, 0, error_type, WHITE, 50, surf=Display, center_x=False)
-            draw_text(0, 50, str(error), WHITE, 50, surf=Display, center_x=False)
+            try:
+                Display.blit(pygame.font.Font(fonts.load(), 50).render(error_type, True, WHITE, 50), (0, 0))
+                Display.blit(pygame.font.Font(fonts.load(), 50).render(str(error), True, WHITE, 50), (0, 50))
+            except FileNotFoundError:
+                Display.blit(pygame.font.Font(None, 50).render(error_type, True, WHITE, 50), (0, 0))
+                Display.blit(pygame.font.Font(None, 50).render(str(error), True, WHITE, 50), (0, 50))
             pygame.display.update()
             pygame.time.wait(3000)
             pygame.quit()

@@ -975,7 +975,7 @@ class NPCCar(pygame.sprite.Sprite):
             self.paths = paths.DogBone()
         elif track == 'hairpin':
             self.paths = paths.Hairpin()
-        self.vehicle = vehicle
+        self.vehicle = vehicle.lower() if type(vehicle) == str else vehicle
         self.move_speed = global_car_move_speed
         self.rotation_speed = global_car_rotation_speed
         if self.vehicle == 'Family Car' or self.vehicle == 1:
@@ -998,6 +998,8 @@ class NPCCar(pygame.sprite.Sprite):
             self.vehicle = 'Race Car'
             self.set_move_speed(5)
             self.set_rotation_speed(3)
+        else:
+            raise ValueError('NPCCar | __init__ | self.vehicle incorrect value -> ' + str(self.vehicle))
         # STARTING variables
         self.origin_pos = self.paths.start_pos(start_position)[0:2]  # Original position
         self.origin_rotation = self.paths.start_pos(start_position)[2]
@@ -4116,7 +4118,6 @@ def controller_added():
     controller_prompts.append((short_controller_name(controller.get_name()),
                                True, pygame.time.get_ticks() + 4000))
     play_sound('controller connect')
-    print('Controller connected ID: ' + str(controller.get_id()))
 
 
 def controller_removed(instance_id):
@@ -4467,7 +4468,8 @@ def game():  # All variables that are not constant
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 Music_loop = False
-                music_thread.join(timeout=0.25)
+                if music_thread.is_alive():
+                    music_thread.join(timeout=0.25)
                 pygame.quit()
                 quit()
 
@@ -4521,7 +4523,8 @@ def game():  # All variables that are not constant
                     Music_loop = False
                     print(get_mouse_pos())
                     print(recorded_keys)
-                    music_thread.join(timeout=0.25)
+                    if music_thread.is_alive():
+                        music_thread.join(timeout=0.25)
                     pygame.quit()
                     quit()
 
@@ -5164,7 +5167,8 @@ def main():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     Music_loop = False
-                    music_thread.join(timeout=0.25)
+                    if music_thread.is_alive():
+                        music_thread.join(timeout=0.25)
                     pygame.quit()
                     quit()
 
@@ -5204,7 +5208,8 @@ def main():
                     elif event.key == pygame.K_ESCAPE:  # DEBUGGING
                         # print(get_mouse_pos())
                         Music_loop = False
-                        music_thread.join(timeout=0.25)
+                        if music_thread.is_alive():
+                            music_thread.join(timeout=0.25)
                         pygame.quit()
                         quit()
 
@@ -8234,7 +8239,6 @@ def main():
         menu_loop = True
         Music_loop = True
 
-
 if __name__ == '__main__':
     if Debug:  # If in debug mode then do not handle errors
         main()
@@ -8271,3 +8275,19 @@ if __name__ == '__main__':
 
     pygame.quit()
     quit()
+
+elif __name__ == 'main':
+    try:
+        Window.blit(pygame.font.Font(fonts.load(bar=True), 100).render('Retro Rampage', True, WHITE),
+                     (CENTRE[0] - 412, CENTRE[1] - 60))
+        Window.blit(pygame.font.Font(fonts.load(), 100).render('Testing mode', True, WHITE),
+                     (CENTRE[0] - 346, CENTRE[1] + 60))
+
+    except FileNotFoundError:
+        Window.blit(pygame.font.Font(None, 100).render('Retro Rampage', True, WHITE),
+                     (CENTRE[0] - 256, CENTRE[1] - 60))
+        Window.blit(pygame.font.Font(None, 100).render('Testing mode', True, WHITE),
+                     (CENTRE[0] - 224, CENTRE[1] + 60))
+    Display.blit(pygame.transform.scale(Window, Display_resolution), (0, 0))
+    pygame.display.update()
+    pygame.time.wait(500)

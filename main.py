@@ -978,23 +978,25 @@ class NPCCar(pygame.sprite.Sprite):
         self.vehicle = vehicle.lower() if type(vehicle) == str else vehicle
         self.move_speed = global_car_move_speed
         self.rotation_speed = global_car_rotation_speed
-        if self.vehicle == 'Family Car' or self.vehicle == 1:
+        if type(self.vehicle) == str:
+            self.vehicle = self.vehicle.lower()
+        if self.vehicle == 'family car' or self.vehicle == 1:
             self.vehicle = 'Family Car'
             self.set_move_speed(3)
             self.set_rotation_speed(2)
-        elif self.vehicle == 'Sports Car' or self.vehicle == 2:
+        elif self.vehicle == 'sports car' or self.vehicle == 2:
             self.vehicle = 'Sports Car'
             self.set_move_speed(4)
             self.set_rotation_speed(3)
-        elif self.vehicle == 'Luxury Car' or self.vehicle == 3:
+        elif self.vehicle == 'luxury car' or self.vehicle == 3:
             self.vehicle = 'Luxury Car'
             self.set_move_speed(3)
             self.set_rotation_speed(3)
-        elif self.vehicle == 'Truck' or self.vehicle == 4:
+        elif self.vehicle == 'truck' or self.vehicle == 4:
             self.vehicle = 'Truck'
             self.set_move_speed(2)
             self.set_rotation_speed(2)
-        elif self.vehicle == 'Race Car' or self.vehicle == 5:
+        elif self.vehicle == 'race car' or self.vehicle == 5:
             self.vehicle = 'Race Car'
             self.set_move_speed(5)
             self.set_rotation_speed(3)
@@ -8239,6 +8241,7 @@ def main():
         menu_loop = True
         Music_loop = True
 
+
 if __name__ == '__main__':
     if Debug:  # If in debug mode then do not handle errors
         main()
@@ -8279,15 +8282,15 @@ if __name__ == '__main__':
 elif __name__ == 'main':
     try:
         Window.blit(pygame.font.Font(fonts.load(bar=True), 100).render('Retro Rampage', True, WHITE),
-                     (CENTRE[0] - 412, CENTRE[1] - 60))
+                    (CENTRE[0] - 412, CENTRE[1] - 60))
         Window.blit(pygame.font.Font(fonts.load(), 100).render('Testing mode', True, WHITE),
-                     (CENTRE[0] - 346, CENTRE[1] + 60))
+                    (CENTRE[0] - 346, CENTRE[1] + 60))
 
     except FileNotFoundError:
         Window.blit(pygame.font.Font(None, 100).render('Retro Rampage', True, WHITE),
-                     (CENTRE[0] - 256, CENTRE[1] - 60))
+                    (CENTRE[0] - 256, CENTRE[1] - 60))
         Window.blit(pygame.font.Font(None, 100).render('Testing mode', True, WHITE),
-                     (CENTRE[0] - 224, CENTRE[1] + 60))
+                    (CENTRE[0] - 224, CENTRE[1] + 60))
     Display.blit(pygame.transform.scale(Window, Display_resolution), (0, 0))
     pygame.display.update()
     pygame.time.wait(500)

@@ -108,6 +108,20 @@ def load_settings():
             print('Successfully loaded settings from file.')
 
 
+if Load_settings:
+    try:
+        load_settings()
+    except FileNotFoundError:
+        with open('settings.json', 'w') as settings:
+            default_settings = {'Debug': False,
+                                'Resolution': 0,
+                                'Screen': 0,
+                                'Menu animations': True,
+                                'Mute volume': False,
+                                'Music volume': 0.5,
+                                'Sfx volume': 0.5}
+            json.dump(default_settings, settings, indent=2)
+
 Desktop_info = pygame.display.get_desktop_sizes()
 if not Force_resolution:  # Automatically detect screen resolution and set display size
     if len(Desktop_info) < Screen + 1:  # Always default to 1st screen if previously set to other and only have one
@@ -204,20 +218,6 @@ sfx_queue = []
 loaded_assets = []
 loaded_sounds = []
 recorded_keys = []  # Empty list for creating NPC paths
-
-if Load_settings:
-    try:
-        load_settings()
-    except FileNotFoundError:
-        with open('settings.json', 'w') as settings:
-            default_settings = {'Debug': False,
-                                'Resolution': 0,
-                                'Screen': 0,
-                                'Menu animations': True,
-                                'Mute volume': False,
-                                'Music volume': 0.5,
-                                'Sfx volume': 0.5}
-            json.dump(default_settings, settings, indent=2)
 
 
 # -------- CLASSES -------- #
@@ -4032,6 +4032,7 @@ def increase_resolution():
 def decrease_resolution():
     # Cycles through supported resolutions
     global Display, Display_resolution, Display_scaling
+    '''
     if Desktop_info[Screen][1] >= 2160 and Display_resolution[1] == 2160:
         Display_resolution = 2560, 1440
     elif Desktop_info[Screen][1] >= 1440 and Display_resolution[1] == 1440:
@@ -4044,6 +4045,14 @@ def decrease_resolution():
         Display_resolution = 640, 360
     elif Desktop_info[Screen][1] >= 360 and Display_resolution[1] == 360:
         Display_resolution = Desktop_info[Screen]
+    '''
+
+    if Desktop_info[Screen][0] >= 2560 and Desktop_info[Screen][1] >= 1440 and Display_resolution[0] > 2560 and Display_resolution[1] > 1440:
+        Display_resolution = 2560, 1440
+    elif Desktop_info[Screen][0] >= 1920 and Desktop_info[Screen][1] >= 1080 and Display_resolution[0] > 1920 and Display_resolution[1] > 1080:
+        Display_resolution = 1920, 1080
+    elif Desktop_info[Screen][0] >= 1280 and Desktop_info[Screen][1] >= 720 and Display_resolution[0] > 1280 and Display_resolution[1] > 720:
+        Display_resolution = 1280, 720
 
     if Window_resolution != Display_resolution:
         Display_scaling = True
@@ -5179,12 +5188,14 @@ def main():
                     update_screen(full_screen=True)
 
                 elif event.type == pygame.WINDOWFOCUSLOST:
-                    Window_sleep = True
-                    pygame.mixer.music.pause()
+                    # Window_sleep = True
+                    # pygame.mixer.music.pause()
+                    pass
 
                 elif event.type == pygame.WINDOWFOCUSGAINED:
-                    Window_sleep = False
-                    pygame.mixer.music.unpause()
+                    # Window_sleep = False
+                    # pygame.mixer.music.unpause()
+                    pass
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F11:

@@ -243,7 +243,6 @@ class Player:
         self.load_defaults()
 
     def load_defaults(self):
-        self.controls = None
         if self.id == 0:
             self.veh_name = 'Family Car'
             self.veh_colour = RED_CAR

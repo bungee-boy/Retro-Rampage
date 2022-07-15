@@ -1,8 +1,8 @@
 import unittest
 import main as game
 
-car = game.Car(game.Player(1))
-car_2 = game.Car(game.Player(2))
+car = game.Car(game.Player(0))
+car_2 = game.Car(game.Player(1))
 npc = game.NPCCar(1, game.RED_CAR, (40, 70), 'npc', 'racetrack', 1)
 
 
@@ -25,6 +25,93 @@ def reset_car(vehicle):  # Used to reset the car's position when testing movemen
 
 reset_car(car)
 reset_car(car_2)
+
+
+class TestPlayer(unittest.TestCase):
+    def test_load_defaults(self):
+        player = game.Player(0)
+        self.assertEqual(player.id, 0)
+        self.assertEqual(player.veh_name, 'Family Car', 'Loading player defaults failed!')
+        self.assertEqual(player.veh_colour, game.RED_CAR, 'Loading player defaults failed!')
+        if 'wasd' not in game.controls:
+            self.assertEqual(player.controls, 'wasd', 'Loading player defaults failed!')
+        elif 'arrows' not in game.controls:
+            self.assertEqual(player.controls, 'arrows', 'Loading player defaults failed!')
+        else:
+            self.assertEqual(player.controls, 'controller', 'Loading player defaults failed!')
+        self.assertEqual(player.name, '', 'Loading player defaults failed!')
+        self.assertEqual(player.start_pos, 6 - player.id, 'Loading player defaults failed!')
+        self.assertEqual(player.default_controls, player.controls, 'Loading player defaults failed!')
+
+        player = game.Player(1)
+        self.assertEqual(player.id, 1)
+        self.assertEqual(player.veh_name, 'Sports Car', 'Loading player defaults failed!')
+        self.assertEqual(player.veh_colour, game.YELLOW_CAR, 'Loading player defaults failed!')
+        if 'wasd' not in game.controls:
+            self.assertEqual(player.controls, 'wasd', 'Loading player defaults failed!')
+        elif 'arrows' not in game.controls:
+            self.assertEqual(player.controls, 'arrows', 'Loading player defaults failed!')
+        else:
+            self.assertEqual(player.controls, 'controller', 'Loading player defaults failed!')
+        self.assertEqual(player.name, '', 'Loading player defaults failed!')
+        self.assertEqual(player.start_pos, 6 - player.id, 'Loading player defaults failed!')
+        self.assertEqual(player.default_controls, player.controls, 'Loading player defaults failed!')
+
+        player = game.Player(2)
+        self.assertEqual(player.id, 2)
+        self.assertEqual(player.veh_name, 'Luxury Car', 'Loading player defaults failed!')
+        self.assertEqual(player.veh_colour, game.GREEN_CAR, 'Loading player defaults failed!')
+        if 'wasd' not in game.controls:
+            self.assertEqual(player.controls, 'wasd', 'Loading player defaults failed!')
+        elif 'arrows' not in game.controls:
+            self.assertEqual(player.controls, 'arrows', 'Loading player defaults failed!')
+        else:
+            self.assertEqual(player.controls, 'controller', 'Loading player defaults failed!')
+        self.assertEqual(player.name, '', 'Loading player defaults failed!')
+        self.assertEqual(player.start_pos, 6 - player.id, 'Loading player defaults failed!')
+        self.assertEqual(player.default_controls, player.controls, 'Loading player defaults failed!')
+
+        player = game.Player(3)
+        self.assertEqual(player.id, 3)
+        self.assertEqual(player.veh_name, 'Truck', 'Loading player defaults failed!')
+        self.assertEqual(player.veh_colour, game.BLUE_CAR, 'Loading player defaults failed!')
+        if 'wasd' not in game.controls:
+            self.assertEqual(player.controls, 'wasd', 'Loading player defaults failed!')
+        elif 'arrows' not in game.controls:
+            self.assertEqual(player.controls, 'arrows', 'Loading player defaults failed!')
+        else:
+            self.assertEqual(player.controls, 'controller', 'Loading player defaults failed!')
+        self.assertEqual(player.name, '', 'Loading player defaults failed!')
+        self.assertEqual(player.start_pos, 6 - player.id, 'Loading player defaults failed!')
+        self.assertEqual(player.default_controls, player.controls, 'Loading player defaults failed!')
+
+        player = game.Player(4)
+        self.assertEqual(player.id, 4)
+        self.assertEqual(player.veh_name, 'Race Car', 'Loading player defaults failed!')
+        self.assertEqual(player.veh_colour, game.BLACK_CAR, 'Loading player defaults failed!')
+        if 'wasd' not in game.controls:
+            self.assertEqual(player.controls, 'wasd', 'Loading player defaults failed!')
+        elif 'arrows' not in game.controls:
+            self.assertEqual(player.controls, 'arrows', 'Loading player defaults failed!')
+        else:
+            self.assertEqual(player.controls, 'controller', 'Loading player defaults failed!')
+        self.assertEqual(player.name, '', 'Loading player defaults failed!')
+        self.assertEqual(player.start_pos, 6 - player.id, 'Loading player defaults failed!')
+        self.assertEqual(player.default_controls, player.controls, 'Loading player defaults failed!')
+
+        player = game.Player(5)
+        self.assertEqual(player.id, 5)
+        self.assertEqual(player.veh_name, 'Family Car', 'Loading player defaults failed!')
+        self.assertEqual(player.veh_colour, game.RED_CAR, 'Loading player defaults failed!')
+        if 'wasd' not in game.controls:
+            self.assertEqual(player.controls, 'wasd', 'Loading player defaults failed!')
+        elif 'arrows' not in game.controls:
+            self.assertEqual(player.controls, 'arrows', 'Loading player defaults failed!')
+        else:
+            self.assertEqual(player.controls, 'controller', 'Loading player defaults failed!')
+        self.assertEqual(player.name, '', 'Loading player defaults failed!')
+        self.assertEqual(player.start_pos, 6 - player.id, 'Loading player defaults failed!')
+        self.assertEqual(player.default_controls, player.controls, 'Loading player defaults failed!')
 
 
 class TestCar(unittest.TestCase):
@@ -323,10 +410,6 @@ class TestNpcCar(unittest.TestCase):
         npc.clear_checkpoints()
         self.assertNotIn([npc.name, npc.laps, npc.image_dir], game.checkpoint_triggers[0], 'Clear checkpoints failed!')
 
-    def test_get_path(self):
-        npc.get_path()
-        self.assertIn(npc.path, game.paths, 'Fetch path failed!')
-
     def test_car_collision(self):
         reset_car(npc)
         reset_car(car_2)
@@ -344,7 +427,7 @@ class TestNpcCar(unittest.TestCase):
         self.assertFalse(npc.allow_reverse, 'Rear collision did not stop!')
         self.assertTrue(npc.allow_forwards, 'Rear collision did not stop!')
 
-    def test_path_movement(self):
+    def test_follow_path(self):
         npc.allow_forwards = True
         npc.allow_reverse = True
         reset_car(npc)
@@ -363,3 +446,9 @@ class TestNpcCar(unittest.TestCase):
         npc.follow_path()
         self.assertGreater(npc.pos_y, 0, 'Path forwards right failed! (movement)')
         self.assertGreater(npc.rotation, 180, 'Path forwards right failed! (rotation)')
+
+    def test_power_up(self):
+        npc.collision = False
+        npc.penalty_time = False
+        npc.power_up('lightning')
+        self.assertEqual(npc.lightning_animation, game.pygame.time.get_ticks() // 70, 'Lightning power-up failed!')

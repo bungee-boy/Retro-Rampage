@@ -1,14 +1,12 @@
 import unittest
 import main as game
 
-game.sfx_volume = 0.1
-game.music_volume = 0.07
 car = game.Car(game.Player(1))
 car_2 = game.Car(game.Player(2))
 npc = game.NPCCar(1, game.RED_CAR, (40, 70), 'npc', 'racetrack', 1)
 
 
-def keypress(keys):  # Used to simulate keyboard input
+def keypress(keys):   # Used to simulate keyboard input
     def keyboard():
         board = [0] * 300
         if type(keys) == int:
@@ -69,12 +67,13 @@ class TestCar(unittest.TestCase):
                 game.controllers.append(self.controller)  # Connect dummy controller
                 car.set_controls(self.controller)  # Bind car to dummy controller
                 self.assertEqual(car.controller, self.controller, 'Binding controller failed!')
+                print(self.controller.get_axis())
             except game.pygame.error:
                 print('\n** Connect a controller to run controller tests **')
         else:
             print('\n** Run tests on windows to check controller inputs **')
 
-    def test_laps(self):
+    def test_check_laps(self):
         reset_car(car)
         car.check_laps(game.pygame.rect.Rect(0, 0, car.rect.width, car.rect.height),
                        game.pygame.rect.Rect(200, 200, 1, 1))  # Collide lap
@@ -98,6 +97,87 @@ class TestCar(unittest.TestCase):
                        game.pygame.rect.Rect(200, 200, 1, 1))  # Collide lap
         self.assertFalse(car._lap_halfway, "Lap halfway didn't reset!")
         self.assertEqual(car.laps, 2, 'Lap increase failed!')
+
+    def test_check_checkpoints(self):
+        reset_car(car)
+        game.checkpoint_triggers = [[], []]
+        car._checkpoint_collision = False
+        car.check_checkpoints([game.pygame.rect.Rect(0, 0, car.rect.width, car.rect.height)])
+        self.assertTrue(car._checkpoint_collision, 'Checkpoint trigger failed!')
+        self.assertTrue(car._point_checked, 'Checkpoint trigger failed!')
+        self.assertIn([car.name, car.laps, car._image_dir], game.checkpoint_triggers[0], 'Checkpoint trigger failed!')
+        car.check_checkpoints([game.pygame.rect.Rect(0, 0, car.rect.width, car.rect.height)])
+        self.assertNotIn([car.name, car.laps, car._image_dir], game.checkpoint_triggers[1], 'Checkpoint added twice!')
+        car.check_checkpoints([game.pygame.rect.Rect(100, 100, 1, 1)])
+        self.assertFalse(car._checkpoint_collision, 'Checkpoint reset failed!')
+        self.assertFalse(car._point_checked, 'Checkpoint reset failed!')
+
+    def test_clear_checkpoints(self):
+        car.check_checkpoints([game.pygame.rect.Rect(0, 0, car.rect.width, car.rect.height)])
+        car.clear_checkpoints()
+        self.assertNotIn([car.name, car.laps, car._image_dir], game.checkpoint_triggers[0], 'Clear checkpoints failed!')
+
+    def test_track_collision(self):
+        reset_car(car)
+        car.collision = False
+        car._collision_sound = False
+        car.damage = 0
+        mask = game.pygame.surface.Surface((100, 100))
+        mask_overlay = game.pygame.surface.Surface((50, 100))
+        mask.fill((0, 0, 0))
+        mask_overlay.fill((255, 255, 255))
+        mask.blit(mask_overlay, (0, 0))
+        mask.set_colorkey((0, 0, 0))
+        mask = game.pygame.mask.from_surface(mask)
+        car.check_track_collisions(mask)
+        self.assertEqual(car.collision, 'track', 'Track collision failed!')
+        self.assertTrue(car._collision_sound, 'Track collision failed!')
+        self.assertEqual(car.damage, 1, 'Track collision failed!')
+        car.check_track_collisions(mask)
+        self.assertEqual(car.damage, 1, 'Track collision triggered twice!')
+        car.move(200, 200)
+        car.check_track_collisions(mask)
+        self.assertFalse(car.collision, 'Track collision failed to reset!')
+        self.assertFalse(car._collision_sound, 'Track collision failed to reset!')
+        self.assertTrue(car._allow_forwards, 'Track collision failed to reset!')
+        self.assertTrue(car._allow_reverse, 'Track collision failed to reset!')
+        '''
+        car.rotate(0)
+        car.rect.midbottom = 20, 20
+        self.assertFalse(car._allow_forwards, 'Track top collision failed!')
+        self.assertTrue(car._allow_reverse, 'Track top collision failed!')
+        car.rect.midtop = 20, 80
+        car.check_track_collisions(mask)
+        self.assertTrue(car._allow_forwards, 'Track bottom collision failed!')
+        self.assertFalse(car._allow_reverse, 'Track bottom collision failed!')
+        car.rotate(180)
+        car.rect.midbottom = 20, 20
+        car.check_track_collisions(mask)
+        self.assertTrue(car._allow_forwards, 'Track top collision failed!')
+        self.assertFalse(car._allow_reverse, 'Track top collision failed!')
+        car.rect.midtop = 20, 80
+        car.check_track_collisions(mask)
+        self.assertFalse(car._allow_forwards, 'Track bottom collision failed!')
+        self.assertTrue(car._allow_reverse, 'Track bottom collision failed!')
+        car.rotate(90)
+        car.midright = 20, 50
+        car.check_track_collisions(mask)
+        self.assertTrue(car._allow_forwards, 'Track left collision failed!')
+        self.assertFalse(car._allow_reverse, 'Track left collision failed!')
+        car.midleft = 30, 50
+        car.check_track_collisions(mask)
+        self.assertFalse(car._allow_forwards, 'Track right collision failed!')
+        self.assertTrue(car._allow_reverse, 'Track right collision failed!')
+        car.rotate(270)
+        car.midright = 20, 50
+        car.check_track_collisions(mask)
+        self.assertFalse(car._allow_forwards, 'Track left collision failed!')
+        self.assertTrue(car._allow_reverse, 'Track left collision failed!')
+        car.midleft = 30, 50
+        car.check_track_collisions(mask)
+        self.assertTrue(car._allow_forwards, 'Track right collision failed!')
+        self.assertFalse(car._allow_reverse, 'Track right collision failed!')
+        '''
 
     def test_car_collision(self):
         reset_car(car)
@@ -187,20 +267,99 @@ class TestCar(unittest.TestCase):
 
 
 class TestNpcCar(unittest.TestCase):
+    def test_move_speed(self):
+        speed = npc.move_speed - game.global_car_move_speed
+        npc.set_move_speed(7)
+        self.assertEqual(npc.move_speed - game.global_car_move_speed, 7, 'Npc move speed failed!')
+        npc.set_move_speed(speed)
+
+    def test_rotation_speed(self):
+        speed = npc.rotation_speed - game.global_car_rotation_speed
+        npc.set_rotation_speed(7)
+        self.assertEqual(npc.rotation_speed - game.global_car_rotation_speed, 7, 'Npc rotation speed failed!')
+        npc.set_rotation_speed(speed)
+
+    def test_check_laps(self):
+        reset_car(npc)
+        npc.check_laps(game.pygame.rect.Rect(0, 0, npc.rect.width, npc.rect.height),
+                       game.pygame.rect.Rect(200, 200, 1, 1))  # Collide lap
+        self.assertTrue(npc.lap_collision, 'Lap collision failed!')
+        self.assertEqual(npc.laps, 1, 'Initial lap failed!')
+        npc.check_laps(game.pygame.rect.Rect(0, 0, npc.rect.width, npc.rect.height),
+                       game.pygame.rect.Rect(200, 200, 1, 1))  # Collide lap
+        self.assertEqual(npc.laps, 1, 'Lap incremented twice!')
+        npc.check_laps(game.pygame.rect.Rect(100, 100, 1, 1),
+                       game.pygame.rect.Rect(200, 200, 1, 1))  # Collide none
+        self.assertFalse(npc.lap_collision, "Lap collision didn't reset!")
+        npc.check_laps(game.pygame.rect.Rect(200, 200, 1, 1),  # Collide halfway
+                       game.pygame.rect.Rect(0, 0, npc.rect.width, npc.rect.height))
+        self.assertTrue(npc.lap_collision, 'Lap collision failed!')
+        self.assertTrue(npc.lap_halfway, 'Lap halfway failed!')
+        self.assertEqual(npc.laps, 1, 'Lap increased on halfway trigger!')
+        npc.check_laps(game.pygame.rect.Rect(100, 100, 1, 1),
+                       game.pygame.rect.Rect(200, 200, 1, 1))  # Collide none
+        self.assertFalse(npc.lap_collision, "Lap collision didn't reset on halfway!")
+        npc.check_laps(game.pygame.rect.Rect(0, 0, npc.rect.width, npc.rect.height),
+                       game.pygame.rect.Rect(200, 200, 1, 1))  # Collide lap
+        self.assertFalse(npc.lap_halfway, "Lap halfway didn't reset!")
+        self.assertEqual(npc.laps, 2, 'Lap increase failed!')
+
+    def test_check_checkpoints(self):
+        reset_car(npc)
+        game.checkpoint_triggers = [[], []]
+        npc.checkpoint_collision = False
+        npc.check_checkpoints([game.pygame.rect.Rect(0, 0, npc.rect.width, npc.rect.height)])
+        self.assertTrue(npc.checkpoint_collision, 'Checkpoint trigger failed!')
+        self.assertTrue(npc.point_checked, 'Checkpoint trigger failed!')
+        self.assertIn([npc.name, npc.laps, npc.image_dir], game.checkpoint_triggers[0], 'Checkpoint trigger failed!')
+        npc.check_checkpoints([game.pygame.rect.Rect(0, 0, npc.rect.width, npc.rect.height)])
+        self.assertNotIn([npc.name, npc.laps, npc.image_dir], game.checkpoint_triggers[1], 'Checkpoint added twice!')
+        npc.check_checkpoints([game.pygame.rect.Rect(100, 100, 1, 1)])
+        self.assertFalse(npc.checkpoint_collision, 'Checkpoint reset failed!')
+        self.assertFalse(npc.point_checked, 'Checkpoint reset failed!')
+
+    def test_clear_checkpoints(self):
+        npc.check_checkpoints([game.pygame.rect.Rect(0, 0, npc.rect.width, npc.rect.height)])
+        npc.clear_checkpoints()
+        self.assertNotIn([npc.name, npc.laps, npc.image_dir], game.checkpoint_triggers[0], 'Clear checkpoints failed!')
+
+    def test_get_path(self):
+        npc.get_path()
+        self.assertIn(npc.path, game.paths, 'Fetch path failed!')
+
+    def test_car_collision(self):
+        reset_car(npc)
+        reset_car(car_2)
+        npc.check_car_collision(car_2)
+        self.assertEqual(npc.collision, car_2, 'Car collision failed!')
+        car_2.move(100, 0)
+        npc.check_car_collision(car_2)
+        self.assertFalse(npc.collision, 'Car collision did not reset!')
+        car_2.move(0, npc.rect.height-2)
+        npc.check_car_collision(car_2)
+        self.assertFalse(npc.allow_forwards, 'Front collision did not stop!')
+        self.assertTrue(npc.allow_reverse, 'Front collision did not stop!')
+        car_2.move(0, -npc.rect.height+2)
+        npc.check_car_collision(car_2)
+        self.assertFalse(npc.allow_reverse, 'Rear collision did not stop!')
+        self.assertTrue(npc.allow_forwards, 'Rear collision did not stop!')
+
     def test_path_movement(self):
+        npc.allow_forwards = True
+        npc.allow_reverse = True
         reset_car(npc)
         npc.path = [[0], [0]]
-        npc.update()  # Move forwards
+        npc.follow_path()  # Move forwards
         self.assertGreater(npc.pos_y, 0, 'Path forwards failed!')
 
         reset_car(npc)
         npc.path = [[0, 2], [0, 2]]
-        npc.update()
+        npc.follow_path()
         self.assertGreater(npc.pos_y, 0, 'Path forwards left failed! (movement')
         self.assertGreater(npc.rotation, 180, 'Path forwards left failed! (rotation)')
 
         reset_car(npc)
         npc.path = [[0, 3], [0, 3]]
-        npc.update()
+        npc.follow_path()
         self.assertGreater(npc.pos_y, 0, 'Path forwards right failed! (movement)')
         self.assertGreater(npc.rotation, 180, 'Path forwards right failed! (rotation)')

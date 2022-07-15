@@ -677,10 +677,6 @@ class Car(pygame.sprite.Sprite):
                         self._allow_forwards = False  # Do not allow forwards
                         self._allow_reverse = True
                         # print('do not allow forwards')
-                    elif self.image.get_size()[0] // 2 > self.mask_overlap[0]:  # If the collision is on the left half
-                        self._allow_forwards = True  # Do not allow reverse
-                        self._allow_reverse = False
-                        # print('do not allow reverse')
 
                 if self.mask_area > self.mask_size // 1.5:  # If over half of the car is colliding with the mask...
                     self.move(self._origin_pos[0], self._origin_pos[1])  # Reset the car to starting position + rotation
@@ -8280,6 +8276,8 @@ if __name__ == '__main__':
     quit()
 
 elif __name__ == 'main':
+    Music_volume = 0.02
+    Sfx_volume = 0.02
     try:
         Window.blit(pygame.font.Font(fonts.load(bar=True), 100).render('Retro Rampage', True, WHITE),
                     (CENTRE[0] - 412, CENTRE[1] - 60))

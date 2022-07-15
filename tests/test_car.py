@@ -1,6 +1,8 @@
 import unittest
 import main as game
 
+game.sfx_volume = 0.1
+game.music_volume = 0.07
 car = game.Car(game.Player(1))
 car_2 = game.Car(game.Player(2))
 npc = game.NPCCar(1, game.RED_CAR, (40, 70), 'npc', 'racetrack', 1)
@@ -60,20 +62,17 @@ class TestCar(unittest.TestCase):
         self.assertEqual(car._left, game.pygame.K_LEFT, 'Left arrow control key failed!')
         self.assertEqual(car._right, game.pygame.K_RIGHT, 'Right arrow control key failed!')
 
-        '''
         import platform
         if platform.system() == 'Windows':
-            import pyvjoy
-            self.v_joystick = pyvjoy.VJoyDevice(1)
-            self.v_joystick.set_button(1, 1)
-
-            self.controller = game.pygame.joystick.Joystick(1)
-            game.controllers.append(self.controller)  # Connect dummy controller
-            car.set_controls(self.controller)  # Bind car to dummy controller
-            self.assertEqual(car.controller, self.controller, 'Binding controller failed!')
+            try:
+                self.controller = game.pygame.joystick.Joystick(0)
+                game.controllers.append(self.controller)  # Connect dummy controller
+                car.set_controls(self.controller)  # Bind car to dummy controller
+                self.assertEqual(car.controller, self.controller, 'Binding controller failed!')
+            except game.pygame.error:
+                print('\n** Connect a controller to run controller tests **')
         else:
-            print('\n**Run tests on windows to check controller inputs**\n')
-        '''
+            print('\n** Run tests on windows to check controller inputs **')
 
     def test_laps(self):
         reset_car(car)

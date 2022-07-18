@@ -4,6 +4,7 @@ import main as game
 car = game.Car(game.Player(1))
 npc = game.NPCCar(1, game.RED_CAR, (40, 70), 'npc', 'racetrack', 1)
 
+
 class TestCar(unittest.TestCase):
     def test_rotation(self):
         car.rotate(2)
@@ -65,6 +66,7 @@ class TestCar(unittest.TestCase):
 
         car.power_up('bullet')
         self.assertEqual(car.damage, car.durability, 'Bullet powerup failed!')
+
 
 class TestNpcCar(unittest.TestCase):
     def test_path_movement(self):

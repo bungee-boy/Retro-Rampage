@@ -3552,9 +3552,9 @@ def draw_slider(pos: tuple[int, int], size: tuple[int, int],
 
 
 # Draws text on screen
-def draw_text(x, y, text, colour, size, bold=False, italic=False, bar=False, outline=False, three_d=False,
+def draw_text(x, y, text, colour, size, bold=False, bar=False, three_d=False,
               center_x=True, return_rect=False, surf=Window):
-    font = pygame.font.Font(fonts.load(bold, italic, bar, outline, three_d), size)
+    font = pygame.font.Font(fonts.load(bold, bar, three_d), size)
     render = font.render(str(text), True, colour)
     if center_x:
         x -= render.get_width() // 2  # Centre text x position
@@ -8275,6 +8275,8 @@ if __name__ == '__main__':
     quit()
 
 elif __name__ == 'main':
+    Display = pygame.display.set_mode([840, 480])
+    Display_resolution = 840, 480
     Music_volume = 0.02
     Sfx_volume = 0.02
     try:

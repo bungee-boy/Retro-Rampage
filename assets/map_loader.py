@@ -12,7 +12,7 @@ hairpin_dir = maps_dir + 'hairpin/'
 map_index = ['racetrack', 'snake', 'dog bone', 'hairpin']
 
 
-def racetrack(layer):
+def racetrack(layer: str):
     if layer == 'bg':
         return racetrack_dir + bg_layer
     elif layer == 'obj':
@@ -25,7 +25,7 @@ def racetrack(layer):
         raise ValueError("racetrack(layer) | layer must be 'bg', 'obj' or 'trk' not " + str(layer))
 
 
-def snake(layer):
+def snake(layer: str):
     if layer == 'bg':
         return snake_dir + bg_layer
     elif layer == 'obj':
@@ -38,7 +38,7 @@ def snake(layer):
         raise ValueError("racetrack(layer) | layer must be 'bg', 'obj' or 'trk' not " + str(layer))
 
 
-def dog_bone(layer):
+def dog_bone(layer: str):
     if layer == 'bg':
         return dog_bone_dir + bg_layer
     elif layer == 'obj':
@@ -51,7 +51,7 @@ def dog_bone(layer):
         raise ValueError("racetrack(layer) | layer must be 'bg', 'obj' or 'trk' not " + str(layer))
 
 
-def hairpin(layer):
+def hairpin(layer: str):
     if layer == 'bg':
         return hairpin_dir + bg_layer
     elif layer == 'obj':

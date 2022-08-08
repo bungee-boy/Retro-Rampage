@@ -8,11 +8,11 @@ def load(bold=False, bar=False, three_d=False):
     path = assets
     if not bar:
         path += 'no_bar'
-    elif three_d:
+    if three_d:
         path += '3D'
 
     if bold:
-        path += '_bold'
+        path += 'bold' if path == assets else '_bold'
 
     if path == assets:
         path += 'default'

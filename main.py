@@ -67,8 +67,8 @@ Mute_volume = False  # Set default muted state
 Music_volume = 0.5  # Set default Volume level for music
 Sfx_volume = 0.5  # Set default Volume level for all sounds effects
 FPS = 60  # Controls the speed of the game ***changing from 60 will break a lot of things!***
-Intro_screen = False  # Enables the intro screen on game boot
-Countdown = False  # Enables the traffic light countdown on game start
+Intro_screen = True  # Enables the intro screen on game boot
+Countdown = True  # Enables the traffic light countdown on game start
 Load_settings = True  # Enables setting loading + saving
 Game_end = False  # Lets the game know if the game finished or if the player quit
 
@@ -178,7 +178,7 @@ else:
 Players = []
 Selected_player = []
 Player_amount = 0
-Npc_amount = 4
+Npc_amount = 3
 Map = 'snake'
 Total_laps = 3
 Current_lap = 0
@@ -221,7 +221,6 @@ checkpoint_triggers = []  # checkpoints[ triggered_car_order[ [car_name, lap, ca
 
 # Define updating and loaded asset lists
 screen_updates = []
-sfx_queue = []
 loaded_assets = []
 loaded_sounds = []
 recorded_keys = []  # Empty list for creating NPC paths
@@ -4128,6 +4127,7 @@ def controller_removed(instance_id):
     for player in Players:
         if player.controls == controller:
             player.controls = player.default_controls
+
     controller.quit()
     controllers.remove(controller)
     if controller in controls:
@@ -7649,13 +7649,65 @@ def main():
                         pass
 
                 else:
-                    # P6 start left
-                    if 0 <= mouse_pos[0] <= 1 and 0 <= mouse_pos[1] <= 1 and Player_amount == 6:
-                        pass
+                    # Laps left
+                    if 887 <= mouse_pos[0] <= 912 and 298 <= mouse_pos[1] <= 323:
+                        if Total_laps <= 1:
+                            draw_triangle((900, 311), 'left', width=25, height=25, border=RED)
+                        else:
+                            draw_triangle((900, 311), 'left', width=25, height=25, border=GREY)
 
-                    # P6 start right
-                    elif 0 <= mouse_pos[0] <= 1 and 0 <= mouse_pos[1] <= 1 and Player_amount == 6:
-                        pass
+                            buttons = pygame.mouse.get_pressed()
+                            if buttons[0] and not button_trigger:
+                                button_trigger = True
+                                play_sound('option down')
+                                Total_laps -= 1
+                            elif not buttons[0] and button_trigger:
+                                button_trigger = False
+
+                    # Laps right
+                    elif 1007 <= mouse_pos[0] <= 1032 and 298 <= mouse_pos[1] <= 323:
+                        if Total_laps >= 10:
+                            draw_triangle((1020, 311), 'right', width=25, height=25, border=RED)
+                        else:
+                            draw_triangle((1020, 311), 'right', width=25, height=25, border=GREY)
+
+                            buttons = pygame.mouse.get_pressed()
+                            if buttons[0] and not button_trigger:
+                                button_trigger = True
+                                play_sound('option up')
+                                Total_laps += 1
+                            elif not buttons[0] and button_trigger:
+                                button_trigger = False
+
+                    # Powerups left
+                    elif 847 <= mouse_pos[0] <= 872 and 688 <= mouse_pos[1] <= 713:
+                        draw_triangle((860, 701), 'left', width=25, height=25, border=GREY)
+
+                        buttons = pygame.mouse.get_pressed()
+                        if buttons[0] and not button_trigger:
+                            button_trigger = True
+                            play_sound('option down')
+                            if powerups:
+                                powerups = False
+                            else:
+                                powerups = True
+                        elif not buttons[0] and button_trigger:
+                            button_trigger = False
+
+                    # Powerups right
+                    elif 1047 <= mouse_pos[0] <= 1072 and 688 <= mouse_pos[1] <= 713:
+                        draw_triangle((1060, 701), 'right', width=25, height=25, border=GREY)
+
+                        buttons = pygame.mouse.get_pressed()
+                        if buttons[0] and not button_trigger:
+                            button_trigger = True
+                            play_sound('option up')
+                            if powerups:
+                                powerups = False
+                            else:
+                                powerups = True
+                        elif not buttons[0] and button_trigger:
+                            button_trigger = False
 
                 # BACK BUTTON
                 if 210 <= mouse_pos[0] <= 409 and 112 <= mouse_pos[1] <= 211:

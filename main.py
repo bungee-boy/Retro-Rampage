@@ -478,6 +478,7 @@ class Car(pygame.sprite.Sprite):
         self._image_dir = assets.car(self.colour, self.vehicle)
         self.image = pygame.transform.scale(pygame.image.load(self._image_dir).convert(), (40, 70))
         self.image.set_colorkey(BLACK)
+        self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
         self._dmg_img = None
         self.damage = 0
         self.size = self.image.get_size()
@@ -488,7 +489,6 @@ class Car(pygame.sprite.Sprite):
         self.pos_y = self.rect.y
         self.rotation = self._origin_rotation
         # COLLISION variables
-        self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
         self.mask_overlap = None  # Used for checking collision position
         self.mask_area = None  # Used to ensure the player cannot get outside the map
         self.mask_size = None
@@ -779,7 +779,7 @@ class Car(pygame.sprite.Sprite):
     def rotate(self, degree):  # Rotate car to new angle
         self.rotation = degree  # Set current rotation as rotation
         if global_car_rotation_speed + 1 >= self.rotation:  # Create snapping points to drive in straight lines
-            self.rotation = 0
+            self.rotation = 360
         elif self.rotation >= 360 - (global_car_rotation_speed + 1):
             self.rotation = 0
         elif 90 - (global_car_rotation_speed + 1) <= self.rotation <= 90 + (global_car_rotation_speed + 1):
@@ -790,8 +790,8 @@ class Car(pygame.sprite.Sprite):
             self.rotation = 270
         self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
             self._image_dir).convert(), self.size), self.rotation)  # Rotate image
-        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.image.set_colorkey(BLACK)
+        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         if 0 < self.damage <= self.durability:
             self._dmg_img = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
                 assets.car_damage(self.vehicle, self.damage)), self.size), self.rotation)  # Load and rotate damage
@@ -1305,8 +1305,8 @@ class NPCCar(pygame.sprite.Sprite):
             self.rotation = 270
         self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
             self.image_dir).convert(), self.size), self.rotation)  # Rotate image
-        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.image.set_colorkey(BLACK)
+        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.rect = self.image.get_rect()  # Set surface size to image size
         if Debug:
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)

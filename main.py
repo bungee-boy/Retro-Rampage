@@ -1635,8 +1635,8 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((840, 380), 'left', width=25, height=50)
-            draw_triangle((1080, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 840, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1080, pad_y + 380), 'right', width=25, height=50)
 
         x = pad_x + CENTRE[0]
         y = pad_y + CENTRE[1] + 100
@@ -1672,8 +1672,8 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((440, 380), 'left', width=25, height=50)
-            draw_triangle((680, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 440, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 680, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P1 name title
@@ -1707,8 +1707,8 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((1240, 380), 'left', width=25, height=50)
-            draw_triangle((1480, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 1240, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1480, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P2 name title
@@ -1861,8 +1861,8 @@ def choose_players_window_2(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((840, 380), 'left', width=25, height=50)
-            draw_triangle((1080, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 840, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1080, pad_y + 380), 'right', width=25, height=50)
 
         x = pad_x + CENTRE[0]
         y = pad_y + CENTRE[1] + 100
@@ -1898,8 +1898,8 @@ def choose_players_window_2(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((440, 380), 'left', width=25, height=50)
-            draw_triangle((680, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 440, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 680, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P1 name title
@@ -1933,8 +1933,8 @@ def choose_players_window_2(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((1240, 380), 'left', width=25, height=50)
-            draw_triangle((1480, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 1240, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1480, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P2 name title
@@ -2032,8 +2032,8 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((840, 380), 'left', width=25, height=50)
-            draw_triangle((1080, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 840, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1080, pad_y + 380), 'right', width=25, height=50)
 
         x = pad_x + CENTRE[0]
         y = pad_y + CENTRE[1] + 100
@@ -2076,8 +2076,8 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((440, 380), 'left', width=25, height=50)
-            draw_triangle((680, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 440, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 680, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P1 name title
@@ -2111,8 +2111,8 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((1240, 380), 'left', width=25, height=50)
-            draw_triangle((1480, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 1240, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1480, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P2 name title

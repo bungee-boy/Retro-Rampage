@@ -511,6 +511,7 @@ class Car(pygame.sprite.Sprite):
         self._bullet_penalty = 0
         self._bullet_damage = 0
         self._current_speed = 0
+        self._boost_ani_frame = 0
         # NAME variables
         self.name = self.player.name
         self._name_rect = None

@@ -5190,11 +5190,13 @@ def main():
 
                 elif event.type == pygame.WINDOWFOCUSLOST:
                     Window_sleep = True
-                    pygame.mixer.music.pause()
+                    if not Mute_volume:
+                        pygame.mixer.music.pause()
 
                 elif event.type == pygame.WINDOWFOCUSGAINED:
                     Window_sleep = False
-                    pygame.mixer.music.unpause()
+                    if not Mute_volume:
+                        pygame.mixer.music.unpause()
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F11:

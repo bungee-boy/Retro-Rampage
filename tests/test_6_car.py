@@ -125,7 +125,7 @@ class TestCar(unittest.TestCase):
 
     def test_rotation(self):
         car.rotate(2)
-        self.assertEqual(car.rotation, 0, 'Snapping to 0 from 2 failed!')
+        self.assertEqual(car.rotation, 360, 'Snapping to 360 from 2 failed!')
         car.rotate(358)
         self.assertEqual(car.rotation, 0, 'Snapping to 0 from 358 failed!')
         car.rotate(92)

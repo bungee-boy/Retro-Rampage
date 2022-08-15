@@ -197,6 +197,9 @@ controller_prompts = []
 lightning_frames = []
 for frame in range(0, 15):
     lightning_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('lightning', frame)), (128, 128)))
+boost_frames = []
+for frame in range(0, 4):
+    boost_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('flame', frame)), (40, 70)))
 Npc_force_veh = 0
 Npc_force_colour = None
 # Define tile and menu variables
@@ -511,6 +514,7 @@ class Car(pygame.sprite.Sprite):
         self._bullet_penalty = 0
         self._bullet_damage = 0
         self._current_speed = 0
+        self._boost_ani_frame = 0
         # NAME variables
         self.name = self.player.name
         self._name_rect = None
@@ -934,6 +938,27 @@ class Car(pygame.sprite.Sprite):
                       width=10, height=10, border=self.colour, border_width=3, surface=surf)
         self._name_rect = draw_text(self.rect.centerx, self.rect.top - 35, self.name, WHITE, 12, surf=surf)
 
+        '''
+                if self.lightning_animation:  # Lightning animation
+            self.ani_frame = pygame.time.get_ticks() // 70 - self.lightning_animation
+            if self.ani_frame < 15:
+                surf.blit(lightning_frames[self.ani_frame], (self.rect.centerx - 64, self.rect.centery - 128))
+                if self.ani_frame == 2:
+                    play_sound('lightning')
+                elif self.ani_frame == 3:
+                    self.penalty_time = pygame.time.get_ticks() + 3000 + \
+                                        (self.move_speed - global_car_move_speed) * 1000
+        '''
+
+        if self._boost_ani_frame >= 4:  # If boost animation finished
+            if self._boost_timeout:  # If boost still active
+                self._boost_ani_frame = 0  # Replay animation
+            else:
+                self._boost_ani_frame = -1  # Reset animation
+        elif self._boost_timeout and self._boost_ani_frame >= 0:  # If boost animation playing
+            surf.blit(boost_frames[self._boost_ani_frame], self.rect.topleft)  # Display flames
+            self._boost_ani_frame += 1  # Increase animation to next frame
+
     def update(self):  # Called each loop and checks if anything has changed
         if self._boost_timeout and self._boost_timeout < pygame.time.get_ticks():  # If boost timeout has expired
             self._boost_timeout = 0  # Reset current speed to previous state
@@ -944,15 +969,15 @@ class Car(pygame.sprite.Sprite):
             self.damage = self._bullet_damage
             self.rotate(self.rotation + 1)
             self.rotate(self.rotation - 1)
-        elif self.damage and not self._boost_timeout:  # Change player speed based on damage and durability
-            self.set_move_speed(round(self.max_speed - (self.max_speed / (self.durability / self.damage))))
-            self.set_rotation_speed(self.max_rotation_speed)
-        elif not self.damage and not self._boost_timeout:
-            self.set_move_speed(self.max_speed)
-            self.set_rotation_speed(self.max_rotation_speed)
+        elif not self._boost_timeout:
+            if self.damage:  # Change player speed based on damage and durability
+                self.set_move_speed(round(self.max_speed - (self.max_speed / (self.durability / self.damage))))
+                self.set_rotation_speed(self.max_rotation_speed)
+            else:
+                self.set_move_speed(self.max_speed)
+                self.set_rotation_speed(self.max_rotation_speed)
         if not self._bullet_penalty:
             self.check_inputs()
-        screen_updates.append(self.rect)
 
 
 class NPCCar(pygame.sprite.Sprite):

@@ -16,6 +16,8 @@ def icon():
 def animation(ver: str, frame: str or int):
     if ver == 'lightning':
         return animations + '/lightning/frame_' + str(frame) + '.png'
+    elif ver == 'flame':
+        return animations + '/flame/frame_' + str(frame) + '.png'
     else:
         raise ValueError('Incorrect animation ver: ' + str(ver))
 

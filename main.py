@@ -194,12 +194,6 @@ Npc_names = [['John', False], ['Mark', False], ['Lilly', False], ['Jessica', Fal
 controllers = []
 controls = []
 controller_prompts = []
-lightning_frames = []
-for frame in range(0, 15):
-    lightning_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('lightning', frame)), (128, 128)))
-boost_frames = []
-for frame in range(0, 4):
-    boost_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('flame', frame)), (40, 70)))
 Npc_force_veh = 0
 Npc_force_colour = None
 # Define tile and menu variables
@@ -514,6 +508,10 @@ class Car(pygame.sprite.Sprite):
         self._bullet_penalty = 0
         self._bullet_damage = 0
         self._current_speed = 0
+        self._boost_frames = []
+        for frame in range(0, 4):
+            self._boost_frames.append(pygame.transform.scale(pygame.image.load(
+                assets.animation('flame', frame)), (self.size[0], self.size[1] + 8)))
         self._boost_ani_frame = 0
         # NAME variables
         self.name = self.player.name
@@ -938,25 +936,14 @@ class Car(pygame.sprite.Sprite):
                       width=10, height=10, border=self.colour, border_width=3, surface=surf)
         self._name_rect = draw_text(self.rect.centerx, self.rect.top - 35, self.name, WHITE, 12, surf=surf)
 
-        '''
-                if self.lightning_animation:  # Lightning animation
-            self.ani_frame = pygame.time.get_ticks() // 70 - self.lightning_animation
-            if self.ani_frame < 15:
-                surf.blit(lightning_frames[self.ani_frame], (self.rect.centerx - 64, self.rect.centery - 128))
-                if self.ani_frame == 2:
-                    play_sound('lightning')
-                elif self.ani_frame == 3:
-                    self.penalty_time = pygame.time.get_ticks() + 3000 + \
-                                        (self.move_speed - global_car_move_speed) * 1000
-        '''
-
         if self._boost_ani_frame >= 4:  # If boost animation finished
             if self._boost_timeout:  # If boost still active
                 self._boost_ani_frame = 0  # Replay animation
             else:
                 self._boost_ani_frame = -1  # Reset animation
         elif self._boost_timeout and self._boost_ani_frame >= 0:  # If boost animation playing
-            surf.blit(boost_frames[self._boost_ani_frame], self.rect.topleft)  # Display flames
+            surf.blit(pygame.transform.rotate(self._boost_frames[
+                                                  self._boost_ani_frame], self.rotation), self.rect.topleft)
             self._boost_ani_frame += 1  # Increase animation to next frame
 
     def update(self):  # Called each loop and checks if anything has changed
@@ -1047,6 +1034,10 @@ class NPCCar(pygame.sprite.Sprite):
         self.mask_size = None
         self.collision = False
         self.collision_time = 0
+        self._lightning_frames = []
+        for frame in range(0, 15):
+            self._lightning_frames.append(
+                pygame.transform.scale(pygame.image.load(assets.animation('lightning', frame)), (128, 128)))
         self.lightning_animation = False
         self.ani_frame = 0
         # MOVEMENT variables
@@ -1464,7 +1455,7 @@ class NPCCar(pygame.sprite.Sprite):
         if self.lightning_animation:  # Lightning animation
             self.ani_frame = pygame.time.get_ticks() // 70 - self.lightning_animation
             if self.ani_frame < 15:
-                surf.blit(lightning_frames[self.ani_frame], (self.rect.centerx - 64, self.rect.centery - 128))
+                surf.blit(self._lightning_frames[self.ani_frame], (self.rect.centerx - 64, self.rect.centery - 128))
                 if self.ani_frame == 2:
                     play_sound('lightning')
                 elif self.ani_frame == 3:

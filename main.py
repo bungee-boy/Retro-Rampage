@@ -67,8 +67,8 @@ Mute_volume = False  # Set default muted state
 Music_volume = 0.5  # Set default Volume level for music
 Sfx_volume = 0.5  # Set default Volume level for all sounds effects
 FPS = 60  # Controls the speed of the game ***changing from 60 will break a lot of things!***
-Intro_screen = False  # Enables the intro screen on game boot
-Countdown = False  # Enables the traffic light countdown on game start
+Intro_screen = True  # Enables the intro screen on game boot
+Countdown = True  # Enables the traffic light countdown on game start
 Load_settings = True  # Enables setting loading + saving
 Game_end = False  # Lets the game know if the game finished or if the player quit
 
@@ -178,7 +178,7 @@ else:
 Players = []
 Selected_player = []
 Player_amount = 0
-Npc_amount = 4
+Npc_amount = 3
 Map = 'snake'
 Total_laps = 3
 Current_lap = 0
@@ -221,7 +221,6 @@ checkpoint_triggers = []  # checkpoints[ triggered_car_order[ [car_name, lap, ca
 
 # Define updating and loaded asset lists
 screen_updates = []
-sfx_queue = []
 loaded_assets = []
 loaded_sounds = []
 recorded_keys = []  # Empty list for creating NPC paths
@@ -243,7 +242,6 @@ class Player:
         self.load_defaults()
 
     def load_defaults(self):
-        self.controls = None
         if self.id == 0:
             self.veh_name = 'Family Car'
             self.veh_colour = RED_CAR
@@ -480,6 +478,7 @@ class Car(pygame.sprite.Sprite):
         self._image_dir = assets.car(self.colour, self.vehicle)
         self.image = pygame.transform.scale(pygame.image.load(self._image_dir).convert(), (40, 70))
         self.image.set_colorkey(BLACK)
+        self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
         self._dmg_img = None
         self.damage = 0
         self.size = self.image.get_size()
@@ -490,7 +489,6 @@ class Car(pygame.sprite.Sprite):
         self.pos_y = self.rect.y
         self.rotation = self._origin_rotation
         # COLLISION variables
-        self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
         self.mask_overlap = None  # Used for checking collision position
         self.mask_area = None  # Used to ensure the player cannot get outside the map
         self.mask_size = None
@@ -677,10 +675,6 @@ class Car(pygame.sprite.Sprite):
                         self._allow_forwards = False  # Do not allow forwards
                         self._allow_reverse = True
                         # print('do not allow forwards')
-                    elif self.image.get_size()[0] // 2 > self.mask_overlap[0]:  # If the collision is on the left half
-                        self._allow_forwards = True  # Do not allow reverse
-                        self._allow_reverse = False
-                        # print('do not allow reverse')
 
                 if self.mask_area > self.mask_size // 1.5:  # If over half of the car is colliding with the mask...
                     self.move(self._origin_pos[0], self._origin_pos[1])  # Reset the car to starting position + rotation
@@ -785,7 +779,7 @@ class Car(pygame.sprite.Sprite):
     def rotate(self, degree):  # Rotate car to new angle
         self.rotation = degree  # Set current rotation as rotation
         if global_car_rotation_speed + 1 >= self.rotation:  # Create snapping points to drive in straight lines
-            self.rotation = 0
+            self.rotation = 360
         elif self.rotation >= 360 - (global_car_rotation_speed + 1):
             self.rotation = 0
         elif 90 - (global_car_rotation_speed + 1) <= self.rotation <= 90 + (global_car_rotation_speed + 1):
@@ -796,8 +790,8 @@ class Car(pygame.sprite.Sprite):
             self.rotation = 270
         self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
             self._image_dir).convert(), self.size), self.rotation)  # Rotate image
-        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.image.set_colorkey(BLACK)
+        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         if 0 < self.damage <= self.durability:
             self._dmg_img = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
                 assets.car_damage(self.vehicle, self.damage)), self.size), self.rotation)  # Load and rotate damage
@@ -978,23 +972,25 @@ class NPCCar(pygame.sprite.Sprite):
         self.vehicle = vehicle.lower() if type(vehicle) == str else vehicle
         self.move_speed = global_car_move_speed
         self.rotation_speed = global_car_rotation_speed
-        if self.vehicle == 'Family Car' or self.vehicle == 1:
+        if type(self.vehicle) == str:
+            self.vehicle = self.vehicle.lower()
+        if self.vehicle == 'family car' or self.vehicle == 1:
             self.vehicle = 'Family Car'
             self.set_move_speed(3)
             self.set_rotation_speed(2)
-        elif self.vehicle == 'Sports Car' or self.vehicle == 2:
+        elif self.vehicle == 'sports car' or self.vehicle == 2:
             self.vehicle = 'Sports Car'
             self.set_move_speed(4)
             self.set_rotation_speed(3)
-        elif self.vehicle == 'Luxury Car' or self.vehicle == 3:
+        elif self.vehicle == 'luxury car' or self.vehicle == 3:
             self.vehicle = 'Luxury Car'
             self.set_move_speed(3)
             self.set_rotation_speed(3)
-        elif self.vehicle == 'Truck' or self.vehicle == 4:
+        elif self.vehicle == 'truck' or self.vehicle == 4:
             self.vehicle = 'Truck'
             self.set_move_speed(2)
             self.set_rotation_speed(2)
-        elif self.vehicle == 'Race Car' or self.vehicle == 5:
+        elif self.vehicle == 'race car' or self.vehicle == 5:
             self.vehicle = 'Race Car'
             self.set_move_speed(5)
             self.set_rotation_speed(3)
@@ -1309,8 +1305,8 @@ class NPCCar(pygame.sprite.Sprite):
             self.rotation = 270
         self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
             self.image_dir).convert(), self.size), self.rotation)  # Rotate image
-        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.image.set_colorkey(BLACK)
+        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.rect = self.image.get_rect()  # Set surface size to image size
         if Debug:
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)
@@ -3555,9 +3551,9 @@ def draw_slider(pos: tuple[int, int], size: tuple[int, int],
 
 
 # Draws text on screen
-def draw_text(x, y, text, colour, size, bold=False, italic=False, bar=False, outline=False, three_d=False,
+def draw_text(x, y, text, colour, size, bold=False, bar=False, three_d=False,
               center_x=True, return_rect=False, surf=Window):
-    font = pygame.font.Font(fonts.load(bold, italic, bar, outline, three_d), size)
+    font = pygame.font.Font(fonts.load(bold, bar, three_d), size)
     render = font.render(str(text), True, colour)
     if center_x:
         x -= render.get_width() // 2  # Centre text x position
@@ -4131,6 +4127,7 @@ def controller_removed(instance_id):
     for player in Players:
         if player.controls == controller:
             player.controls = player.default_controls
+
     controller.quit()
     controllers.remove(controller)
     if controller in controls:
@@ -5193,11 +5190,13 @@ def main():
 
                 elif event.type == pygame.WINDOWFOCUSLOST:
                     Window_sleep = True
-                    pygame.mixer.music.pause()
+                    if not Mute_volume:
+                        pygame.mixer.music.pause()
 
                 elif event.type == pygame.WINDOWFOCUSGAINED:
                     Window_sleep = False
-                    pygame.mixer.music.unpause()
+                    if not Mute_volume:
+                        pygame.mixer.music.unpause()
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F11:
@@ -7652,13 +7651,65 @@ def main():
                         pass
 
                 else:
-                    # P6 start left
-                    if 0 <= mouse_pos[0] <= 1 and 0 <= mouse_pos[1] <= 1 and Player_amount == 6:
-                        pass
+                    # Laps left
+                    if 887 <= mouse_pos[0] <= 912 and 298 <= mouse_pos[1] <= 323:
+                        if Total_laps <= 1:
+                            draw_triangle((900, 311), 'left', width=25, height=25, border=RED)
+                        else:
+                            draw_triangle((900, 311), 'left', width=25, height=25, border=GREY)
 
-                    # P6 start right
-                    elif 0 <= mouse_pos[0] <= 1 and 0 <= mouse_pos[1] <= 1 and Player_amount == 6:
-                        pass
+                            buttons = pygame.mouse.get_pressed()
+                            if buttons[0] and not button_trigger:
+                                button_trigger = True
+                                play_sound('option down')
+                                Total_laps -= 1
+                            elif not buttons[0] and button_trigger:
+                                button_trigger = False
+
+                    # Laps right
+                    elif 1007 <= mouse_pos[0] <= 1032 and 298 <= mouse_pos[1] <= 323:
+                        if Total_laps >= 10:
+                            draw_triangle((1020, 311), 'right', width=25, height=25, border=RED)
+                        else:
+                            draw_triangle((1020, 311), 'right', width=25, height=25, border=GREY)
+
+                            buttons = pygame.mouse.get_pressed()
+                            if buttons[0] and not button_trigger:
+                                button_trigger = True
+                                play_sound('option up')
+                                Total_laps += 1
+                            elif not buttons[0] and button_trigger:
+                                button_trigger = False
+
+                    # Powerups left
+                    elif 847 <= mouse_pos[0] <= 872 and 688 <= mouse_pos[1] <= 713:
+                        draw_triangle((860, 701), 'left', width=25, height=25, border=GREY)
+
+                        buttons = pygame.mouse.get_pressed()
+                        if buttons[0] and not button_trigger:
+                            button_trigger = True
+                            play_sound('option down')
+                            if powerups:
+                                powerups = False
+                            else:
+                                powerups = True
+                        elif not buttons[0] and button_trigger:
+                            button_trigger = False
+
+                    # Powerups right
+                    elif 1047 <= mouse_pos[0] <= 1072 and 688 <= mouse_pos[1] <= 713:
+                        draw_triangle((1060, 701), 'right', width=25, height=25, border=GREY)
+
+                        buttons = pygame.mouse.get_pressed()
+                        if buttons[0] and not button_trigger:
+                            button_trigger = True
+                            play_sound('option up')
+                            if powerups:
+                                powerups = False
+                            else:
+                                powerups = True
+                        elif not buttons[0] and button_trigger:
+                            button_trigger = False
 
                 # BACK BUTTON
                 if 210 <= mouse_pos[0] <= 409 and 112 <= mouse_pos[1] <= 211:
@@ -8239,6 +8290,7 @@ def main():
         menu_loop = True
         Music_loop = True
 
+
 if __name__ == '__main__':
     if Debug:  # If in debug mode then do not handle errors
         main()
@@ -8277,17 +8329,21 @@ if __name__ == '__main__':
     quit()
 
 elif __name__ == 'main':
+    Display = pygame.display.set_mode([840, 480])
+    Display_resolution = 840, 480
+    Music_volume = 0.02
+    Sfx_volume = 0.02
     try:
         Window.blit(pygame.font.Font(fonts.load(bar=True), 100).render('Retro Rampage', True, WHITE),
-                     (CENTRE[0] - 412, CENTRE[1] - 60))
+                    (CENTRE[0] - 412, CENTRE[1] - 60))
         Window.blit(pygame.font.Font(fonts.load(), 100).render('Testing mode', True, WHITE),
-                     (CENTRE[0] - 346, CENTRE[1] + 60))
+                    (CENTRE[0] - 346, CENTRE[1] + 60))
 
     except FileNotFoundError:
         Window.blit(pygame.font.Font(None, 100).render('Retro Rampage', True, WHITE),
-                     (CENTRE[0] - 256, CENTRE[1] - 60))
+                    (CENTRE[0] - 256, CENTRE[1] - 60))
         Window.blit(pygame.font.Font(None, 100).render('Testing mode', True, WHITE),
-                     (CENTRE[0] - 224, CENTRE[1] + 60))
+                    (CENTRE[0] - 224, CENTRE[1] + 60))
     Display.blit(pygame.transform.scale(Window, Display_resolution), (0, 0))
     pygame.display.update()
     pygame.time.wait(500)

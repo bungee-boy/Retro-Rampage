@@ -5023,9 +5023,9 @@ def game():  # All variables that are not constant
                 Countdown -= 2
 
             if len(power_ups) < 5 * Player_amount and powerups:  # Spawn random power-ups
-                rand = 0 # randint(0, 1400 // (10 + Player_amount + Npc_amount))
+                rand = randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = 0 # randint(0, 3 if Npc_amount else 2)
+                    rand = randint(0, 3 if Npc_amount else 2)
                     if not rand:
                         ver = 'repair'
                     elif rand == 1:

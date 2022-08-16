@@ -510,7 +510,8 @@ class Car(pygame.sprite.Sprite):
         self._current_speed = 0
         self._boost_frames = []
         for frame in range(0, 4):
-            self._boost_frames.append(pygame.image.load(assets.animation('flame', frame, car_num=self.vehicle)))
+            self._boost_frames.append(pygame.transform.scale(pygame.image.load(assets.animation(
+                'flame', frame, car_num=self.vehicle)), (self.size[0], self.size[1] + 20)))
         self._boost_ani_frame = 0
         self._ani_frame = None
         self._ani_frame_rect = None
@@ -943,11 +944,10 @@ class Car(pygame.sprite.Sprite):
         elif not self._boost_timeout and self._boost_ani_frame != -1:  # If boost timeout finished
             self._boost_ani_frame = -1  # Reset animation
         if self._boost_timeout and self._boost_ani_frame >= 0:  # If boost animation playing
-            self._ani_frame = pygame.image.load(self._boost_frames[self._boost_ani_frame])
+            self._ani_frame = pygame.transform.rotate(self._boost_frames[self._boost_ani_frame], self.rotation)
             self._ani_frame_rect = self._ani_frame.get_rect()
             self._ani_frame_rect.center = self.rect.center
-            surf.blit(pygame.transform.rotate(self._ani_frame, self.rotation), self._ani_frame_rect.topleft)
-            print(self._ani_frame_rect.topleft, self.rect.topleft)
+            surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
             self._boost_ani_frame += 1  # Increase animation to next frame
 
     def update(self):  # Called each loop and checks if anything has changed

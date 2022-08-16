@@ -510,9 +510,10 @@ class Car(pygame.sprite.Sprite):
         self._current_speed = 0
         self._boost_frames = []
         for frame in range(0, 4):
-            self._boost_frames.append(pygame.transform.scale(pygame.image.load(
-                assets.animation('flame', frame)), (self.size[0], self.size[1] + 8)))
+            self._boost_frames.append(pygame.image.load(assets.animation('flame', frame, car_num=self.vehicle)))
         self._boost_ani_frame = 0
+        self._ani_frame = None
+        self._ani_frame_rect = None
         # NAME variables
         self.name = self.player.name
         self._name_rect = None
@@ -816,6 +817,7 @@ class Car(pygame.sprite.Sprite):
                 self._boost_timeout = pygame.time.get_ticks() + 2000 + (5000 - self._current_speed * 1000)
                 self.set_move_speed(10)
                 self.set_rotation_speed(5)
+                self._boost_ani_frame = 0
             else:
                 self._boost_timeout += 2000 + (5000 - self._current_speed * 1000)
 
@@ -936,14 +938,16 @@ class Car(pygame.sprite.Sprite):
                       width=10, height=10, border=self.colour, border_width=3, surface=surf)
         self._name_rect = draw_text(self.rect.centerx, self.rect.top - 35, self.name, WHITE, 12, surf=surf)
 
-        if self._boost_ani_frame >= 4:  # If boost animation finished
-            if self._boost_timeout:  # If boost still active
-                self._boost_ani_frame = 0  # Replay animation
-            else:
-                self._boost_ani_frame = -1  # Reset animation
-        elif self._boost_timeout and self._boost_ani_frame >= 0:  # If boost animation playing
-            surf.blit(pygame.transform.rotate(self._boost_frames[
-                                                  self._boost_ani_frame], self.rotation), self.rect.topleft)
+        if self._boost_ani_frame == 4 and self._boost_timeout:  # If boost animation finished
+            self._boost_ani_frame = 0  # Replay animation
+        elif not self._boost_timeout and self._boost_ani_frame != -1:  # If boost timeout finished
+            self._boost_ani_frame = -1  # Reset animation
+        if self._boost_timeout and self._boost_ani_frame >= 0:  # If boost animation playing
+            self._ani_frame = pygame.image.load(self._boost_frames[self._boost_ani_frame])
+            self._ani_frame_rect = self._ani_frame.get_rect()
+            self._ani_frame_rect.center = self.rect.center
+            surf.blit(pygame.transform.rotate(self._ani_frame, self.rotation), self._ani_frame_rect.topleft)
+            print(self._ani_frame_rect.topleft, self.rect.topleft)
             self._boost_ani_frame += 1  # Increase animation to next frame
 
     def update(self):  # Called each loop and checks if anything has changed
@@ -4986,9 +4990,9 @@ def game():  # All variables that are not constant
                 Countdown -= 2
 
             if len(power_ups) < 5 * Player_amount and powerups:  # Spawn random power-ups
-                rand = randint(0, 1400 // (10 + Player_amount + Npc_amount))
+                rand = 0 # randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = randint(0, 3 if Npc_amount else 2)
+                    rand = 1 # randint(0, 3 if Npc_amount else 2)
                     if not rand:
                         ver = 'repair'
                     elif rand == 1:

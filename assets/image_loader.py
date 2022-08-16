@@ -13,9 +13,23 @@ def icon():
     return assets + '/icon.ico'
 
 
-def animation(ver: str, frame: str or int):
+def animation(ver: str, frame: str or int, car_num='' or int):
     if ver == 'lightning':
         return animations + '/lightning/frame_' + str(frame) + '.png'
+    elif ver == 'flame':
+        if type(car_num) == str:
+            if car_num == 'Family Car' or car_num == 'Luxury Car' or car_num == 'Truck':
+                car_num = 1
+            elif car_num == 'Sports Car' or car_num == 'Race Car':
+                car_num = 2
+            else:
+                raise ValueError('Incorrect car name: ' + str(car_num))
+        if car_num == 2 or car_num == 5:
+            return animations + '/flame/c' + str(car_num) + 'f' + str(frame) + '.png'
+        elif car_num == 1 or car_num == 3 or car_num == 4:
+            return animations + '/flame/c134f' + str(frame) + '.png'
+        else:
+            raise ValueError('Incorrect car number: ' + str(car_num))
     else:
         raise ValueError('Incorrect animation ver: ' + str(ver))
 

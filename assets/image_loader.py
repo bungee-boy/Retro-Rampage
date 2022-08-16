@@ -30,6 +30,8 @@ def animation(ver: str, frame: str or int, car_num='' or int):
             return animations + '/flame/c134f' + str(frame) + '.png'
         else:
             raise ValueError('Incorrect car number: ' + str(car_num))
+    elif ver == 'smoke':
+        return animations + '/smoke/frame_' + str(frame) + '.png'
     else:
         raise ValueError('Incorrect animation ver: ' + str(ver))
 

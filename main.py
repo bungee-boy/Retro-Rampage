@@ -1,4 +1,4 @@
-from math import cos, sin, radians, ceil
+from math import cos, sin, radians, ceil, floor
 import assets.audio_loader as sounds
 import assets.image_loader as assets
 import assets.font_loader as fonts
@@ -196,6 +196,12 @@ controls = []
 controller_prompts = []
 Npc_force_veh = 0
 Npc_force_colour = None
+lightning_frames = []
+for frame in range(0, 16):
+    lightning_frames.append(assets.animation('lightning', frame))
+smoke_frames = []
+for frame in range(0, 7):
+    smoke_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('smoke', frame)), (64, 64)))
 # Define tile and menu variables
 map_preview_size = 974, 600
 map_preview_pos = CENTRE[0] - map_preview_size[0] // 2, CENTRE[1] - map_preview_size[1] // 2
@@ -508,11 +514,12 @@ class Car(pygame.sprite.Sprite):
         self._bullet_penalty = 0
         self._bullet_damage = 0
         self._current_speed = 0
-        self._boost_frames = []
-        for frame in range(0, 4):
+        self._boost_frames = []  # Boost animation frames
+        self._boost_ani_frame = -1
+        for frames in range(0, 4):
             self._boost_frames.append(pygame.transform.scale(pygame.image.load(assets.animation(
-                'flame', frame, car_num=self.vehicle)), (self.size[0], self.size[1] + 20)))
-        self._boost_ani_frame = 0
+                'flame', frames, car_num=self.vehicle)), (self.size[0], self.size[1] + 20)))
+        self._smoke_ani_frame = -1
         self._ani_frame = None
         self._ani_frame_rect = None
         # NAME variables
@@ -825,11 +832,15 @@ class Car(pygame.sprite.Sprite):
             if self.controller:
                 self.controller.rumble(0, 0.2, self._boost_timeout - pygame.time.get_ticks())
         elif ver == 'bullet':
+            if self._boost_timeout:
+                self._boost_timeout = 0
+                self._boost_ani_frame = -1
             play_sound('bullet')
             if self.controller:
                 self.controller.rumble(1, 1, 500)
             self._bullet_damage = self.damage
             self._bullet_penalty = pygame.time.get_ticks() + 2000 + (5000 - self._current_speed * 1000)
+            self._smoke_ani_frame = 0
             self.damage = self.durability
             self.rotate(self.rotation + 1)
             self.rotate(self.rotation - 1)
@@ -950,6 +961,18 @@ class Car(pygame.sprite.Sprite):
             surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
             self._boost_ani_frame += 1  # Increase animation to next frame
 
+        if self._smoke_ani_frame >= 13.5 and self._bullet_penalty:  # If smoke animation finished
+            self._smoke_ani_frame = 0  # Replay animation
+        elif not self._bullet_penalty and self._smoke_ani_frame >= 13.5:  # If smoke timeout finished
+            self._smoke_ani_frame = -1  # Reset animation at end of loop
+        if self._smoke_ani_frame >= 0:  # If smoke animation playing
+            self._ani_frame = smoke_frames[floor(self._smoke_ani_frame/2)]
+            self._ani_frame_rect = self._ani_frame.get_rect()
+            self._ani_frame_rect.centerx = self.rect.centerx
+            self._ani_frame_rect.bottom = self.rect.centery
+            surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
+            self._smoke_ani_frame += 1  # Increase animation to next frame
+
     def update(self):  # Called each loop and checks if anything has changed
         if self._boost_timeout and self._boost_timeout < pygame.time.get_ticks():  # If boost timeout has expired
             self._boost_timeout = 0  # Reset current speed to previous state
@@ -964,7 +987,7 @@ class Car(pygame.sprite.Sprite):
             if self.damage:  # Change player speed based on damage and durability
                 self.set_move_speed(round(self.max_speed - (self.max_speed / (self.durability / self.damage))))
                 self.set_rotation_speed(self.max_rotation_speed)
-            else:
+            elif self._move_speed != self.max_speed or self._rotation_speed != self.max_rotation_speed:
                 self.set_move_speed(self.max_speed)
                 self.set_rotation_speed(self.max_rotation_speed)
         if not self._bullet_penalty:
@@ -1038,12 +1061,8 @@ class NPCCar(pygame.sprite.Sprite):
         self.mask_size = None
         self.collision = False
         self.collision_time = 0
-        self._lightning_frames = []
-        for frame in range(0, 15):
-            self._lightning_frames.append(
-                pygame.transform.scale(pygame.image.load(assets.animation('lightning', frame)), (128, 128)))
         self.lightning_animation = False
-        self.ani_frame = 0
+        self._lightning_frame = None
         # MOVEMENT variables
         self.allow_forwards = True
         self.allow_reverse = True
@@ -1457,12 +1476,12 @@ class NPCCar(pygame.sprite.Sprite):
         self.name_rect = draw_text(self.rect.centerx, self.rect.top - 35, self.name, WHITE, 12, surf=surf)
 
         if self.lightning_animation:  # Lightning animation
-            self.ani_frame = pygame.time.get_ticks() // 70 - self.lightning_animation
-            if self.ani_frame < 15:
-                surf.blit(self._lightning_frames[self.ani_frame], (self.rect.centerx - 64, self.rect.centery - 128))
-                if self.ani_frame == 2:
+            self._lightning_frame = pygame.time.get_ticks() // 70 - self.lightning_animation
+            if self._lightning_frame < 15:
+                surf.blit(lightning_frames[self._lightning_frame], (self.rect.centerx - 64, self.rect.centery - 128))
+                if self._lightning_frame == 2:
                     play_sound('lightning')
-                elif self.ani_frame == 3:
+                elif self._lightning_frame == 3:
                     self.penalty_time = pygame.time.get_ticks() + 3000 + \
                                         (self.move_speed - global_car_move_speed) * 1000
 
@@ -4992,7 +5011,7 @@ def game():  # All variables that are not constant
             if len(power_ups) < 5 * Player_amount and powerups:  # Spawn random power-ups
                 rand = 0 # randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = 1 # randint(0, 3 if Npc_amount else 2)
+                    rand = randint(1, 2) # randint(0, 3 if Npc_amount else 2)
                     if not rand:
                         ver = 'repair'
                     elif rand == 1:

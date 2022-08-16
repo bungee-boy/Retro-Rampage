@@ -66,9 +66,9 @@ Menu_animation = True  # Enables animations on the main menu
 Mute_volume = False  # Set default muted state
 Music_volume = 0.5  # Set default Volume level for music
 Sfx_volume = 0.5  # Set default Volume level for all sounds effects
-FPS = 60  # Controls the speed of the game ***changing from 60 will break a lot of things!***
-Intro_screen = True  # Enables the intro screen on game boot
-Countdown = True  # Enables the traffic light countdown on game start
+FPS = 60  # Controls the speed of the game ***changing from 60 will break EVERYTHING!***
+Intro_screen = False  # Enables the intro screen on game boot
+Countdown = False  # Enables the traffic light countdown on game start
 Load_settings = True  # Enables setting loading + saving
 Game_end = False  # Lets the game know if the game finished or if the player quit
 
@@ -197,11 +197,14 @@ controller_prompts = []
 Npc_force_veh = 0
 Npc_force_colour = None
 lightning_frames = []
-for frame in range(0, 16):
+for frame in range(0, 15):
     lightning_frames.append(assets.animation('lightning', frame))
 smoke_frames = []
 for frame in range(0, 7):
     smoke_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('smoke', frame)), (64, 64)))
+repair_frames = []
+for frame in range(0, 11):
+    repair_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('repair', frame)), (128, 128)))
 # Define tile and menu variables
 map_preview_size = 974, 600
 map_preview_pos = CENTRE[0] - map_preview_size[0] // 2, CENTRE[1] - map_preview_size[1] // 2
@@ -520,6 +523,7 @@ class Car(pygame.sprite.Sprite):
             self._boost_frames.append(pygame.transform.scale(pygame.image.load(assets.animation(
                 'flame', frames, car_num=self.vehicle)), (self.size[0], self.size[1] + 20)))
         self._smoke_ani_frame = -1
+        self._repair_ani_frame = -1
         self._ani_frame = None
         self._ani_frame_rect = None
         # NAME variables
@@ -819,6 +823,7 @@ class Car(pygame.sprite.Sprite):
             if self.controller:
                 self.controller.rumble(0, 0.7, 200)
             self.damage = 0
+            self._repair_ani_frame = 0
         elif ver == 'boost':
             play_sound('boost')
             if not self._boost_timeout:
@@ -961,9 +966,9 @@ class Car(pygame.sprite.Sprite):
             surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
             self._boost_ani_frame += 1  # Increase animation to next frame
 
-        if self._smoke_ani_frame >= 13.5 and self._bullet_penalty:  # If smoke animation finished
+        if self._smoke_ani_frame >= 14 and self._bullet_penalty:  # If smoke animation finished
             self._smoke_ani_frame = 0  # Replay animation
-        elif not self._bullet_penalty and self._smoke_ani_frame >= 13.5:  # If smoke timeout finished
+        elif not self._bullet_penalty and self._smoke_ani_frame >= 14:  # If smoke timeout finished
             self._smoke_ani_frame = -1  # Reset animation at end of loop
         if self._smoke_ani_frame >= 0:  # If smoke animation playing
             self._ani_frame = smoke_frames[floor(self._smoke_ani_frame/2)]
@@ -972,6 +977,15 @@ class Car(pygame.sprite.Sprite):
             self._ani_frame_rect.bottom = self.rect.centery
             surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
             self._smoke_ani_frame += 1  # Increase animation to next frame
+
+        if self._repair_ani_frame >= 22:  # If repair animation finished...
+            self._repair_ani_frame = -1  # Reset animation
+        if self._repair_ani_frame >= 0:
+            self._ani_frame = repair_frames[floor(self._repair_ani_frame/2)]
+            self._ani_frame_rect = self._ani_frame.get_rect()
+            self._ani_frame_rect.center = self.rect.center
+            surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
+            self._repair_ani_frame += 1  # Increase animation to next frame
 
     def update(self):  # Called each loop and checks if anything has changed
         if self._boost_timeout and self._boost_timeout < pygame.time.get_ticks():  # If boost timeout has expired
@@ -5011,7 +5025,7 @@ def game():  # All variables that are not constant
             if len(power_ups) < 5 * Player_amount and powerups:  # Spawn random power-ups
                 rand = 0 # randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = randint(1, 2) # randint(0, 3 if Npc_amount else 2)
+                    rand = 0 # randint(0, 3 if Npc_amount else 2)
                     if not rand:
                         ver = 'repair'
                     elif rand == 1:

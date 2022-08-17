@@ -24,6 +24,7 @@ class TestLibrary(unittest.TestCase):
 
 class TestUsage(unittest.TestCase):
     def test_music(self):
+        game.Mute_volume = False
         game.menu_music()
         self.assertTrue(game.pygame.mixer.music.get_busy(), 'Menu music test failed!')
         game.game_music(0)
@@ -58,6 +59,7 @@ class TestUsage(unittest.TestCase):
         self.assertEqual(game.current_song, game.sounds.game_track(4), 'Game music test failed!')
 
     def test_sfx(self):
+        game.Mute_volume = False
         game.loaded_sounds = []
         game.play_sound('error')
         game.play_sound('boot')

@@ -26,8 +26,13 @@ def reset_car(vehicle):  # Used to reset the car's position when testing movemen
 reset_car(car)
 reset_car(car_2)
 
+print(keypress(game.pygame.K_a))
+
 
 class TestPlayer(unittest.TestCase):
+    def test_self(self):
+        self.assertEqual(keypress())
+
     def test_load_defaults(self):
         player = game.Player(0)
         self.assertEqual(player.id, 0)

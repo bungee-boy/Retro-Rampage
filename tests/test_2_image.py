@@ -7,9 +7,21 @@ class TestLibrary(unittest.TestCase):
         err_msg = 'Image loader test failed!'
         self.assertEqual(game.assets.icon(), game.assets.assets + '/icon.ico', err_msg)
 
+        self.assertRaises(ValueError, game.assets.animation, 'x', 0)
+        self.assertRaises(ValueError, game.assets.animation, 'flame', 0, car_num=-1)
+        self.assertRaises(ValueError, game.assets.animation, 'flame', 0, car_num='x')
         self.assertEqual(game.assets.animation('lightning', 0),
                          game.assets.assets + '/animations/lightning/frame_0.png', err_msg)
-        self.assertRaises(ValueError, game.assets.animation, 'x', 0)
+        self.assertEqual(game.assets.animation('flame', 0, car_num='FaMiLy CaR'),
+                         game.assets.assets + '/animations/flame/c134f0.png', err_msg)
+        self.assertEqual(game.assets.animation('flame', 0, car_num='SpOrTs CaR'),
+                         game.assets.assets + '/animations/flame/c2f0.png', err_msg)
+        self.assertEqual(game.assets.animation('flame', 0, car_num='RaCe CaR'),
+                         game.assets.assets + '/animations/flame/c5f0.png', err_msg)
+        self.assertEqual(game.assets.animation('smoke', 0),
+                         game.assets.assets + '/animations/smoke/frame_0.png', err_msg)
+        self.assertEqual(game.assets.animation('repair', 0),
+                         game.assets.assets + '/animations/repair/frame_0.png', err_msg)
 
         self.assertEqual(game.assets.controller(), game.assets.assets + '/objects/controller.png', err_msg)
         self.assertEqual(game.assets.controller_button('B'),

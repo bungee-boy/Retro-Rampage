@@ -18,10 +18,13 @@ def animation(ver: str, frame: str or int, car_num='' or int):
         return animations + '/lightning/frame_' + str(frame) + '.png'
     elif ver == 'flame':
         if type(car_num) == str:
-            if car_num == 'Family Car' or car_num == 'Luxury Car' or car_num == 'Truck':
+            car_num = car_num.lower()
+            if car_num == 'family car' or car_num == 'luxury car' or car_num == 'truck':
                 car_num = 1
-            elif car_num == 'Sports Car' or car_num == 'Race Car':
+            elif car_num == 'sports car':
                 car_num = 2
+            elif car_num == 'race car':
+                car_num = 5
             else:
                 raise ValueError('Incorrect car name: ' + str(car_num))
         if car_num == 2 or car_num == 5:

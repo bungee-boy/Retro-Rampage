@@ -5080,8 +5080,10 @@ def game():  # All variables that are not constant
                             player_list[player].power_up('lightning')
                             if Npc_amount > 1:
                                 rand = randint(0, Npc_amount - 1)
-                                while npc_list[rand].collision:
+                                attempts = 0
+                                while npc_list[rand].collision and attempts <= Npc_amount*2:
                                     rand = randint(0, Npc_amount - 1)
+                                    attempts += 1
                             else:
                                 rand = 0
                             npc_list[rand].power_up(power_up[4])
@@ -5208,7 +5210,7 @@ def main():
             if not Window_sleep:
                 clock.tick(FPS)  # Update the pygame clock every cycle
             else:
-                clock.tick(2)
+                clock.tick(2)  # If window sleeping decrease frame rate to save performance
 
             if not music_thread.is_alive() and not Mute_volume:
                 music_thread = Thread(target=menu_music_loop)
@@ -5235,6 +5237,10 @@ def main():
                             else:
                                 current_window = 'choose players 3'
                     controller_removed(event.__dict__['instance_id'])
+                    if current_window == 'choose players 2' or current_window == 'choose players 3' or \
+                        current_window == 'choose vehicle' or current_window == 'choose vehicle 2' or \
+                            current_window == 'choose vehicle 3' or current_window == 'race settings':
+                        current_window = 'choose players'
 
                 elif event.type == pygame.FULLSCREEN:
                     pygame.display.toggle_fullscreen()

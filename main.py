@@ -4370,7 +4370,7 @@ def game():  # All variables that are not constant
     npc_list = []
     if Npc_amount != 0:
         npc_pos = 1
-        while len(npc_list) <= Npc_amount:
+        while len(npc_list) <= Npc_amount - 1:
             if Player_amount == 1 and npc_pos != Players[0].start_pos or Player_amount == 2 and \
                     npc_pos != Players[0].start_pos and npc_pos != Players[1].start_pos or Player_amount == 3 and \
                     npc_pos != Players[0].start_pos and npc_pos != Players[1].start_pos and \

@@ -18,4 +18,4 @@ tests folder or at the project root.
     
     nose2
     
-Worth noting, nose2 looks for `test` at the start of the filename.
+Worth noting, nose2 looks for `test` at the start of the filename as well as functions to run.

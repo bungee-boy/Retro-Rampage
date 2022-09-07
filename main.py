@@ -1,4 +1,4 @@
-from math import cos, sin, radians, ceil
+from math import cos, sin, radians, ceil, floor
 import assets.audio_loader as sounds
 import assets.image_loader as assets
 import assets.font_loader as fonts
@@ -66,9 +66,9 @@ Menu_animation = True  # Enables animations on the main menu
 Mute_volume = False  # Set default muted state
 Music_volume = 0.5  # Set default Volume level for music
 Sfx_volume = 0.5  # Set default Volume level for all sounds effects
-FPS = 60  # Controls the speed of the game ***changing from 60 will break a lot of things!***
-Intro_screen = False  # Enables the intro screen on game boot
-Countdown = False  # Enables the traffic light countdown on game start
+FPS = 60  # Controls the speed of the game ***changing from 60 will break EVERYTHING!***
+Intro_screen = True  # Enables the intro screen on game boot
+Countdown = True  # Enables the traffic light countdown on game start
 Load_settings = True  # Enables setting loading + saving
 Game_end = False  # Lets the game know if the game finished or if the player quit
 
@@ -178,7 +178,7 @@ else:
 Players = []
 Selected_player = []
 Player_amount = 0
-Npc_amount = 4
+Npc_amount = 3
 Map = 'snake'
 Total_laps = 3
 Current_lap = 0
@@ -194,11 +194,17 @@ Npc_names = [['John', False], ['Mark', False], ['Lilly', False], ['Jessica', Fal
 controllers = []
 controls = []
 controller_prompts = []
-lightning_frames = []
-for frame in range(0, 15):
-    lightning_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('lightning', frame)), (128, 128)))
 Npc_force_veh = 0
 Npc_force_colour = None
+lightning_frames = []
+for frame in range(0, 15):
+    lightning_frames.append(assets.animation('lightning', frame))
+smoke_frames = []
+for frame in range(0, 7):
+    smoke_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('smoke', frame)), (64, 64)))
+repair_frames = []
+for frame in range(0, 11):
+    repair_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('repair', frame)), (128, 128)))
 # Define tile and menu variables
 map_preview_size = 974, 600
 map_preview_pos = CENTRE[0] - map_preview_size[0] // 2, CENTRE[1] - map_preview_size[1] // 2
@@ -221,7 +227,6 @@ checkpoint_triggers = []  # checkpoints[ triggered_car_order[ [car_name, lap, ca
 
 # Define updating and loaded asset lists
 screen_updates = []
-sfx_queue = []
 loaded_assets = []
 loaded_sounds = []
 recorded_keys = []  # Empty list for creating NPC paths
@@ -243,7 +248,6 @@ class Player:
         self.load_defaults()
 
     def load_defaults(self):
-        self.controls = None
         if self.id == 0:
             self.veh_name = 'Family Car'
             self.veh_colour = RED_CAR
@@ -480,6 +484,7 @@ class Car(pygame.sprite.Sprite):
         self._image_dir = assets.car(self.colour, self.vehicle)
         self.image = pygame.transform.scale(pygame.image.load(self._image_dir).convert(), (40, 70))
         self.image.set_colorkey(BLACK)
+        self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
         self._dmg_img = None
         self.damage = 0
         self.size = self.image.get_size()
@@ -490,7 +495,6 @@ class Car(pygame.sprite.Sprite):
         self.pos_y = self.rect.y
         self.rotation = self._origin_rotation
         # COLLISION variables
-        self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
         self.mask_overlap = None  # Used for checking collision position
         self.mask_area = None  # Used to ensure the player cannot get outside the map
         self.mask_size = None
@@ -513,6 +517,15 @@ class Car(pygame.sprite.Sprite):
         self._bullet_penalty = 0
         self._bullet_damage = 0
         self._current_speed = 0
+        self._boost_frames = []  # Boost animation frames
+        self._boost_ani_frame = -1
+        for frames in range(0, 4):
+            self._boost_frames.append(pygame.transform.scale(pygame.image.load(assets.animation(
+                'flame', frames, car_num=self.vehicle)), (self.size[0], self.size[1] + 20)))
+        self._smoke_ani_frame = -1
+        self._repair_ani_frame = -1
+        self._ani_frame = None
+        self._ani_frame_rect = None
         # NAME variables
         self.name = self.player.name
         self._name_rect = None
@@ -677,10 +690,6 @@ class Car(pygame.sprite.Sprite):
                         self._allow_forwards = False  # Do not allow forwards
                         self._allow_reverse = True
                         # print('do not allow forwards')
-                    elif self.image.get_size()[0] // 2 > self.mask_overlap[0]:  # If the collision is on the left half
-                        self._allow_forwards = True  # Do not allow reverse
-                        self._allow_reverse = False
-                        # print('do not allow reverse')
 
                 if self.mask_area > self.mask_size // 1.5:  # If over half of the car is colliding with the mask...
                     self.move(self._origin_pos[0], self._origin_pos[1])  # Reset the car to starting position + rotation
@@ -785,7 +794,7 @@ class Car(pygame.sprite.Sprite):
     def rotate(self, degree):  # Rotate car to new angle
         self.rotation = degree  # Set current rotation as rotation
         if global_car_rotation_speed + 1 >= self.rotation:  # Create snapping points to drive in straight lines
-            self.rotation = 0
+            self.rotation = 360
         elif self.rotation >= 360 - (global_car_rotation_speed + 1):
             self.rotation = 0
         elif 90 - (global_car_rotation_speed + 1) <= self.rotation <= 90 + (global_car_rotation_speed + 1):
@@ -796,8 +805,8 @@ class Car(pygame.sprite.Sprite):
             self.rotation = 270
         self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
             self._image_dir).convert(), self.size), self.rotation)  # Rotate image
-        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.image.set_colorkey(BLACK)
+        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         if 0 < self.damage <= self.durability:
             self._dmg_img = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
                 assets.car_damage(self.vehicle, self.damage)), self.size), self.rotation)  # Load and rotate damage
@@ -814,23 +823,29 @@ class Car(pygame.sprite.Sprite):
             if self.controller:
                 self.controller.rumble(0, 0.7, 200)
             self.damage = 0
+            self._repair_ani_frame = 0
         elif ver == 'boost':
             play_sound('boost')
             if not self._boost_timeout:
                 self._boost_timeout = pygame.time.get_ticks() + 2000 + (5000 - self._current_speed * 1000)
                 self.set_move_speed(10)
                 self.set_rotation_speed(5)
+                self._boost_ani_frame = 0
             else:
                 self._boost_timeout += 2000 + (5000 - self._current_speed * 1000)
 
             if self.controller:
                 self.controller.rumble(0, 0.2, self._boost_timeout - pygame.time.get_ticks())
         elif ver == 'bullet':
+            if self._boost_timeout:
+                self._boost_timeout = 0
+                self._boost_ani_frame = -1
             play_sound('bullet')
             if self.controller:
                 self.controller.rumble(1, 1, 500)
             self._bullet_damage = self.damage
             self._bullet_penalty = pygame.time.get_ticks() + 2000 + (5000 - self._current_speed * 1000)
+            self._smoke_ani_frame = 0
             self.damage = self.durability
             self.rotate(self.rotation + 1)
             self.rotate(self.rotation - 1)
@@ -940,6 +955,38 @@ class Car(pygame.sprite.Sprite):
                       width=10, height=10, border=self.colour, border_width=3, surface=surf)
         self._name_rect = draw_text(self.rect.centerx, self.rect.top - 35, self.name, WHITE, 12, surf=surf)
 
+        if self._boost_ani_frame == 4 and self._boost_timeout:  # If boost animation finished
+            self._boost_ani_frame = 0  # Replay animation
+        elif not self._boost_timeout and self._boost_ani_frame != -1:  # If boost timeout finished
+            self._boost_ani_frame = -1  # Reset animation
+        if self._boost_timeout and self._boost_ani_frame >= 0:  # If boost animation playing
+            self._ani_frame = pygame.transform.rotate(self._boost_frames[self._boost_ani_frame], self.rotation)
+            self._ani_frame_rect = self._ani_frame.get_rect()
+            self._ani_frame_rect.center = self.rect.center
+            surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
+            self._boost_ani_frame += 1  # Increase animation to next frame
+
+        if self._smoke_ani_frame >= 14 and self._bullet_penalty:  # If smoke animation finished
+            self._smoke_ani_frame = 0  # Replay animation
+        elif not self._bullet_penalty and self._smoke_ani_frame >= 14:  # If smoke timeout finished
+            self._smoke_ani_frame = -1  # Reset animation at end of loop
+        if self._smoke_ani_frame >= 0:  # If smoke animation playing
+            self._ani_frame = smoke_frames[floor(self._smoke_ani_frame/2)]
+            self._ani_frame_rect = self._ani_frame.get_rect()
+            self._ani_frame_rect.centerx = self.rect.centerx
+            self._ani_frame_rect.bottom = self.rect.centery
+            surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
+            self._smoke_ani_frame += 1  # Increase animation to next frame
+
+        if self._repair_ani_frame >= 22:  # If repair animation finished...
+            self._repair_ani_frame = -1  # Reset animation
+        if self._repair_ani_frame >= 0:
+            self._ani_frame = repair_frames[floor(self._repair_ani_frame/2)]
+            self._ani_frame_rect = self._ani_frame.get_rect()
+            self._ani_frame_rect.center = self.rect.center
+            surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
+            self._repair_ani_frame += 1  # Increase animation to next frame
+
     def update(self):  # Called each loop and checks if anything has changed
         if self._boost_timeout and self._boost_timeout < pygame.time.get_ticks():  # If boost timeout has expired
             self._boost_timeout = 0  # Reset current speed to previous state
@@ -950,15 +997,15 @@ class Car(pygame.sprite.Sprite):
             self.damage = self._bullet_damage
             self.rotate(self.rotation + 1)
             self.rotate(self.rotation - 1)
-        elif self.damage and not self._boost_timeout:  # Change player speed based on damage and durability
-            self.set_move_speed(round(self.max_speed - (self.max_speed / (self.durability / self.damage))))
-            self.set_rotation_speed(self.max_rotation_speed)
-        elif not self.damage and not self._boost_timeout:
-            self.set_move_speed(self.max_speed)
-            self.set_rotation_speed(self.max_rotation_speed)
+        elif not self._boost_timeout:
+            if self.damage:  # Change player speed based on damage and durability
+                self.set_move_speed(round(self.max_speed - (self.max_speed / (self.durability / self.damage))))
+                self.set_rotation_speed(self.max_rotation_speed)
+            elif self._move_speed != self.max_speed or self._rotation_speed != self.max_rotation_speed:
+                self.set_move_speed(self.max_speed)
+                self.set_rotation_speed(self.max_rotation_speed)
         if not self._bullet_penalty:
             self.check_inputs()
-        screen_updates.append(self.rect)
 
 
 class NPCCar(pygame.sprite.Sprite):
@@ -978,23 +1025,25 @@ class NPCCar(pygame.sprite.Sprite):
         self.vehicle = vehicle.lower() if type(vehicle) == str else vehicle
         self.move_speed = global_car_move_speed
         self.rotation_speed = global_car_rotation_speed
-        if self.vehicle == 'Family Car' or self.vehicle == 1:
+        if type(self.vehicle) == str:
+            self.vehicle = self.vehicle.lower()
+        if self.vehicle == 'family car' or self.vehicle == 1:
             self.vehicle = 'Family Car'
             self.set_move_speed(3)
             self.set_rotation_speed(2)
-        elif self.vehicle == 'Sports Car' or self.vehicle == 2:
+        elif self.vehicle == 'sports car' or self.vehicle == 2:
             self.vehicle = 'Sports Car'
             self.set_move_speed(4)
             self.set_rotation_speed(3)
-        elif self.vehicle == 'Luxury Car' or self.vehicle == 3:
+        elif self.vehicle == 'luxury car' or self.vehicle == 3:
             self.vehicle = 'Luxury Car'
             self.set_move_speed(3)
             self.set_rotation_speed(3)
-        elif self.vehicle == 'Truck' or self.vehicle == 4:
+        elif self.vehicle == 'truck' or self.vehicle == 4:
             self.vehicle = 'Truck'
             self.set_move_speed(2)
             self.set_rotation_speed(2)
-        elif self.vehicle == 'Race Car' or self.vehicle == 5:
+        elif self.vehicle == 'race car' or self.vehicle == 5:
             self.vehicle = 'Race Car'
             self.set_move_speed(5)
             self.set_rotation_speed(3)
@@ -1027,7 +1076,7 @@ class NPCCar(pygame.sprite.Sprite):
         self.collision = False
         self.collision_time = 0
         self.lightning_animation = False
-        self.ani_frame = 0
+        self._lightning_frame = None
         # MOVEMENT variables
         self.allow_forwards = True
         self.allow_reverse = True
@@ -1309,8 +1358,8 @@ class NPCCar(pygame.sprite.Sprite):
             self.rotation = 270
         self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
             self.image_dir).convert(), self.size), self.rotation)  # Rotate image
-        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.image.set_colorkey(BLACK)
+        self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.rect = self.image.get_rect()  # Set surface size to image size
         if Debug:
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)
@@ -1441,12 +1490,12 @@ class NPCCar(pygame.sprite.Sprite):
         self.name_rect = draw_text(self.rect.centerx, self.rect.top - 35, self.name, WHITE, 12, surf=surf)
 
         if self.lightning_animation:  # Lightning animation
-            self.ani_frame = pygame.time.get_ticks() // 70 - self.lightning_animation
-            if self.ani_frame < 15:
-                surf.blit(lightning_frames[self.ani_frame], (self.rect.centerx - 64, self.rect.centery - 128))
-                if self.ani_frame == 2:
+            self._lightning_frame = pygame.time.get_ticks() // 70 - self.lightning_animation
+            if self._lightning_frame < 15:
+                surf.blit(lightning_frames[self._lightning_frame], (self.rect.centerx - 64, self.rect.centery - 128))
+                if self._lightning_frame == 2:
                     play_sound('lightning')
-                elif self.ani_frame == 3:
+                elif self._lightning_frame == 3:
                     self.penalty_time = pygame.time.get_ticks() + 3000 + \
                                         (self.move_speed - global_car_move_speed) * 1000
 
@@ -1639,8 +1688,8 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((840, 380), 'left', width=25, height=50)
-            draw_triangle((1080, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 840, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1080, pad_y + 380), 'right', width=25, height=50)
 
         x = pad_x + CENTRE[0]
         y = pad_y + CENTRE[1] + 100
@@ -1676,8 +1725,8 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((440, 380), 'left', width=25, height=50)
-            draw_triangle((680, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 440, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 680, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P1 name title
@@ -1711,8 +1760,8 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((1240, 380), 'left', width=25, height=50)
-            draw_triangle((1480, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 1240, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1480, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P2 name title
@@ -1865,8 +1914,8 @@ def choose_players_window_2(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((840, 380), 'left', width=25, height=50)
-            draw_triangle((1080, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 840, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1080, pad_y + 380), 'right', width=25, height=50)
 
         x = pad_x + CENTRE[0]
         y = pad_y + CENTRE[1] + 100
@@ -1902,8 +1951,8 @@ def choose_players_window_2(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((440, 380), 'left', width=25, height=50)
-            draw_triangle((680, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 440, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 680, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P1 name title
@@ -1937,8 +1986,8 @@ def choose_players_window_2(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((1240, 380), 'left', width=25, height=50)
-            draw_triangle((1480, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 1240, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1480, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P2 name title
@@ -2036,8 +2085,8 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((840, 380), 'left', width=25, height=50)
-            draw_triangle((1080, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 840, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1080, pad_y + 380), 'right', width=25, height=50)
 
         x = pad_x + CENTRE[0]
         y = pad_y + CENTRE[1] + 100
@@ -2080,8 +2129,8 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((440, 380), 'left', width=25, height=50)
-            draw_triangle((680, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 440, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 680, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P1 name title
@@ -2115,8 +2164,8 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controls.get_name()), WHITE, 32)
         if type(player.controls) == str:
-            draw_triangle((1240, 380), 'left', width=25, height=50)
-            draw_triangle((1480, 380), 'right', width=25, height=50)
+            draw_triangle((pad_x + 1240, pad_y + 380), 'left', width=25, height=50)
+            draw_triangle((pad_x + 1480, pad_y + 380), 'right', width=25, height=50)
 
         y = pad_y + CENTRE[1] + 100
         # P2 name title
@@ -3555,9 +3604,9 @@ def draw_slider(pos: tuple[int, int], size: tuple[int, int],
 
 
 # Draws text on screen
-def draw_text(x, y, text, colour, size, bold=False, italic=False, bar=False, outline=False, three_d=False,
+def draw_text(x, y, text, colour, size, bold=False, bar=False, three_d=False,
               center_x=True, return_rect=False, surf=Window):
-    font = pygame.font.Font(fonts.load(bold, italic, bar, outline, three_d), size)
+    font = pygame.font.Font(fonts.load(bold, bar, three_d), size)
     render = font.render(str(text), True, colour)
     if center_x:
         x -= render.get_width() // 2  # Centre text x position
@@ -4131,6 +4180,7 @@ def controller_removed(instance_id):
     for player in Players:
         if player.controls == controller:
             player.controls = player.default_controls
+
     controller.quit()
     controllers.remove(controller)
     if controller in controls:
@@ -4320,7 +4370,7 @@ def game():  # All variables that are not constant
     npc_list = []
     if Npc_amount != 0:
         npc_pos = 1
-        while len(npc_list) <= Npc_amount:
+        while len(npc_list) <= Npc_amount - 1:
             if Player_amount == 1 and npc_pos != Players[0].start_pos or Player_amount == 2 and \
                     npc_pos != Players[0].start_pos and npc_pos != Players[1].start_pos or Player_amount == 3 and \
                     npc_pos != Players[0].start_pos and npc_pos != Players[1].start_pos and \
@@ -5030,8 +5080,10 @@ def game():  # All variables that are not constant
                             player_list[player].power_up('lightning')
                             if Npc_amount > 1:
                                 rand = randint(0, Npc_amount - 1)
-                                while npc_list[rand].collision:
+                                attempts = 0
+                                while npc_list[rand].collision and attempts <= Npc_amount*2:
                                     rand = randint(0, Npc_amount - 1)
+                                    attempts += 1
                             else:
                                 rand = 0
                             npc_list[rand].power_up(power_up[4])
@@ -5158,7 +5210,7 @@ def main():
             if not Window_sleep:
                 clock.tick(FPS)  # Update the pygame clock every cycle
             else:
-                clock.tick(2)
+                clock.tick(2)  # If window sleeping decrease frame rate to save performance
 
             if not music_thread.is_alive() and not Mute_volume:
                 music_thread = Thread(target=menu_music_loop)
@@ -5185,6 +5237,10 @@ def main():
                             else:
                                 current_window = 'choose players 3'
                     controller_removed(event.__dict__['instance_id'])
+                    if current_window == 'choose players 2' or current_window == 'choose players 3' or \
+                        current_window == 'choose vehicle' or current_window == 'choose vehicle 2' or \
+                            current_window == 'choose vehicle 3' or current_window == 'race settings':
+                        current_window = 'choose players'
 
                 elif event.type == pygame.FULLSCREEN:
                     pygame.display.toggle_fullscreen()
@@ -5193,11 +5249,13 @@ def main():
 
                 elif event.type == pygame.WINDOWFOCUSLOST:
                     Window_sleep = True
-                    pygame.mixer.music.pause()
+                    if not Mute_volume:
+                        pygame.mixer.music.pause()
 
                 elif event.type == pygame.WINDOWFOCUSGAINED:
                     Window_sleep = False
-                    pygame.mixer.music.unpause()
+                    if not Mute_volume:
+                        pygame.mixer.music.unpause()
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F11:
@@ -7652,13 +7710,65 @@ def main():
                         pass
 
                 else:
-                    # P6 start left
-                    if 0 <= mouse_pos[0] <= 1 and 0 <= mouse_pos[1] <= 1 and Player_amount == 6:
-                        pass
+                    # Laps left
+                    if 887 <= mouse_pos[0] <= 912 and 298 <= mouse_pos[1] <= 323:
+                        if Total_laps <= 1:
+                            draw_triangle((900, 311), 'left', width=25, height=25, border=RED)
+                        else:
+                            draw_triangle((900, 311), 'left', width=25, height=25, border=GREY)
 
-                    # P6 start right
-                    elif 0 <= mouse_pos[0] <= 1 and 0 <= mouse_pos[1] <= 1 and Player_amount == 6:
-                        pass
+                            buttons = pygame.mouse.get_pressed()
+                            if buttons[0] and not button_trigger:
+                                button_trigger = True
+                                play_sound('option down')
+                                Total_laps -= 1
+                            elif not buttons[0] and button_trigger:
+                                button_trigger = False
+
+                    # Laps right
+                    elif 1007 <= mouse_pos[0] <= 1032 and 298 <= mouse_pos[1] <= 323:
+                        if Total_laps >= 10:
+                            draw_triangle((1020, 311), 'right', width=25, height=25, border=RED)
+                        else:
+                            draw_triangle((1020, 311), 'right', width=25, height=25, border=GREY)
+
+                            buttons = pygame.mouse.get_pressed()
+                            if buttons[0] and not button_trigger:
+                                button_trigger = True
+                                play_sound('option up')
+                                Total_laps += 1
+                            elif not buttons[0] and button_trigger:
+                                button_trigger = False
+
+                    # Powerups left
+                    elif 847 <= mouse_pos[0] <= 872 and 688 <= mouse_pos[1] <= 713:
+                        draw_triangle((860, 701), 'left', width=25, height=25, border=GREY)
+
+                        buttons = pygame.mouse.get_pressed()
+                        if buttons[0] and not button_trigger:
+                            button_trigger = True
+                            play_sound('option down')
+                            if powerups:
+                                powerups = False
+                            else:
+                                powerups = True
+                        elif not buttons[0] and button_trigger:
+                            button_trigger = False
+
+                    # Powerups right
+                    elif 1047 <= mouse_pos[0] <= 1072 and 688 <= mouse_pos[1] <= 713:
+                        draw_triangle((1060, 701), 'right', width=25, height=25, border=GREY)
+
+                        buttons = pygame.mouse.get_pressed()
+                        if buttons[0] and not button_trigger:
+                            button_trigger = True
+                            play_sound('option up')
+                            if powerups:
+                                powerups = False
+                            else:
+                                powerups = True
+                        elif not buttons[0] and button_trigger:
+                            button_trigger = False
 
                 # BACK BUTTON
                 if 210 <= mouse_pos[0] <= 409 and 112 <= mouse_pos[1] <= 211:
@@ -8239,6 +8349,7 @@ def main():
         menu_loop = True
         Music_loop = True
 
+
 if __name__ == '__main__':
     if Debug:  # If in debug mode then do not handle errors
         main()
@@ -8277,17 +8388,21 @@ if __name__ == '__main__':
     quit()
 
 elif __name__ == 'main':
+    Display = pygame.display.set_mode([840, 480])
+    Display_resolution = 840, 480
+    Music_volume = 0.02
+    Sfx_volume = 0.02
     try:
         Window.blit(pygame.font.Font(fonts.load(bar=True), 100).render('Retro Rampage', True, WHITE),
-                     (CENTRE[0] - 412, CENTRE[1] - 60))
+                    (CENTRE[0] - 412, CENTRE[1] - 60))
         Window.blit(pygame.font.Font(fonts.load(), 100).render('Testing mode', True, WHITE),
-                     (CENTRE[0] - 346, CENTRE[1] + 60))
+                    (CENTRE[0] - 346, CENTRE[1] + 60))
 
     except FileNotFoundError:
         Window.blit(pygame.font.Font(None, 100).render('Retro Rampage', True, WHITE),
-                     (CENTRE[0] - 256, CENTRE[1] - 60))
+                    (CENTRE[0] - 256, CENTRE[1] - 60))
         Window.blit(pygame.font.Font(None, 100).render('Testing mode', True, WHITE),
-                     (CENTRE[0] - 224, CENTRE[1] + 60))
+                    (CENTRE[0] - 224, CENTRE[1] + 60))
     Display.blit(pygame.transform.scale(Window, Display_resolution), (0, 0))
     pygame.display.update()
     pygame.time.wait(500)

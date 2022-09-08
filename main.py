@@ -59,7 +59,7 @@ GREEN_CAR = 57, 194, 114
 BLUE_CAR = 47, 149, 208
 BLACK_CAR = 93, 91, 91
 # Other variables
-Debug = False  # Enables Debug mode for detecting issues. Has various effects other than visual
+Debug = False  # Enables Debug mode for detecting issues. (Changes various things other than visual changes)
 Force_resolution = []  # Manual window size ([] = Automatic, [width, height] = Forced)
 Screen = 0  # If the user has multiple monitors, sets which monitor to use (starts at 0)
 Menu_animation = True  # Enables animations on the main menu
@@ -198,7 +198,7 @@ Npc_force_veh = 0
 Npc_force_colour = None
 lightning_frames = []
 for frame in range(0, 15):
-    lightning_frames.append(assets.animation('lightning', frame))
+    lightning_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('lightning', frame)), (128, 128)))
 smoke_frames = []
 for frame in range(0, 7):
     smoke_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('smoke', frame)), (64, 64)))
@@ -4494,7 +4494,7 @@ def game():  # All variables that are not constant
             gameplay_gui(player_list, 0, 0)
             update_screen(full_screen=True)
 
-    while not Game_end and not game_quit:
+    while not Game_end and not game_quit:  # Main game loop
         if Player_positions:
             if Current_lap != Player_positions[0][1]:
                 Current_lap = Player_positions[0][1]
@@ -5013,7 +5013,7 @@ def game():  # All variables that are not constant
             if Game_paused:
                 update_screen(surf=Secondary_window)
 
-        else:
+        else:  # If game playing
             Window.blit(full_map, (0, 0))
 
             if Countdown > -108:  # animate traffic light out of screen
@@ -5023,9 +5023,9 @@ def game():  # All variables that are not constant
                 Countdown -= 2
 
             if len(power_ups) < 5 * Player_amount and powerups:  # Spawn random power-ups
-                rand = randint(0, 1400 // (10 + Player_amount + Npc_amount))
+                rand = 0 # randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = randint(0, 3 if Npc_amount else 2)
+                    rand = 3 # randint(0, 3 if Npc_amount else 2)
                     if not rand:
                         ver = 'repair'
                     elif rand == 1:
@@ -5078,11 +5078,12 @@ def game():  # All variables that are not constant
                                                                       power_up[1][1] - player_list[player].rect.top)):
                         if power_up[4] == 'lightning':  # Choose random NPC for lightning powerup
                             player_list[player].power_up('lightning')
-                            if Npc_amount > 1:
-                                rand = randint(0, Npc_amount - 1)
+                            if Npc_amount >= 1:
+                                rand = randint(0, Npc_amount)
                                 attempts = 0
-                                while npc_list[rand].collision and attempts <= Npc_amount*2:
-                                    rand = randint(0, Npc_amount - 1)
+                                while (npc_list[rand].collision or npc_list[rand].collision_time) and \
+                                       attempts <= Npc_amount*2:
+                                    rand = randint(0, Npc_amount)
                                     attempts += 1
                             else:
                                 rand = 0
@@ -5182,7 +5183,7 @@ def main():
     global Player_amount, Npc_amount, Total_laps, Debug, loaded_assets, Music_volume, Screen, checkpoint_triggers, \
         Sfx_volume, loaded_sounds, Mute_volume, Menu_animation, Map, selected_text_entry, button_trigger, Window_sleep,\
         Music_loop, music_thread, powerups, Npc_force_veh, Npc_force_colour, current_window, Players, controllers, \
-        controls
+        controls, selected_text_entry
 
     Music_loop = True
     menu_loop = True  # Set game sub-loop to menus
@@ -5277,7 +5278,7 @@ def main():
                     elif event.key == pygame.K_BACKSPACE:
                         Players[selected_text_entry - 1].name = Players[selected_text_entry - 1].name[:-1]
 
-                    if len(Players[selected_text_entry - 1].name) <= 12 and \
+                    if selected_text_entry and len(Players[selected_text_entry - 1].name) <= 12 and \
                             event.key != pygame.K_BACKSPACE and event.key != pygame.K_DELETE and \
                             event.key != pygame.K_TAB:
                         Players[selected_text_entry - 1].name += event.unicode
@@ -5542,6 +5543,7 @@ def main():
                     controller_popup()
                     update_screen(full_screen=True)  # Update entire screen
                     prev_window = current_window  # Set current window to updated
+                    selected_text_entry = 0
 
                 choose_players_window(bg)
                 mouse_pos = get_mouse_pos()
@@ -6033,6 +6035,7 @@ def main():
                     controller_popup()
                     update_screen(full_screen=True)  # Update entire screen
                     prev_window = current_window  # Set current window to updated
+                    selected_text_entry = 0
 
                 choose_players_window_2(bg)
                 mouse_pos = get_mouse_pos()
@@ -6385,6 +6388,7 @@ def main():
                     controller_popup()
                     update_screen(full_screen=True)  # Update entire screen
                     prev_window = current_window  # Set current window to updated
+                    selected_text_entry = 0
 
                 choose_players_window_3(bg)
                 mouse_pos = get_mouse_pos()
@@ -6718,6 +6722,7 @@ def main():
                     controller_popup()
                     update_screen(full_screen=True)  # Update entire screen
                     prev_window = current_window  # Set current window to updated
+                    selected_text_entry = 0
 
                 choose_vehicle_window(bg)
 

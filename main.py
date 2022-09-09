@@ -5022,7 +5022,7 @@ def game():  # All variables that are not constant
                     pygame.draw.rect(Window, WHITE, (822, Countdown * 2, 276, 108), 1)
                 Countdown -= 2
 
-            if len(power_ups) < 5 * Player_amount and powerups:  # Spawn random power-ups
+            if len(power_ups) < 50 * Player_amount and powerups:  # Spawn random power-ups
                 rand = 0 # randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
                     rand = 3 # randint(0, 3 if Npc_amount else 2)
@@ -5079,15 +5079,14 @@ def game():  # All variables that are not constant
                         if power_up[4] == 'lightning':  # Choose random NPC for lightning powerup
                             player_list[player].power_up('lightning')
                             if Npc_amount >= 1:
-                                rand = randint(0, Npc_amount)
+                                rand = randint(0, Npc_amount - 1)
                                 attempts = 0
                                 while (npc_list[rand].collision or npc_list[rand].collision_time) and \
-                                       attempts <= Npc_amount*2:
-                                    rand = randint(0, Npc_amount)
+                                        attempts < Npc_amount * 2:
+                                    rand = randint(0, Npc_amount - 1)
                                     attempts += 1
-                            else:
-                                rand = 0
-                            npc_list[rand].power_up(power_up[4])
+                                if attempts >= Npc_amount * 2:
+                                    npc_list[rand].power_up(power_up[4])
                         else:
                             player_list[player].power_up(power_up[4])
                         play_sound('power up')

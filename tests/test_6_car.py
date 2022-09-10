@@ -3,7 +3,7 @@ import main as game
 
 car = game.Car(game.Player(0))
 car_2 = game.Car(game.Player(1))
-npc = game.NPCCar(1, game.RED_CAR, (40, 70), 'npc', 'racetrack', 1)
+npc = game.NpcCar(1, game.RED_CAR, (40, 70), 'npc', 'racetrack', 1)
 
 
 def keypress(keys):   # Used to simulate keyboard input

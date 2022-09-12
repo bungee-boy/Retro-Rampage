@@ -62,7 +62,7 @@ BLACK_CAR = 93, 91, 91
 Debug = False  # Enables Debug mode for detecting issues. (Changes various things other than visual changes)
 Force_resolution = []  # Manual window size ([] = Automatic, [width, height] = Forced)
 Screen = 0  # If the user has multiple monitors, sets which monitor to use (starts at 0)
-Menu_animation = True  # Enables animations on the main menu
+Menu_animation = False  # Enables animations on the main menu
 Mute_volume = False  # Set default muted state
 Music_volume = 0.5  # Set default Volume level for music
 Sfx_volume = 0.5  # Set default Volume level for all sounds effects
@@ -210,8 +210,8 @@ map_preview_size = 974, 600
 map_preview_pos = CENTRE[0] - map_preview_size[0] // 2, CENTRE[1] - map_preview_size[1] // 2
 map_preview = '', pygame.surface.Surface(map_preview_size)
 tile_scale = ceil(WIDTH / 15), ceil(HEIGHT / 10)
-menu_scroll_speed = 20  # Default = 20
-menu_car_speed = 6  # Default = 6
+menu_scroll_speed = 70  # Default = 20
+menu_car_speed = 10  # Default = 6
 button_trigger = False  # only press single button with single click
 selected_text_entry = 0
 current_song = ''
@@ -1008,7 +1008,7 @@ class Car(pygame.sprite.Sprite):
             self.check_inputs()
 
 
-class NPCCar(pygame.sprite.Sprite):
+class NpcCar(pygame.sprite.Sprite):
     def __init__(self, vehicle: str or int, colour: tuple[int, int, int], size: tuple[int, int],
                  name: str, track: str, start_position: int):
         super().__init__()
@@ -1048,7 +1048,7 @@ class NPCCar(pygame.sprite.Sprite):
             self.set_move_speed(5)
             self.set_rotation_speed(3)
         else:
-            raise ValueError('NPCCar | __init__ | self.vehicle incorrect value -> ' + str(self.vehicle))
+            raise ValueError('NpcCar | __init__ | self.vehicle incorrect value -> ' + str(self.vehicle))
         # STARTING variables
         self.origin_pos = self.paths.start_pos(start_position)[0:2]  # Original position
         self.origin_rotation = self.paths.start_pos(start_position)[2]
@@ -4399,17 +4399,17 @@ def game():  # All variables that are not constant
                 else:
                     colour = rand_color()
                 if npc_pos == 1:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 1))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 1))
                 elif npc_pos == 2:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 2))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 2))
                 elif npc_pos == 3:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 3))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 3))
                 elif npc_pos == 4:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 4))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 4))
                 elif npc_pos == 5:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 5))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 5))
                 elif npc_pos == 6:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 6))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 6))
                 else:
                     name[1] = False
                     break
@@ -5082,12 +5082,15 @@ def game():  # All variables that are not constant
                                 rand = randint(0, Npc_amount - 1)
                                 attempts = 0
                                 while (npc_list[rand].collision or npc_list[rand].collision_time) and \
+<<<<<<< HEAD
                                         attempts <= Npc_amount * 2:
+=======
+                                        attempts < Npc_amount * 2:
+>>>>>>> f8840c285d65ccd5e38bb2395fc697eb2e536241
                                     rand = randint(0, Npc_amount - 1)
                                     attempts += 1
-                            else:
-                                rand = 0
-                            npc_list[rand].power_up(power_up[4])
+                                if attempts >= Npc_amount * 2:
+                                    npc_list[rand].power_up(power_up[4])
                         else:
                             player_list[player].power_up(power_up[4])
                         play_sound('power up')

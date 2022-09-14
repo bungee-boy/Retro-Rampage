@@ -4164,9 +4164,6 @@ def game():  # All variables that are not constant
         for layer in layers:
             full_map.blit(layer, (0, 0))
 
-        finish_line_rect = pygame.rect.Rect(1312, 233, 64, 183)  # Set lap trigger rectangles
-        halfway_line_rect = pygame.rect.Rect(544, 665, 64, 183)
-
         checkpoint_positions = maps.racetrack('checkpoints')  # Checkpoint position loading and rect generation
         checkpoint_rectangles = []
         for point in checkpoint_positions:
@@ -4185,9 +4182,6 @@ def game():  # All variables that are not constant
         full_map = pygame.Surface((WIDTH, HEIGHT))
         for layer in layers:
             full_map.blit(layer, (0, 0))
-
-        finish_line_rect = pygame.rect.Rect(930, 773, 64, 183)  # Set lap trigger rectangles
-        halfway_line_rect = pygame.rect.Rect(928, 125, 64, 183)
 
         checkpoint_positions = maps.snake('checkpoints')  # Checkpoint position loading and rect generation
         checkpoint_rectangles = []
@@ -4208,9 +4202,6 @@ def game():  # All variables that are not constant
         for layer in layers:
             full_map.blit(layer, (0, 0))
 
-        finish_line_rect = pygame.rect.Rect(544, 341, 64, 183)  # Set lap trigger rectangles
-        halfway_line_rect = pygame.rect.Rect(1440, 773, 64, 183)
-
         checkpoint_positions = maps.dog_bone('checkpoints')  # Checkpoint position loading and rect generation
         checkpoint_rectangles = []
         for point in checkpoint_positions:
@@ -4230,9 +4221,6 @@ def game():  # All variables that are not constant
         for layer in layers:
             full_map.blit(layer, (0, 0))
 
-        finish_line_rect = pygame.rect.Rect(1184, 125, 64, 183)  # Set lap trigger rectangles
-        halfway_line_rect = pygame.rect.Rect(660, 675, 216, 54)
-
         checkpoint_positions = maps.hairpin('checkpoints')  # Checkpoint position loading and rect generation
         checkpoint_rectangles = []
         for point in checkpoint_positions:
@@ -4249,14 +4237,6 @@ def game():  # All variables that are not constant
     track_mask = pygame.mask.from_surface(layers[2])
 
     if Debug:  # If debug outline track mask in red and outline lap triggers
-        # LAP TRIGGERS
-        finish_line = pygame.surface.Surface((finish_line_rect.width, finish_line_rect.height))  # Create blank surface
-        finish_line.set_colorkey(BLACK)  # Make the surface invisible
-        pygame.draw.rect(finish_line, RED, (0, 0, finish_line_rect.width, finish_line_rect.height), 1)  # Outline rect
-        halfway_line = pygame.surface.Surface((halfway_line_rect.width, halfway_line_rect.height))
-        halfway_line.set_colorkey(BLACK)
-        pygame.draw.rect(halfway_line, RED, (0, 0, halfway_line_rect.width, halfway_line_rect.height), 1)
-
         # CHECKPOINT TRIGGERS
         checkpoint_surfaces = []
         for point in checkpoint_rectangles:  # Convert each rect into an invisible surface

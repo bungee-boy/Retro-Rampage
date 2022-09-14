@@ -67,8 +67,8 @@ Mute_volume = False  # Set default muted state
 Music_volume = 0.5  # Set default Volume level for music
 Sfx_volume = 0.5  # Set default Volume level for all sounds effects
 FPS = 60  # Controls the speed of the game ***changing from 60 will break EVERYTHING!***
-Intro_screen = True  # Enables the intro screen on game boot
-Countdown = True  # Enables the traffic light countdown on game start
+Intro_screen = False  # Enables the intro screen on game boot
+Countdown = False  # Enables the traffic light countdown on game start
 Load_settings = True  # Enables setting loading + saving
 Game_end = False  # Lets the game know if the game finished or if the player quit
 
@@ -177,10 +177,10 @@ else:
     Display_scaling = False
 Players = []
 Selected_player = []
-Player_amount = 0
-Npc_amount = 3
-Map = 'snake'
-Total_laps = 3
+Player_amount = 1
+Npc_amount = 0
+Map = 'hairpin'
+Total_laps = 1
 Current_lap = 0
 Race_time = 0
 Music_loop = True
@@ -219,7 +219,7 @@ clock = pygame.time.Clock()  # Used for timing display updates and keeping const
 music_thread = Thread()
 
 # Define game variables
-powerups = True
+powerups = False
 Game_paused = False
 global_car_rotation_speed = 1
 global_car_move_speed = 4
@@ -500,7 +500,7 @@ class Car(pygame.sprite.Sprite):
         self.mask_size = None
         self.collision = False
         # MOVEMENT variables
-        self._record = False
+        self._record = True
         if self._record:
             self.keystrokes = []
         self._up = None
@@ -5186,7 +5186,7 @@ def main():
     menu_loop = True  # Set game sub-loop to menus
     saved_timer = None  # Timer for settings save
     leaderboard = False
-    current_window = 'main menu'  # Set beginning window to main menu
+    current_window = 'choose vehicle'  # Set beginning window to main menu
     prev_window = ''  # Set previous window to None as game is booting
     car = MenuCar()
     bg = menu_background(top=True, right=True, bottom=True, left=True)  # Set initial values of background(s)
@@ -5194,6 +5194,9 @@ def main():
     music_thread = Thread(target=menu_music_loop)
 
     Players.append(Player(0))
+    Players[0].name = 'Path builder'
+    Players[0].controls = 'arrows'
+    Players[0].start_pos = 3
 
     if Intro_screen and not Debug:
         intro_bg = menu_background()

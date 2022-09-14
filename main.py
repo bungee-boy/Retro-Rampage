@@ -1459,12 +1459,12 @@ def get_car_positions(player_list, npc_list):
     positions = []
     vehicles = player_list + npc_list
     for vehicle in vehicles:
-        vehicle = vehicle.name, vehicle.laps, vehicle.image_dir, vehicle.checkpoint_count, vehicle.checkpoint_time
+        vehicle = vehicle.laps, vehicle.checkpoint_count, vehicle.checkpoint_time, vehicle
         positions.append(vehicle)  # Cut down vehicle data
 
-    positions = sorted(positions, key=lambda tup: tup[4])  # Sort based on checkpoint times
-    positions = sorted(positions, key=lambda tup: tup[3], reverse=True)  # Sort based on checkpoint number
-    return sorted(positions, key=lambda tup: tup[1], reverse=True)  # Sort positions based on their lap number
+    positions = sorted(positions, key=lambda tup: tup[2])  # Sort based on checkpoint times
+    positions = sorted(positions, key=lambda tup: tup[1], reverse=True)  # Sort based on checkpoint number
+    return sorted(positions, key=lambda tup: tup[0], reverse=True)  # Sort positions based on their lap number
 
 
 # -------- MAP PREVIEW -------- #
@@ -3177,9 +3177,9 @@ def leaderboard_window(curr_bg, pad_x=0, pad_y=0):
     draw_text(x + 160, y + 20, 'Finish', WHITE, 70)
 
     for car_no in range(0, len(Player_positions)):
-        rect = draw_text(CENTRE[0], 85 * car_no + 250, str(car_no + 1) + '. ' + Player_positions[car_no][0],
+        rect = draw_text(CENTRE[0], 85 * car_no + 250, str(car_no + 1) + '. ' + Player_positions[car_no][3].name,
                          WHITE, 75, return_rect=True)  # Car position
-        Window.blit(pygame.transform.scale(pygame.image.load(Player_positions[car_no][2]),
+        Window.blit(pygame.transform.scale(pygame.image.load(Player_positions[car_no][3].image_dir),
                                            (45, 68)), (CENTRE[0] + rect.width // 2 + 15, 85 * car_no + 250))
 
     # Draw race info at bottom of screen
@@ -3205,21 +3205,21 @@ def gameplay_gui(player_list, game_countdown_timer, lap_timer):
     draw_text(10, 10, 'Positions', WHITE, 50, center_x=False)  # Leaderboard positions
     for car_no in range(0, len(Player_positions)):
         draw_text(10, 40 * car_no + 60, str(car_no + 1) + '.', WHITE, 40, center_x=False)  # Car position
-        Window.blit(pygame.transform.scale(pygame.image.load(Player_positions[car_no][2]),
+        Window.blit(pygame.transform.scale(pygame.image.load(Player_positions[car_no][3].image_dir),
                                            (30, 40)), (50, 40 * car_no + 60))  # Small car image
-        draw_text(85, 40 * car_no + 60, ' ' + str(Player_positions[car_no][1]) + '/' + str(Total_laps) + ' ' +
-                  Player_positions[car_no][0], WHITE, 40, center_x=False)  # Car name and current lap
+        draw_text(85, 40 * car_no + 60, ' ' + str(Player_positions[car_no][3].laps) + '/' + str(Total_laps) + ' ' +
+                  Player_positions[car_no][3].name, WHITE, 40, center_x=False)  # Car name and current lap
 
     draw_text(1800, 10, 'Total Laps', WHITE, 40)
     if Player_positions:
-        draw_text(1850, 50, Player_positions[0][1], WHITE, 40)
+        draw_text(1850, 50, Player_positions[0][3].name, WHITE, 40)
         if lap_timer > pygame.time.get_ticks():
-            draw_text(CENTRE[0], CENTRE[1], 'Lap ' + str(Player_positions[0][1]), WHITE, 70, bar=True)
+            draw_text(CENTRE[0], CENTRE[1], 'Lap ' + str(Player_positions[0][3].laps), WHITE, 70, bar=True)
     else:
         draw_text(1850, 50, 0, WHITE, 40)
 
     if game_countdown_timer:
-        draw_text(CENTRE[0], CENTRE[1] - 50, Player_positions[0][0] + ' has finished!', WHITE, 50)
+        draw_text(CENTRE[0], CENTRE[1] - 50, Player_positions[0][3].name + ' has finished!', WHITE, 50)
         draw_text(CENTRE[0], CENTRE[1], 'Game ends in ' + str(game_countdown_timer // 1000), WHITE, 50)
 
 
@@ -4389,8 +4389,8 @@ def game():  # All variables that are not constant
 
     while not Game_end and not game_quit:  # Main game loop
         if Player_positions:
-            if Current_lap != Player_positions[0][1]:
-                Current_lap = Player_positions[0][1]
+            if Current_lap != Player_positions[0][3].laps:
+                Current_lap = Player_positions[0][3].laps
                 if Current_lap > Total_laps:
                     play_sound('lap finish')
                 else:
@@ -4916,9 +4916,9 @@ def game():  # All variables that are not constant
                 Countdown -= 2
 
             if len(power_ups) < 8 * Player_amount and powerups:  # Spawn random power-ups
-                rand = 0 # randint(0, 1400 // (10 + Player_amount + Npc_amount))
+                rand = randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = 3 # randint(0, 3 if Npc_amount else 2)
+                    rand = randint(0, 3 if Npc_amount else 2)
                     if not rand:
                         ver = 'repair'
                     elif rand == 1:
@@ -4970,10 +4970,10 @@ def game():  # All variables that are not constant
                                                                       power_up[1][1] - player_list[player].rect.top)):
                         if power_up[4] == 'lightning':  # Choose NPC for lightning powerup
                             player_list[player].power_up('lightning')
-                            for vehicle in npc_list:
-                                if vehicle.type == 'NPC':
-                                    if not vehicle.collision:
-                                        vehicle.power_up(power_up[4])
+                            for vehicle in Player_positions:
+                                if vehicle[3].type == 'NPC':
+                                    if not vehicle[3].penalty_time:
+                                        vehicle[3].power_up(power_up[4])
                                         break
                         else:
                             player_list[player].power_up(power_up[4])

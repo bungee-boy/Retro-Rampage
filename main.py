@@ -4249,8 +4249,6 @@ def game():  # All variables that are not constant
         for pos in track_mask.outline():  # Outline track mask
             pygame.draw.circle(full_map, RED, (pos[0], pos[1]), 1)
     else:
-        finish_line = None
-        halfway_line = None
         checkpoint_surfaces = []
 
     track_mask.invert()
@@ -5021,9 +5019,7 @@ def game():  # All variables that are not constant
             for npc_pos in npc_list:
                 npc_pos.draw()
 
-            if Debug and finish_line:
-                Window.blit(finish_line, finish_line_rect.topleft)  # Draw outlines of triggers on Debug
-                Window.blit(halfway_line, halfway_line_rect.topleft)
+            if Debug:
                 for point in checkpoint_surfaces:
                     Window.blit(point, checkpoint_rectangles[checkpoint_surfaces.index(point)].topleft)
 

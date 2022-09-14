@@ -5082,11 +5082,7 @@ def game():  # All variables that are not constant
                                 rand = randint(0, Npc_amount - 1)
                                 attempts = 0
                                 while (npc_list[rand].collision or npc_list[rand].collision_time) and \
-<<<<<<< HEAD
-                                        attempts <= Npc_amount * 2:
-=======
                                         attempts < Npc_amount * 2:
->>>>>>> f8840c285d65ccd5e38bb2395fc697eb2e536241
                                     rand = randint(0, Npc_amount - 1)
                                     attempts += 1
                                 if attempts >= Npc_amount * 2:

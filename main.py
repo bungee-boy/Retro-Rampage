@@ -223,7 +223,6 @@ powerups = True
 Game_paused = False
 global_car_rotation_speed = 1
 global_car_move_speed = 4
-checkpoint_triggers = []  # checkpoints[ triggered_car_order[ [car_name, lap, car_image_dir] ] ]
 
 # Define updating and loaded asset lists
 screen_updates = []
@@ -481,8 +480,8 @@ class Car(pygame.sprite.Sprite):
         self.set_rotation_speed(self.max_rotation_speed)
         # SURFACE variables
         self.colour = self.player.veh_colour
-        self._image_dir = assets.car(self.colour, self.vehicle)
-        self.image = pygame.transform.scale(pygame.image.load(self._image_dir).convert(), (40, 70))
+        self.image_dir = assets.car(self.colour, self.vehicle)
+        self.image = pygame.transform.scale(pygame.image.load(self.image_dir).convert(), (40, 70))
         self.image.set_colorkey(BLACK)
         self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
         self._dmg_img = None
@@ -530,12 +529,11 @@ class Car(pygame.sprite.Sprite):
         self.name = self.player.name
         self._name_rect = None
         # LAP variables
-        self._lap_collision = False
-        self._lap_halfway = False
+        self._lap_halfway = True
         self.laps = 0
         # CHECKPOINT variables
-        self._checkpoint_collision = False
-        self._point_checked = False
+        self.checkpoint_count = -1
+        self.checkpoint_time = 0
         # SOUND variables
         self._collision_sound = False
         # Move car to starting position
@@ -572,54 +570,16 @@ class Car(pygame.sprite.Sprite):
         else:
             raise ValueError("Car | controls is not == 'wasd' or 'arrows' or controller. : " + str(control))
 
-    def check_laps(self, lap_rect: pygame.rect.Rect, halfway_rect: pygame.rect.Rect):  # Track amount of laps
-        # Uses flip-flop and triggers to count how many laps the car has gone round the track
-        if self.laps <= 0:  # On start of race
-            if not self._lap_collision and lap_rect.colliderect(self.rect):  # Only check start and add one if collide
-                self.laps += 1
-                self._lap_collision = True
-            elif self._lap_collision and not lap_rect.colliderect(self.rect):
-                self._lap_collision = False
-        else:  # For the rest of the race
-            if not self._lap_collision:  # If there isn't already a collision
-                if self._lap_halfway:  # If the car has gone halfway then check finish line, else check halfway
-                    if lap_rect.colliderect(self.rect):
-                        # print('lap collision')
-                        self._lap_collision = True
-                        self._lap_halfway = False
-                        self.laps += 1
-                        self.clear_checkpoints()
-                else:
-                    if halfway_rect.colliderect(self.rect):
-                        # print('halfway collision')
-                        self._lap_collision = True
-                        self._lap_halfway = True
-            # Always default self._lap_collision to False for next collision
-            elif self._lap_collision and not (lap_rect.colliderect(self.rect) or halfway_rect.colliderect(self.rect)):
-                self._lap_collision = False
-            # print(self._lap_collision, self._lap_halfway)
-
     def check_checkpoints(self, checkpoint_rectangles):
-        for check_point in checkpoint_rectangles:  # For each checkpoint
-            if check_point.colliderect(self.rect) and not self._checkpoint_collision:
-                self._checkpoint_collision = True  # Only allow single collision for checkpoint
-                for car in checkpoint_triggers[checkpoint_rectangles.index(check_point)]:  # Only add self once
-                    if car[0] == self.name:
-                        self._point_checked = True
-                if not self._point_checked:
-                    checkpoint_triggers[checkpoint_rectangles.index(check_point)].append([self.name, self.laps,
-                                                                                          self._image_dir])
-                    self._point_checked = True
-
-            elif not check_point.colliderect(self.rect) and self._checkpoint_collision:  # If there is no collision
-                self._checkpoint_collision = False  # Reset triggered state to False
-                self._point_checked = False
-
-    def clear_checkpoints(self):
-        for point in checkpoint_triggers:
-            for car in point:
-                if car[0] == self.name:
-                    point.remove(car)
+        for checkpoint in checkpoint_rectangles:
+            if checkpoint.colliderect(self.rect) and self.checkpoint_count != checkpoint_rectangles.index(checkpoint):
+                self.checkpoint_count = checkpoint_rectangles.index(checkpoint)
+                self.checkpoint_time = pygame.time.get_ticks()
+                if not self._lap_halfway and self.checkpoint_count == floor(len(checkpoint_rectangles) / 2):
+                    self._lap_halfway = True
+                if self._lap_halfway and self.checkpoint_count == 0:
+                    self._lap_halfway = False
+                    self.laps += 1
 
     def check_track_collisions(self, track_mask):  # Check if there are collisions and take action
         if not self.collision or self.collision == 'track':
@@ -804,7 +764,7 @@ class Car(pygame.sprite.Sprite):
         elif 270 - (global_car_rotation_speed + 1) <= self.rotation <= 270 + (global_car_rotation_speed + 1):
             self.rotation = 270
         self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
-            self._image_dir).convert(), self.size), self.rotation)  # Rotate image
+            self.image_dir).convert(), self.size), self.rotation)  # Rotate image
         self.image.set_colorkey(BLACK)
         self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         if 0 < self.damage <= self.durability:
@@ -1087,12 +1047,11 @@ class NPCCar(pygame.sprite.Sprite):
         self.name = name
         self.name_rect = None
         # LAP variables
-        self.lap_collision = False
-        self.lap_halfway = False
+        self.lap_halfway = True
         self.laps = 0
         # CHECKPOINT variables
-        self.checkpoint_collision = False
-        self.point_checked = False
+        self.checkpoint_count = -1
+        self.checkpoint_time = 0
         self.prev_checkpoint_position = self.origin_pos
         self.prev_checkpoint_rotation = self.origin_rotation
         self.prev_checkpoint_path_position = 0
@@ -1111,57 +1070,16 @@ class NPCCar(pygame.sprite.Sprite):
     def set_rotation_speed(self, speed):
         self.rotation_speed = global_car_rotation_speed + speed
 
-    def check_laps(self, lap_rect: pygame.rect.Rect, halfway_rect: pygame.rect.Rect):  # Track amount of laps
-        # Uses flip-flop and triggers to count how many laps the car has gone round the track
-        if self.laps <= 0:  # On start of race
-            if not self.lap_collision and lap_rect.colliderect(self.rect):  # Only check start and add one if collide
-                self.laps += 1
-                self.lap_collision = True
-            elif self.lap_collision and not lap_rect.colliderect(self.rect):
-                self.lap_collision = False
-        else:  # For the rest of the race
-            if not self.lap_collision:  # If there isn't already a collision
-                if self.lap_halfway:  # If the car has gone halfway then check finish line, else check halfway
-                    if lap_rect.colliderect(self.rect):
-                        # print('lap collision')
-                        self.lap_collision = True
-                        self.lap_halfway = False
-                        self.laps += 1
-                        self.clear_checkpoints()
-                else:
-                    if halfway_rect.colliderect(self.rect):
-                        # print('halfway collision')
-                        self.lap_collision = True
-                        self.lap_halfway = True
-            # Always default self._lap_collision to False for next collision
-            elif self.lap_collision and not (lap_rect.colliderect(self.rect) or halfway_rect.colliderect(self.rect)):
-                self.lap_collision = False
-            # print(self._lap_collision, self._lap_halfway)
-
     def check_checkpoints(self, checkpoint_rectangles):
-        for check_point in checkpoint_rectangles:  # For each checkpoint
-            if check_point.colliderect(self.rect) and not self.checkpoint_collision:
-                self.checkpoint_collision = True  # Only allow single collision for checkpoint
-                for car in checkpoint_triggers[checkpoint_rectangles.index(check_point)]:  # Only add self once
-                    if car[0] == self.name:
-                        self.point_checked = True
-                if not self.point_checked:
-                    checkpoint_triggers[checkpoint_rectangles.index(check_point)].append([self.name, self.laps,
-                                                                                          self.image_dir])
-                    self.point_checked = True
-                    self.prev_checkpoint_position = self.pos_x, self.pos_y
-                    self.prev_checkpoint_rotation = self.rotation
-                    self.prev_checkpoint_path_position = self.path_position
-
-            elif not check_point.colliderect(self.rect) and self.checkpoint_collision:  # If there is no collision
-                self.checkpoint_collision = False  # Reset triggered state to False
-                self.point_checked = False
-
-    def clear_checkpoints(self):
-        for point in checkpoint_triggers:
-            for car in point:
-                if car[0] == self.name:
-                    point.remove(car)
+        for checkpoint in checkpoint_rectangles:
+            if checkpoint.colliderect(self.rect) and self.checkpoint_count != checkpoint_rectangles.index(checkpoint):
+                self.checkpoint_count = checkpoint_rectangles.index(checkpoint)
+                self.checkpoint_time = pygame.time.get_ticks()
+                if not self.lap_halfway and self.checkpoint_count == floor(len(checkpoint_rectangles) / 2):
+                    self.lap_halfway = True
+                if self.lap_halfway and self.checkpoint_count == 0:
+                    self.lap_halfway = False
+                    self.laps += 1
 
     def get_path(self):  # Randomise path according to start position
         return self.paths.path(self.rotation_speed - global_car_rotation_speed, self.start_position,
@@ -1536,14 +1454,15 @@ class NPCCar(pygame.sprite.Sprite):
 
 
 # -------- CAR FUNCTIONS -------- #
-def get_car_positions():
+def get_car_positions(player_list, npc_list):
     positions = []
-    for checkpoint in reversed(checkpoint_triggers):
-        for car in checkpoint:
-            if car not in positions:
-                positions.append(car)
-            elif car in positions:
-                pass
+    vehicles = player_list + npc_list
+    for vehicle in vehicles:
+        vehicle = vehicle.name, vehicle.laps, vehicle.image_dir, vehicle.checkpoint_count, vehicle.checkpoint_time
+        positions.append(vehicle)  # Cut down vehicle data
+
+    positions = sorted(positions, key=lambda tup: tup[4])  # Sort based on checkpoint times
+    positions = sorted(positions, key=lambda tup: tup[3], reverse=True)  # Sort based on checkpoint number
     return sorted(positions, key=lambda tup: tup[1], reverse=True)  # Sort positions based on their lap number
 
 
@@ -4217,7 +4136,7 @@ def get_mouse_pos():
 
 # -------- GAME LOOPS -------- #
 def game():  # All variables that are not constant
-    global Player_positions, Race_time, Countdown, checkpoint_triggers, Window_screenshot, button_trigger, \
+    global Player_positions, Race_time, Countdown, Window_screenshot, button_trigger, \
         Debug, Screen, Menu_animation, Mute_volume, Music_volume, Sfx_volume, loaded_assets, loaded_sounds, \
         Current_lap, Window_sleep, Game_end, Music_loop, music_thread, current_window, Game_paused
     layers = []
@@ -4225,7 +4144,6 @@ def game():  # All variables that are not constant
     current_window = ''
     game_countdown = 0
     game_countdown_timer = 0
-    checkpoint_triggers = []
     Player_positions = []
     power_ups = []
     triggered_power_ups = []
@@ -4246,14 +4164,10 @@ def game():  # All variables that are not constant
         for layer in layers:
             full_map.blit(layer, (0, 0))
 
-        finish_line_rect = pygame.rect.Rect(1312, 233, 64, 183)  # Set lap trigger rectangles
-        halfway_line_rect = pygame.rect.Rect(544, 665, 64, 183)
-
         checkpoint_positions = maps.racetrack('checkpoints')  # Checkpoint position loading and rect generation
         checkpoint_rectangles = []
         for point in checkpoint_positions:
             checkpoint_rectangles.append(pygame.rect.Rect(*point))
-            checkpoint_triggers.append([])  # Add list indexes for trigger recognition later
 
         for pos in range(1, 7):
             full_map.blit(pygame.transform.rotate(pygame.transform.scale(pygame.image.load(assets.tile(
@@ -4269,14 +4183,10 @@ def game():  # All variables that are not constant
         for layer in layers:
             full_map.blit(layer, (0, 0))
 
-        finish_line_rect = pygame.rect.Rect(930, 773, 64, 183)  # Set lap trigger rectangles
-        halfway_line_rect = pygame.rect.Rect(928, 125, 64, 183)
-
         checkpoint_positions = maps.snake('checkpoints')  # Checkpoint position loading and rect generation
         checkpoint_rectangles = []
         for point in checkpoint_positions:
             checkpoint_rectangles.append(pygame.rect.Rect(*point))
-            checkpoint_triggers.append([])  # Add list indexes for trigger recognition later
 
         for pos in range(1, 7):
             full_map.blit(pygame.transform.rotate(pygame.transform.scale(pygame.image.load(assets.tile(
@@ -4292,14 +4202,10 @@ def game():  # All variables that are not constant
         for layer in layers:
             full_map.blit(layer, (0, 0))
 
-        finish_line_rect = pygame.rect.Rect(544, 341, 64, 183)  # Set lap trigger rectangles
-        halfway_line_rect = pygame.rect.Rect(1440, 773, 64, 183)
-
         checkpoint_positions = maps.dog_bone('checkpoints')  # Checkpoint position loading and rect generation
         checkpoint_rectangles = []
         for point in checkpoint_positions:
             checkpoint_rectangles.append(pygame.rect.Rect(*point))
-            checkpoint_triggers.append([])  # Add list indexes for trigger recognition later
 
         for pos in range(1, 7):
             full_map.blit(pygame.transform.rotate(pygame.transform.scale(pygame.image.load(assets.tile(
@@ -4315,14 +4221,10 @@ def game():  # All variables that are not constant
         for layer in layers:
             full_map.blit(layer, (0, 0))
 
-        finish_line_rect = pygame.rect.Rect(1184, 125, 64, 183)  # Set lap trigger rectangles
-        halfway_line_rect = pygame.rect.Rect(660, 675, 216, 54)
-
         checkpoint_positions = maps.hairpin('checkpoints')  # Checkpoint position loading and rect generation
         checkpoint_rectangles = []
         for point in checkpoint_positions:
             checkpoint_rectangles.append(pygame.rect.Rect(*point))
-            checkpoint_triggers.append([])  # Add list indexes for trigger recognition later
 
         for pos in range(1, 7):
             full_map.blit(pygame.transform.rotate(pygame.transform.scale(pygame.image.load(assets.tile(
@@ -4335,14 +4237,6 @@ def game():  # All variables that are not constant
     track_mask = pygame.mask.from_surface(layers[2])
 
     if Debug:  # If debug outline track mask in red and outline lap triggers
-        # LAP TRIGGERS
-        finish_line = pygame.surface.Surface((finish_line_rect.width, finish_line_rect.height))  # Create blank surface
-        finish_line.set_colorkey(BLACK)  # Make the surface invisible
-        pygame.draw.rect(finish_line, RED, (0, 0, finish_line_rect.width, finish_line_rect.height), 1)  # Outline rect
-        halfway_line = pygame.surface.Surface((halfway_line_rect.width, halfway_line_rect.height))
-        halfway_line.set_colorkey(BLACK)
-        pygame.draw.rect(halfway_line, RED, (0, 0, halfway_line_rect.width, halfway_line_rect.height), 1)
-
         # CHECKPOINT TRIGGERS
         checkpoint_surfaces = []
         for point in checkpoint_rectangles:  # Convert each rect into an invisible surface
@@ -5064,11 +4958,10 @@ def game():  # All variables that are not constant
                 player.update()
             for player in range(0, len(player_list)):  # For every player,
                 player_list[player].check_track_collisions(track_mask)  # Track collisions
-                player_list[player].check_laps(finish_line_rect, halfway_line_rect)  # Lap collisions
+                player_list[player].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
+                # player_list[player].check_laps(finish_line_rect, halfway_line_rect)  # Lap collisions
                 if player_list[player].laps > Total_laps and not game_countdown:
                     game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
-                if player_list[player].laps != 0:
-                    player_list[player].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
                 if len(player_list) == 2 and player == 0:
                     player_list[player].check_car_collision(player_list[player + 1])  # Collisions between players
                 elif len(player_list) == 2 and player == 1:
@@ -5094,11 +4987,9 @@ def game():  # All variables that are not constant
             for npc_pos in range(0, len(npc_list)):
                 npc_list[npc_pos].update()  # Update position
                 npc_list[npc_pos].check_track_collisions(track_mask)  # Track collisions
-                npc_list[npc_pos].check_laps(finish_line_rect, halfway_line_rect)  # Lap collisions
+                npc_list[npc_pos].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
                 if npc_list[npc_pos].laps > Total_laps and not game_countdown:
                     game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
-                if npc_list[npc_pos].laps != 0:
-                    npc_list[npc_pos].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
                 for other_npc in range(len(npc_list)):
                     if npc_pos != other_npc:
                         npc_list[npc_pos].check_car_collision(npc_list[other_npc])  # Collisions between NPCs
@@ -5141,7 +5032,7 @@ def game():  # All variables that are not constant
                 if game_countdown_timer // 1000 <= 0:
                     Game_end = True
 
-            Player_positions = get_car_positions()  # Update player positions
+            Player_positions = get_car_positions(player_list, npc_list)  # Update player positions
             gameplay_gui(player_list, game_countdown_timer, lap_timer)  # Draw GUI
             update_screen(full_screen=True)  # Update entire screen
 
@@ -5177,7 +5068,7 @@ def game():  # All variables that are not constant
 
 
 def main():
-    global Player_amount, Npc_amount, Total_laps, Debug, loaded_assets, Music_volume, Screen, checkpoint_triggers, \
+    global Player_amount, Npc_amount, Total_laps, Debug, loaded_assets, Music_volume, Screen, \
         Sfx_volume, loaded_sounds, Mute_volume, Menu_animation, Map, selected_text_entry, button_trigger, Window_sleep,\
         Music_loop, music_thread, powerups, Npc_force_veh, Npc_force_colour, current_window, Players, controllers, \
         controls
@@ -8301,7 +8192,6 @@ def main():
                     buttons = pygame.mouse.get_pressed()
                     if buttons[0] and not button_trigger:
                         button_trigger = True
-                        checkpoint_triggers = []
                         current_window = 'main menu'
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(top=True, right=True, bottom=True, left=True)
@@ -8329,7 +8219,6 @@ def main():
         if game_quit:
             new_bg = menu_background(top=True, right=True, bottom=True, left=True)
             main_window(new_bg)
-            checkpoint_triggers = []
             current_window = 'main menu'
         else:
             new_bg = menu_background()

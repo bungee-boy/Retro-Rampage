@@ -439,6 +439,7 @@ class MenuCar:  # Create car sprite
 class Car(pygame.sprite.Sprite):
     def __init__(self, player: Player):
         super().__init__()
+        self.type = 'Player'
         self.player = player
         if self.player.id > 6 or self.player.id < 0:
             raise ValueError('Car | self._id should only be between 0 and 5, not ' + str(self.player.id))
@@ -1012,7 +1013,7 @@ class NpcCar(pygame.sprite.Sprite):
     def __init__(self, vehicle: str or int, colour: tuple[int, int, int], size: tuple[int, int],
                  name: str, track: str, start_position: int):
         super().__init__()
-
+        self.type = 'NPC'
         self.start_position = start_position
         if track == 'racetrack':
             self.paths = paths.Racetrack()
@@ -5023,9 +5024,9 @@ def game():  # All variables that are not constant
                 Countdown -= 2
 
             if len(power_ups) < 8 * Player_amount and powerups:  # Spawn random power-ups
-                rand = randint(0, 1400 // (10 + Player_amount + Npc_amount))
+                rand = 0 # randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = randint(0, 3 if Npc_amount else 2)
+                    rand = 3 # randint(0, 3 if Npc_amount else 2)
                     if not rand:
                         ver = 'repair'
                     elif rand == 1:
@@ -5076,17 +5077,13 @@ def game():  # All variables that are not constant
                 for power_up in power_ups:  # Check powerup collisions for each player
                     if player_list[player].mask.overlap(power_up[3], (power_up[1][0] - player_list[player].rect.left,
                                                                       power_up[1][1] - player_list[player].rect.top)):
-                        if power_up[4] == 'lightning':  # Choose random NPC for lightning powerup
+                        if power_up[4] == 'lightning':  # Choose NPC for lightning powerup
                             player_list[player].power_up('lightning')
-                            if Npc_amount >= 1:
-                                rand = randint(0, Npc_amount - 1)
-                                attempts = 0
-                                while (npc_list[rand].collision or npc_list[rand].collision_time) and \
-                                        attempts < Npc_amount * 2:
-                                    rand = randint(0, Npc_amount - 1)
-                                    attempts += 1
-                                if attempts >= Npc_amount * 2:
-                                    npc_list[rand].power_up(power_up[4])
+                            for vehicle in npc_list:
+                                if vehicle.type == 'NPC':
+                                    if not vehicle.collision:
+                                        vehicle.power_up(power_up[4])
+                                        break
                         else:
                             player_list[player].power_up(power_up[4])
                         play_sound('power up')

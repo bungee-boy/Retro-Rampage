@@ -59,10 +59,10 @@ GREEN_CAR = 57, 194, 114
 BLUE_CAR = 47, 149, 208
 BLACK_CAR = 93, 91, 91
 # Other variables
-Debug = False  # Enables Debug mode for detecting issues. Has various effects other than visual
+Debug = False  # Enables Debug mode for detecting issues. (Changes various things other than visual changes)
 Force_resolution = []  # Manual window size ([] = Automatic, [width, height] = Forced)
 Screen = 0  # If the user has multiple monitors, sets which monitor to use (starts at 0)
-Menu_animation = True  # Enables animations on the main menu
+Menu_animation = False  # Enables animations on the main menu
 Mute_volume = False  # Set default muted state
 Music_volume = 0.5  # Set default Volume level for music
 Sfx_volume = 0.5  # Set default Volume level for all sounds effects
@@ -198,7 +198,7 @@ Npc_force_veh = 0
 Npc_force_colour = None
 lightning_frames = []
 for frame in range(0, 15):
-    lightning_frames.append(assets.animation('lightning', frame))
+    lightning_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('lightning', frame)), (128, 128)))
 smoke_frames = []
 for frame in range(0, 7):
     smoke_frames.append(pygame.transform.scale(pygame.image.load(assets.animation('smoke', frame)), (64, 64)))
@@ -210,8 +210,8 @@ map_preview_size = 974, 600
 map_preview_pos = CENTRE[0] - map_preview_size[0] // 2, CENTRE[1] - map_preview_size[1] // 2
 map_preview = '', pygame.surface.Surface(map_preview_size)
 tile_scale = ceil(WIDTH / 15), ceil(HEIGHT / 10)
-menu_scroll_speed = 20  # Default = 20
-menu_car_speed = 6  # Default = 6
+menu_scroll_speed = 70  # Default = 20
+menu_car_speed = 10  # Default = 6
 button_trigger = False  # only press single button with single click
 selected_text_entry = 0
 current_song = ''
@@ -438,6 +438,7 @@ class MenuCar:  # Create car sprite
 class Car(pygame.sprite.Sprite):
     def __init__(self, player: Player):
         super().__init__()
+        self.type = 'Player'
         self.player = player
         if self.player.id > 6 or self.player.id < 0:
             raise ValueError('Car | self._id should only be between 0 and 5, not ' + str(self.player.id))
@@ -968,11 +969,11 @@ class Car(pygame.sprite.Sprite):
             self.check_inputs()
 
 
-class NPCCar(pygame.sprite.Sprite):
+class NpcCar(pygame.sprite.Sprite):
     def __init__(self, vehicle: str or int, colour: tuple[int, int, int], size: tuple[int, int],
                  name: str, track: str, start_position: int):
         super().__init__()
-
+        self.type = 'NPC'
         self.start_position = start_position
         if track == 'racetrack':
             self.paths = paths.Racetrack()
@@ -1008,7 +1009,7 @@ class NPCCar(pygame.sprite.Sprite):
             self.set_move_speed(5)
             self.set_rotation_speed(3)
         else:
-            raise ValueError('NPCCar | __init__ | self.vehicle incorrect value -> ' + str(self.vehicle))
+            raise ValueError('NpcCar | __init__ | self.vehicle incorrect value -> ' + str(self.vehicle))
         # STARTING variables
         self.origin_pos = self.paths.start_pos(start_position)[0:2]  # Original position
         self.origin_rotation = self.paths.start_pos(start_position)[2]
@@ -4291,17 +4292,17 @@ def game():  # All variables that are not constant
                 else:
                     colour = rand_color()
                 if npc_pos == 1:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 1))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 1))
                 elif npc_pos == 2:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 2))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 2))
                 elif npc_pos == 3:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 3))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 3))
                 elif npc_pos == 4:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 4))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 4))
                 elif npc_pos == 5:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 5))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 5))
                 elif npc_pos == 6:
-                    npc_list.append(NPCCar(vehicle, colour, (40, 70), name[0], Map, 6))
+                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 6))
                 else:
                     name[1] = False
                     break
@@ -4386,7 +4387,7 @@ def game():  # All variables that are not constant
             gameplay_gui(player_list, 0, 0)
             update_screen(full_screen=True)
 
-    while not Game_end and not game_quit:
+    while not Game_end and not game_quit:  # Main game loop
         if Player_positions:
             if Current_lap != Player_positions[0][1]:
                 Current_lap = Player_positions[0][1]
@@ -4905,7 +4906,7 @@ def game():  # All variables that are not constant
             if Game_paused:
                 update_screen(surf=Secondary_window)
 
-        else:
+        else:  # If game playing
             Window.blit(full_map, (0, 0))
 
             if Countdown > -108:  # animate traffic light out of screen
@@ -4914,10 +4915,10 @@ def game():  # All variables that are not constant
                     pygame.draw.rect(Window, WHITE, (822, Countdown * 2, 276, 108), 1)
                 Countdown -= 2
 
-            if len(power_ups) < 5 * Player_amount and powerups:  # Spawn random power-ups
-                rand = randint(0, 1400 // (10 + Player_amount + Npc_amount))
+            if len(power_ups) < 8 * Player_amount and powerups:  # Spawn random power-ups
+                rand = 0 # randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = randint(0, 3 if Npc_amount else 2)
+                    rand = 3 # randint(0, 3 if Npc_amount else 2)
                     if not rand:
                         ver = 'repair'
                     elif rand == 1:
@@ -4967,15 +4968,13 @@ def game():  # All variables that are not constant
                 for power_up in power_ups:  # Check powerup collisions for each player
                     if player_list[player].mask.overlap(power_up[3], (power_up[1][0] - player_list[player].rect.left,
                                                                       power_up[1][1] - player_list[player].rect.top)):
-                        if power_up[4] == 'lightning':  # Choose random NPC for lightning powerup
+                        if power_up[4] == 'lightning':  # Choose NPC for lightning powerup
                             player_list[player].power_up('lightning')
-                            if Npc_amount > 1:
-                                rand = randint(0, Npc_amount - 1)
-                                while npc_list[rand].collision:
-                                    rand = randint(0, Npc_amount - 1)
-                            else:
-                                rand = 0
-                            npc_list[rand].power_up(power_up[4])
+                            for vehicle in npc_list:
+                                if vehicle.type == 'NPC':
+                                    if not vehicle.collision:
+                                        vehicle.power_up(power_up[4])
+                                        break
                         else:
                             player_list[player].power_up(power_up[4])
                         play_sound('power up')
@@ -5067,7 +5066,7 @@ def main():
     global Player_amount, Npc_amount, Total_laps, Debug, loaded_assets, Music_volume, Screen, \
         Sfx_volume, loaded_sounds, Mute_volume, Menu_animation, Map, selected_text_entry, button_trigger, Window_sleep,\
         Music_loop, music_thread, powerups, Npc_force_veh, Npc_force_colour, current_window, Players, controllers, \
-        controls
+        controls, selected_text_entry
 
     Music_loop = True
     menu_loop = True  # Set game sub-loop to menus
@@ -5158,7 +5157,7 @@ def main():
                     elif event.key == pygame.K_BACKSPACE:
                         Players[selected_text_entry - 1].name = Players[selected_text_entry - 1].name[:-1]
 
-                    if len(Players[selected_text_entry - 1].name) <= 12 and \
+                    if selected_text_entry and len(Players[selected_text_entry - 1].name) <= 12 and \
                             event.key != pygame.K_BACKSPACE and event.key != pygame.K_DELETE and \
                             event.key != pygame.K_TAB:
                         Players[selected_text_entry - 1].name += event.unicode
@@ -5423,6 +5422,7 @@ def main():
                     controller_popup()
                     update_screen(full_screen=True)  # Update entire screen
                     prev_window = current_window  # Set current window to updated
+                    selected_text_entry = 0
 
                 choose_players_window(bg)
                 mouse_pos = get_mouse_pos()
@@ -5914,6 +5914,7 @@ def main():
                     controller_popup()
                     update_screen(full_screen=True)  # Update entire screen
                     prev_window = current_window  # Set current window to updated
+                    selected_text_entry = 0
 
                 choose_players_window_2(bg)
                 mouse_pos = get_mouse_pos()
@@ -6266,6 +6267,7 @@ def main():
                     controller_popup()
                     update_screen(full_screen=True)  # Update entire screen
                     prev_window = current_window  # Set current window to updated
+                    selected_text_entry = 0
 
                 choose_players_window_3(bg)
                 mouse_pos = get_mouse_pos()
@@ -6599,6 +6601,7 @@ def main():
                     controller_popup()
                     update_screen(full_screen=True)  # Update entire screen
                     prev_window = current_window  # Set current window to updated
+                    selected_text_entry = 0
 
                 choose_vehicle_window(bg)
 

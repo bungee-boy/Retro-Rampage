@@ -4370,7 +4370,7 @@ def game():  # All variables that are not constant
     npc_list = []
     if Npc_amount != 0:
         npc_pos = 1
-        while len(npc_list) <= Npc_amount - 1:
+        while len(npc_list) <= Npc_amount:
             if Player_amount == 1 and npc_pos != Players[0].start_pos or Player_amount == 2 and \
                     npc_pos != Players[0].start_pos and npc_pos != Players[1].start_pos or Player_amount == 3 and \
                     npc_pos != Players[0].start_pos and npc_pos != Players[1].start_pos and \
@@ -5210,7 +5210,7 @@ def main():
             if not Window_sleep:
                 clock.tick(FPS)  # Update the pygame clock every cycle
             else:
-                clock.tick(2)  # If window sleeping decrease frame rate to save performance
+                clock.tick(2)
 
             if not music_thread.is_alive() and not Mute_volume:
                 music_thread = Thread(target=menu_music_loop)
@@ -5237,10 +5237,6 @@ def main():
                             else:
                                 current_window = 'choose players 3'
                     controller_removed(event.__dict__['instance_id'])
-                    if current_window == 'choose players 2' or current_window == 'choose players 3' or \
-                        current_window == 'choose vehicle' or current_window == 'choose vehicle 2' or \
-                            current_window == 'choose vehicle 3' or current_window == 'race settings':
-                        current_window = 'choose players'
 
                 elif event.type == pygame.FULLSCREEN:
                     pygame.display.toggle_fullscreen()

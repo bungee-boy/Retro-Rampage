@@ -179,7 +179,7 @@ Players = []
 Selected_player = []
 Player_amount = 1
 Npc_amount = 0
-Map = 'hairpin'
+Map = 'snake'
 Total_laps = 1
 Current_lap = 0
 Race_time = 0
@@ -5072,16 +5072,12 @@ def main():
     menu_loop = True  # Set game sub-loop to menus
     saved_timer = None  # Timer for settings save
     leaderboard = False
-    current_window = 'choose vehicle'  # Set beginning window to main menu
+    current_window = 'main'  # Set beginning window to main menu
     prev_window = ''  # Set previous window to None as game is booting
     car = MenuCar()
     bg = menu_background(top=True, right=True, bottom=True, left=True)  # Set initial values of background(s)
     new_bg = bg
     music_thread = Thread(target=menu_music_loop)
-
-    Players.append(Player(0))
-    Players[0].name = 'Path builder'
-    Players[0].start_pos = 3
 
     if Intro_screen and not Debug:
         intro_bg = menu_background()

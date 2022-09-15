@@ -177,10 +177,10 @@ else:
     Display_scaling = False
 Players = []
 Selected_player = []
-Player_amount = 1
-Npc_amount = 0
+Player_amount = 0
+Npc_amount = 3
 Map = 'snake'
-Total_laps = 1
+Total_laps = 3
 Current_lap = 0
 Race_time = 0
 Music_loop = True
@@ -5079,7 +5079,7 @@ def main():
     new_bg = bg
     music_thread = Thread(target=menu_music_loop)
 
-    Players.append(Player(1))
+    Players.append(Player(0))
 
     if Intro_screen and not Debug:
         intro_bg = menu_background()

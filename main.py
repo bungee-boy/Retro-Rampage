@@ -4915,7 +4915,7 @@ def game():  # All variables that are not constant
                     pygame.draw.rect(Window, WHITE, (822, Countdown * 2, 276, 108), 1)
                 Countdown -= 2
 
-            if len(power_ups) < 8 * Player_amount and powerups:  # Spawn random power-ups
+            if len(power_ups) < 10 * Player_amount and powerups:  # Spawn random power-ups
                 rand = randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
                     rand = randint(0, 3 if Npc_amount else 2)

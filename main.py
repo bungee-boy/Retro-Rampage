@@ -5195,7 +5195,6 @@ def main():
 
     Players.append(Player(0))
     Players[0].name = 'Path builder'
-    Players[0].controls = 'arrows'
     Players[0].start_pos = 3
 
     if Intro_screen and not Debug:

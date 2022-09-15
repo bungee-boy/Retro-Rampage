@@ -517,7 +517,7 @@ class Car(pygame.sprite.Sprite):
         self._bullet_penalty = 0
         self._bullet_damage = 0
         self._current_speed = 0
-        self._boost_frames = []  # Boost animation frames
+        self._boost_frames = []  # Boost animation frames stored locally as different versions per car
         self._boost_ani_frame = -1
         for frames in range(0, 4):
             self._boost_frames.append(pygame.transform.scale(pygame.image.load(assets.animation(
@@ -526,6 +526,8 @@ class Car(pygame.sprite.Sprite):
         self._repair_ani_frame = -1
         self._ani_frame = None
         self._ani_frame_rect = None
+        self.lightning_animation = False
+        self._lightning_frame = None
         # NAME variables
         self.name = self.player.name
         self._name_rect = None
@@ -808,11 +810,13 @@ class Car(pygame.sprite.Sprite):
             self._bullet_penalty = pygame.time.get_ticks() + 2000 + (5000 - self._current_speed * 1000)
             self._smoke_ani_frame = 0
             self.damage = self.durability
-            self.rotate(self.rotation + 1)
+            self.rotate(self.rotation + 1)  # Reloads image for damage
             self.rotate(self.rotation - 1)
         elif ver == 'lightning':
-            if self.controller:
-                self.controller.rumble(0.3, 0.5, 700)
+            if ver == 'lightning' and not self.collision and not self._bullet_penalty:
+                self.lightning_animation = pygame.time.get_ticks() // 70
+                if self.controller:
+                    self.controller.rumble(0.3, 0.5, 700)
 
     def check_inputs(self):  # Check all inputs and take action
         if self.input_type == 'keyboard':
@@ -948,13 +952,31 @@ class Car(pygame.sprite.Sprite):
             surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
             self._repair_ani_frame += 1  # Increase animation to next frame
 
+        if self.lightning_animation:  # Lightning animation
+            self._lightning_frame = pygame.time.get_ticks() // 70 - self.lightning_animation
+            if self._lightning_frame < 15:
+                surf.blit(lightning_frames[self._lightning_frame], (self.rect.centerx - 64, self.rect.centery - 128))
+                if self._lightning_frame == 2:
+                    play_sound('lightning')
+                elif self._lightning_frame == 3:
+                    if self._boost_timeout:
+                        self._boost_timeout = 0
+                        self._boost_ani_frame = -1
+
+                    self._bullet_damage = self.damage
+                    self._bullet_penalty = pygame.time.get_ticks() + 3000 + \
+                                           (self._move_speed - global_car_move_speed) * 1000
+                    self.damage = self.durability
+                    self.rotate(self.rotation + 1)  # Reloads image for damage
+                    self.rotate(self.rotation - 1)
+
     def update(self):  # Called each loop and checks if anything has changed
         if self._boost_timeout and self._boost_timeout < pygame.time.get_ticks():  # If boost timeout has expired
             self._boost_timeout = 0  # Reset current speed to previous state
             self.set_move_speed(self._current_speed)
             self.set_rotation_speed(self.max_rotation_speed)
-        elif self._bullet_penalty and self._bullet_penalty < pygame.time.get_ticks():
-            self._bullet_penalty = 0
+        elif self._bullet_penalty and self._bullet_penalty < pygame.time.get_ticks():  # If bullet penalty expired
+            self._bullet_penalty = 0  # Reset car to previous state
             self.damage = self._bullet_damage
             self.rotate(self.rotation + 1)
             self.rotate(self.rotation - 1)
@@ -965,6 +987,7 @@ class Car(pygame.sprite.Sprite):
             elif self._move_speed != self.max_speed or self._rotation_speed != self.max_rotation_speed:
                 self.set_move_speed(self.max_speed)
                 self.set_rotation_speed(self.max_rotation_speed)
+
         if not self._bullet_penalty:
             self.check_inputs()
 
@@ -4916,9 +4939,9 @@ def game():  # All variables that are not constant
                 Countdown -= 2
 
             if len(power_ups) < 10 * Player_amount and powerups:  # Spawn random power-ups
-                rand = randint(0, 1400 // (10 + Player_amount + Npc_amount))
+                rand = 0#randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = randint(0, 3 if Npc_amount else 2)
+                    rand = 3# randint(0, 3)
                     if not rand:
                         ver = 'repair'
                     elif rand == 1:

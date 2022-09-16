@@ -500,7 +500,7 @@ class Car(pygame.sprite.Sprite):
         self.mask_size = None
         self.collision = False
         # MOVEMENT variables
-        self._record = True
+        self._record = False
         if self._record:
             self.keystrokes = []
         self._up = None
@@ -4969,7 +4969,7 @@ def game():  # All variables that are not constant
                     if player_list[player].mask.overlap(power_up[3], (power_up[1][0] - player_list[player].rect.left,
                                                                       power_up[1][1] - player_list[player].rect.top)):
                         if power_up[4] == 'lightning':  # Choose NPC for lightning powerup
-                            player_list[player].power_up('lightning')
+                            player_list[player].power_up('lightning')#
                             for vehicle in Player_positions:
                                 if vehicle[3].type == 'NPC':
                                     if not vehicle[3].penalty_time:
@@ -5028,6 +5028,9 @@ def game():  # All variables that are not constant
                     Game_end = True
 
             Player_positions = get_car_positions(player_list, npc_list)  # Update player positions
+
+            print(player_list[0].laps, player_list[0].checkpoint_count, player_list[0].checkpoint_time)
+
             gameplay_gui(player_list, game_countdown_timer, lap_timer)  # Draw GUI
             update_screen(full_screen=True)  # Update entire screen
 

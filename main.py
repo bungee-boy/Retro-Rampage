@@ -67,8 +67,8 @@ Mute_volume = False  # Set default muted state
 Music_volume = 0.5  # Set default Volume level for music
 Sfx_volume = 0.5  # Set default Volume level for all sounds effects
 FPS = 60  # Controls the speed of the game ***changing from 60 will break EVERYTHING!***
-Intro_screen = True  # Enables the intro screen on game boot
-Countdown = True  # Enables the traffic light countdown on game start
+Intro_screen = False  # Enables the intro screen on game boot
+Countdown = False  # Enables the traffic light countdown on game start
 Load_settings = True  # Enables setting loading + saving
 Game_end = False  # Lets the game know if the game finished or if the player quit
 
@@ -514,7 +514,7 @@ class Car(pygame.sprite.Sprite):
         self._allow_reverse = True
         self._pressed_keys = None
         self._boost_timeout = 0
-        self._bullet_penalty = 0
+        self.bullet_penalty = 0
         self._bullet_damage = 0
         self._current_speed = 0
         self._boost_frames = []  # Boost animation frames
@@ -805,7 +805,7 @@ class Car(pygame.sprite.Sprite):
             if self.controller:
                 self.controller.rumble(1, 1, 500)
             self._bullet_damage = self.damage
-            self._bullet_penalty = pygame.time.get_ticks() + 2000 + (5000 - self._current_speed * 1000)
+            self.bullet_penalty = pygame.time.get_ticks() + 2000 + (5000 - self._current_speed * 1000)
             self._smoke_ani_frame = 0
             self.damage = self.durability
             self.rotate(self.rotation + 1)
@@ -927,9 +927,9 @@ class Car(pygame.sprite.Sprite):
             surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
             self._boost_ani_frame += 1  # Increase animation to next frame
 
-        if self._smoke_ani_frame >= 14 and self._bullet_penalty:  # If smoke animation finished
+        if self._smoke_ani_frame >= 14 and self.bullet_penalty:  # If smoke animation finished
             self._smoke_ani_frame = 0  # Replay animation
-        elif not self._bullet_penalty and self._smoke_ani_frame >= 14:  # If smoke timeout finished
+        elif not self.bullet_penalty and self._smoke_ani_frame >= 14:  # If smoke timeout finished
             self._smoke_ani_frame = -1  # Reset animation at end of loop
         if self._smoke_ani_frame >= 0:  # If smoke animation playing
             self._ani_frame = smoke_frames[floor(self._smoke_ani_frame/2)]
@@ -953,8 +953,8 @@ class Car(pygame.sprite.Sprite):
             self._boost_timeout = 0  # Reset current speed to previous state
             self.set_move_speed(self._current_speed)
             self.set_rotation_speed(self.max_rotation_speed)
-        elif self._bullet_penalty and self._bullet_penalty < pygame.time.get_ticks():
-            self._bullet_penalty = 0
+        elif self.bullet_penalty and self.bullet_penalty < pygame.time.get_ticks():
+            self.bullet_penalty = 0
             self.damage = self._bullet_damage
             self.rotate(self.rotation + 1)
             self.rotate(self.rotation - 1)
@@ -965,7 +965,7 @@ class Car(pygame.sprite.Sprite):
             elif self._move_speed != self.max_speed or self._rotation_speed != self.max_rotation_speed:
                 self.set_move_speed(self.max_speed)
                 self.set_rotation_speed(self.max_rotation_speed)
-        if not self._bullet_penalty:
+        if not self.bullet_penalty:
             self.check_inputs()
 
 
@@ -4968,11 +4968,15 @@ def game():  # All variables that are not constant
                 for power_up in power_ups:  # Check powerup collisions for each player
                     if player_list[player].mask.overlap(power_up[3], (power_up[1][0] - player_list[player].rect.left,
                                                                       power_up[1][1] - player_list[player].rect.top)):
-                        if power_up[4] == 'lightning':  # Choose NPC for lightning powerup
-                            player_list[player].power_up('lightning')#
+                        if power_up[4] == 'lightning':  # Lightning powerup targets first to last
+                            player_list[player].power_up('lightning_rumble')#
                             for vehicle in Player_positions:
                                 if vehicle[3].type == 'NPC':
                                     if not vehicle[3].penalty_time:
+                                        vehicle[3].power_up(power_up[4])
+                                        break
+                                elif vehicle[3].type == 'Player':
+                                    if not vehicle[3].bullet_penalty:
                                         vehicle[3].power_up(power_up[4])
                                         break
                         else:

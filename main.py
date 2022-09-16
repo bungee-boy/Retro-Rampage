@@ -514,7 +514,7 @@ class Car(pygame.sprite.Sprite):
         self._allow_reverse = True
         self._pressed_keys = None
         self._boost_timeout = 0
-        self._bullet_penalty = 0
+        self.bullet_penalty = 0
         self._bullet_damage = 0
         self._current_speed = 0
         self._boost_frames = []  # Boost animation frames stored locally as different versions per car
@@ -807,16 +807,17 @@ class Car(pygame.sprite.Sprite):
             if self.controller:
                 self.controller.rumble(1, 1, 500)
             self._bullet_damage = self.damage
-            self._bullet_penalty = pygame.time.get_ticks() + 2000 + (5000 - self._current_speed * 1000)
+            self.bullet_penalty = pygame.time.get_ticks() + 2000 + (5000 - self._current_speed * 1000)
             self._smoke_ani_frame = 0
             self.damage = self.durability
             self.rotate(self.rotation + 1)  # Reloads image for damage
             self.rotate(self.rotation - 1)
         elif ver == 'lightning':
-            if ver == 'lightning' and not self.collision and not self._bullet_penalty:
+            if ver == 'lightning' and not self.collision and not self.bullet_penalty:
                 self.lightning_animation = pygame.time.get_ticks() // 70
-                if self.controller:
-                    self.controller.rumble(0.3, 0.5, 700)
+        elif ver == 'lightning rumble':
+            if self.controller:
+                self.controller.rumble(0.3, 0.5, 700)
 
     def check_inputs(self):  # Check all inputs and take action
         if self.input_type == 'keyboard':
@@ -931,9 +932,9 @@ class Car(pygame.sprite.Sprite):
             surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
             self._boost_ani_frame += 1  # Increase animation to next frame
 
-        if self._smoke_ani_frame >= 14 and self._bullet_penalty:  # If smoke animation finished
+        if self._smoke_ani_frame >= 14 and self.bullet_penalty:  # If smoke animation finished
             self._smoke_ani_frame = 0  # Replay animation
-        elif not self._bullet_penalty and self._smoke_ani_frame >= 14:  # If smoke timeout finished
+        elif not self.bullet_penalty and self._smoke_ani_frame >= 14:  # If smoke timeout finished
             self._smoke_ani_frame = -1  # Reset animation at end of loop
         if self._smoke_ani_frame >= 0:  # If smoke animation playing
             self._ani_frame = smoke_frames[floor(self._smoke_ani_frame/2)]
@@ -964,8 +965,8 @@ class Car(pygame.sprite.Sprite):
                         self._boost_ani_frame = -1
 
                     self._bullet_damage = self.damage
-                    self._bullet_penalty = pygame.time.get_ticks() + 3000 + \
-                                           (self._move_speed - global_car_move_speed) * 1000
+                    self.bullet_penalty = pygame.time.get_ticks() + 3000 + \
+                        (self._move_speed - global_car_move_speed) * 1000
                     self.damage = self.durability
                     self.rotate(self.rotation + 1)  # Reloads image for damage
                     self.rotate(self.rotation - 1)
@@ -975,8 +976,8 @@ class Car(pygame.sprite.Sprite):
             self._boost_timeout = 0  # Reset current speed to previous state
             self.set_move_speed(self._current_speed)
             self.set_rotation_speed(self.max_rotation_speed)
-        elif self._bullet_penalty and self._bullet_penalty < pygame.time.get_ticks():  # If bullet penalty expired
-            self._bullet_penalty = 0  # Reset car to previous state
+        elif self.bullet_penalty and self.bullet_penalty < pygame.time.get_ticks():  # If bullet penalty expired
+            self.bullet_penalty = 0  # Reset car to previous state
             self.damage = self._bullet_damage
             self.rotate(self.rotation + 1)
             self.rotate(self.rotation - 1)
@@ -988,7 +989,7 @@ class Car(pygame.sprite.Sprite):
                 self.set_move_speed(self.max_speed)
                 self.set_rotation_speed(self.max_rotation_speed)
 
-        if not self._bullet_penalty:
+        if not self.bullet_penalty:
             self.check_inputs()
 
 
@@ -4939,9 +4940,9 @@ def game():  # All variables that are not constant
                 Countdown -= 2
 
             if len(power_ups) < 10 * Player_amount and powerups:  # Spawn random power-ups
-                rand = 0#randint(0, 1400 // (10 + Player_amount + Npc_amount))
+                rand = randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = 3# randint(0, 3)
+                    rand = randint(0, 3)
                     if not rand:
                         ver = 'repair'
                     elif rand == 1:
@@ -4991,12 +4992,16 @@ def game():  # All variables that are not constant
                 for power_up in power_ups:  # Check powerup collisions for each player
                     if player_list[player].mask.overlap(power_up[3], (power_up[1][0] - player_list[player].rect.left,
                                                                       power_up[1][1] - player_list[player].rect.top)):
-                        if power_up[4] == 'lightning':  # Choose NPC for lightning powerup
-                            player_list[player].power_up('lightning')
+                        if power_up[4] == 'lightning':  # Lightning targets first to last vehicle
+                            player_list[player].power_up('lightning rumble')  # Controller rumble for player
                             for vehicle in Player_positions:
                                 if vehicle[3].type == 'NPC':
                                     if not vehicle[3].penalty_time:
-                                        vehicle[3].power_up(power_up[4])
+                                        vehicle[3].power_up('lightning')  # Trigger animation and penalty
+                                        break
+                                elif vehicle[3].type == 'Player':
+                                    if not vehicle[3].bullet_penalty:
+                                        vehicle[3].power_up('lightning')  # Trigger animation and penalty
                                         break
                         else:
                             player_list[player].power_up(power_up[4])

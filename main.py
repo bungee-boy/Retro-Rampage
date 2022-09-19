@@ -500,7 +500,7 @@ class Car(pygame.sprite.Sprite):
         self.mask_size = None
         self.collision = False
         # MOVEMENT variables
-        self._record = True
+        self._record = False
         if self._record:
             self.keystrokes = []
         self._up = None
@@ -536,6 +536,7 @@ class Car(pygame.sprite.Sprite):
         self.laps = 0
         # CHECKPOINT variables
         self.checkpoint_count = -1
+        # self._prev_checkpoint_count = -2
         self.checkpoint_time = 0
         # SOUND variables
         self._collision_sound = False
@@ -574,14 +575,17 @@ class Car(pygame.sprite.Sprite):
             raise ValueError("Car | controls is not == 'wasd' or 'arrows' or controller. : " + str(control))
 
     def check_checkpoints(self, checkpoint_rectangles):
-        for checkpoint in checkpoint_rectangles:
+        for checkpoint in checkpoint_rectangles:  # For each checkpoint
             if checkpoint.colliderect(self.rect) and self.checkpoint_count != checkpoint_rectangles.index(checkpoint):
-                self.checkpoint_count = checkpoint_rectangles.index(checkpoint)
-                self.checkpoint_time = pygame.time.get_ticks()
-                if not self._lap_halfway and self.checkpoint_count == floor(len(checkpoint_rectangles) / 2):
-                    self._lap_halfway = True
-                if self._lap_halfway and self.checkpoint_count == 0:
-                    self._lap_halfway = False
+                # self._prev_checkpoint_count = self.checkpoint_count  # Save previous checkpoint count
+                self.checkpoint_count = checkpoint_rectangles.index(checkpoint)  # Set current checkpoint
+                self.checkpoint_time = pygame.time.get_ticks()  # Set checkpoint time
+                if not self._lap_halfway and self.checkpoint_count == \
+                        ceil(len(checkpoint_rectangles) + 1 / 2):  # If hit halfway
+                    self._lap_halfway = True  # Set halfway
+                if self._lap_halfway and checkpoint_rectangles.index(checkpoint) == 0 and \
+                        self.checkpoint_count <= checkpoint_rectangles.index(checkpoint):  # If checkpoint 0 and halfway
+                    self._lap_halfway = False  # Halfway reset
                     self.laps += 1
 
     def check_track_collisions(self, track_mask):  # Check if there are collisions and take action
@@ -4982,7 +4986,6 @@ def game():  # All variables that are not constant
             for player in range(0, len(player_list)):  # For every player,
                 player_list[player].check_track_collisions(track_mask)  # Track collisions
                 player_list[player].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
-                # player_list[player].check_laps(finish_line_rect, halfway_line_rect)  # Lap collisions
                 if player_list[player].laps > Total_laps and not game_countdown:
                     game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
                 if len(player_list) == 2 and player == 0:
@@ -5054,6 +5057,8 @@ def game():  # All variables that are not constant
                 game_countdown_timer = game_countdown - pygame.time.get_ticks()
                 if game_countdown_timer // 1000 <= 0:
                     Game_end = True
+
+            print(player_list[0].laps, player_list[0]._lap_halfway, player_list[0].checkpoint_count)
 
             Player_positions = get_car_positions(player_list, npc_list)  # Update player positions
             gameplay_gui(player_list, game_countdown_timer, lap_timer)  # Draw GUI

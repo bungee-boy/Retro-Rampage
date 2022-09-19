@@ -514,10 +514,10 @@ class Car(pygame.sprite.Sprite):
         self._allow_reverse = True
         self._pressed_keys = None
         self._boost_timeout = 0
-        self._bullet_penalty = 0
+        self.bullet_penalty = 0
         self._bullet_damage = 0
         self._current_speed = 0
-        self._boost_frames = []  # Boost animation frames
+        self._boost_frames = []  # Boost animation frames stored locally as different versions per car
         self._boost_ani_frame = -1
         for frames in range(0, 4):
             self._boost_frames.append(pygame.transform.scale(pygame.image.load(assets.animation(
@@ -526,6 +526,8 @@ class Car(pygame.sprite.Sprite):
         self._repair_ani_frame = -1
         self._ani_frame = None
         self._ani_frame_rect = None
+        self.lightning_animation = False
+        self._lightning_frame = None
         # NAME variables
         self.name = self.player.name
         self._name_rect = None
@@ -572,14 +574,16 @@ class Car(pygame.sprite.Sprite):
             raise ValueError("Car | controls is not == 'wasd' or 'arrows' or controller. : " + str(control))
 
     def check_checkpoints(self, checkpoint_rectangles):
-        for checkpoint in checkpoint_rectangles:
+        for checkpoint in checkpoint_rectangles:  # For each checkpoint
             if checkpoint.colliderect(self.rect) and self.checkpoint_count != checkpoint_rectangles.index(checkpoint):
-                self.checkpoint_count = checkpoint_rectangles.index(checkpoint)
-                self.checkpoint_time = pygame.time.get_ticks()
-                if not self._lap_halfway and self.checkpoint_count == floor(len(checkpoint_rectangles) / 2):
-                    self._lap_halfway = True
-                if self._lap_halfway and self.checkpoint_count == 0:
-                    self._lap_halfway = False
+                self.checkpoint_count = checkpoint_rectangles.index(checkpoint)  # Set current checkpoint
+                self.checkpoint_time = pygame.time.get_ticks()  # Set checkpoint time
+                if not self._lap_halfway and self.checkpoint_count == \
+                        ceil(len(checkpoint_rectangles) / 2):  # If hit halfway
+                    self._lap_halfway = True  # Set halfway
+                if self._lap_halfway and checkpoint_rectangles.index(checkpoint) == 0 and \
+                        self.checkpoint_count <= checkpoint_rectangles.index(checkpoint):  # If checkpoint 0 and halfway
+                    self._lap_halfway = False  # Halfway reset
                     self.laps += 1
 
     def check_track_collisions(self, track_mask):  # Check if there are collisions and take action
@@ -805,12 +809,15 @@ class Car(pygame.sprite.Sprite):
             if self.controller:
                 self.controller.rumble(1, 1, 500)
             self._bullet_damage = self.damage
-            self._bullet_penalty = pygame.time.get_ticks() + 2000 + (5000 - self._current_speed * 1000)
+            self.bullet_penalty = pygame.time.get_ticks() + 2000 + (5000 - self._current_speed * 1000)
             self._smoke_ani_frame = 0
             self.damage = self.durability
-            self.rotate(self.rotation + 1)
+            self.rotate(self.rotation + 1)  # Reloads image for damage
             self.rotate(self.rotation - 1)
         elif ver == 'lightning':
+            if ver == 'lightning' and not self.collision and not self.bullet_penalty:
+                self.lightning_animation = pygame.time.get_ticks() // 70
+        elif ver == 'lightning rumble':
             if self.controller:
                 self.controller.rumble(0.3, 0.5, 700)
 
@@ -927,9 +934,9 @@ class Car(pygame.sprite.Sprite):
             surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
             self._boost_ani_frame += 1  # Increase animation to next frame
 
-        if self._smoke_ani_frame >= 14 and self._bullet_penalty:  # If smoke animation finished
+        if self._smoke_ani_frame >= 14 and self.bullet_penalty:  # If smoke animation finished
             self._smoke_ani_frame = 0  # Replay animation
-        elif not self._bullet_penalty and self._smoke_ani_frame >= 14:  # If smoke timeout finished
+        elif not self.bullet_penalty and self._smoke_ani_frame >= 14:  # If smoke timeout finished
             self._smoke_ani_frame = -1  # Reset animation at end of loop
         if self._smoke_ani_frame >= 0:  # If smoke animation playing
             self._ani_frame = smoke_frames[floor(self._smoke_ani_frame/2)]
@@ -948,13 +955,31 @@ class Car(pygame.sprite.Sprite):
             surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
             self._repair_ani_frame += 1  # Increase animation to next frame
 
+        if self.lightning_animation:  # Lightning animation
+            self._lightning_frame = pygame.time.get_ticks() // 70 - self.lightning_animation
+            if self._lightning_frame < 15:
+                surf.blit(lightning_frames[self._lightning_frame], (self.rect.centerx - 64, self.rect.centery - 128))
+                if self._lightning_frame == 2:
+                    play_sound('lightning')
+                elif self._lightning_frame == 3:
+                    if self._boost_timeout:
+                        self._boost_timeout = 0
+                        self._boost_ani_frame = -1
+
+                    self._bullet_damage = self.damage
+                    self.bullet_penalty = pygame.time.get_ticks() + 3000 + \
+                        (self._move_speed - global_car_move_speed) * 1000
+                    self.damage = self.durability
+                    self.rotate(self.rotation + 1)  # Reloads image for damage
+                    self.rotate(self.rotation - 1)
+
     def update(self):  # Called each loop and checks if anything has changed
         if self._boost_timeout and self._boost_timeout < pygame.time.get_ticks():  # If boost timeout has expired
             self._boost_timeout = 0  # Reset current speed to previous state
             self.set_move_speed(self._current_speed)
             self.set_rotation_speed(self.max_rotation_speed)
-        elif self._bullet_penalty and self._bullet_penalty < pygame.time.get_ticks():
-            self._bullet_penalty = 0
+        elif self.bullet_penalty and self.bullet_penalty < pygame.time.get_ticks():  # If bullet penalty expired
+            self.bullet_penalty = 0  # Reset car to previous state
             self.damage = self._bullet_damage
             self.rotate(self.rotation + 1)
             self.rotate(self.rotation - 1)
@@ -965,7 +990,8 @@ class Car(pygame.sprite.Sprite):
             elif self._move_speed != self.max_speed or self._rotation_speed != self.max_rotation_speed:
                 self.set_move_speed(self.max_speed)
                 self.set_rotation_speed(self.max_rotation_speed)
-        if not self._bullet_penalty:
+
+        if not self.bullet_penalty:
             self.check_inputs()
 
 
@@ -4918,7 +4944,7 @@ def game():  # All variables that are not constant
             if len(power_ups) < 10 * Player_amount and powerups:  # Spawn random power-ups
                 rand = randint(0, 1400 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = randint(0, 3 if Npc_amount else 2)
+                    rand = randint(0, 3)
                     if not rand:
                         ver = 'repair'
                     elif rand == 1:
@@ -4958,7 +4984,6 @@ def game():  # All variables that are not constant
             for player in range(0, len(player_list)):  # For every player,
                 player_list[player].check_track_collisions(track_mask)  # Track collisions
                 player_list[player].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
-                # player_list[player].check_laps(finish_line_rect, halfway_line_rect)  # Lap collisions
                 if player_list[player].laps > Total_laps and not game_countdown:
                     game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
                 if len(player_list) == 2 and player == 0:
@@ -4968,12 +4993,16 @@ def game():  # All variables that are not constant
                 for power_up in power_ups:  # Check powerup collisions for each player
                     if player_list[player].mask.overlap(power_up[3], (power_up[1][0] - player_list[player].rect.left,
                                                                       power_up[1][1] - player_list[player].rect.top)):
-                        if power_up[4] == 'lightning':  # Choose NPC for lightning powerup
-                            player_list[player].power_up('lightning')#
+                        if power_up[4] == 'lightning':  # Lightning targets first to last vehicle
+                            player_list[player].power_up('lightning rumble')  # Controller rumble for player
                             for vehicle in Player_positions:
                                 if vehicle[3].type == 'NPC':
                                     if not vehicle[3].penalty_time:
-                                        vehicle[3].power_up(power_up[4])
+                                        vehicle[3].power_up('lightning')  # Trigger animation and penalty
+                                        break
+                                elif vehicle[3].type == 'Player':
+                                    if not vehicle[3].bullet_penalty:
+                                        vehicle[3].power_up('lightning')  # Trigger animation and penalty
                                         break
                         else:
                             player_list[player].power_up(power_up[4])

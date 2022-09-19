@@ -5028,9 +5028,6 @@ def game():  # All variables that are not constant
                     Game_end = True
 
             Player_positions = get_car_positions(player_list, npc_list)  # Update player positions
-
-            print(player_list[0].laps, player_list[0].checkpoint_count, player_list[0].checkpoint_time)
-
             gameplay_gui(player_list, game_countdown_timer, lap_timer)  # Draw GUI
             update_screen(full_screen=True)  # Update entire screen
 

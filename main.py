@@ -536,7 +536,6 @@ class Car(pygame.sprite.Sprite):
         self.laps = 0
         # CHECKPOINT variables
         self.checkpoint_count = -1
-        # self._prev_checkpoint_count = -2
         self.checkpoint_time = 0
         # SOUND variables
         self._collision_sound = False
@@ -577,11 +576,10 @@ class Car(pygame.sprite.Sprite):
     def check_checkpoints(self, checkpoint_rectangles):
         for checkpoint in checkpoint_rectangles:  # For each checkpoint
             if checkpoint.colliderect(self.rect) and self.checkpoint_count != checkpoint_rectangles.index(checkpoint):
-                # self._prev_checkpoint_count = self.checkpoint_count  # Save previous checkpoint count
                 self.checkpoint_count = checkpoint_rectangles.index(checkpoint)  # Set current checkpoint
                 self.checkpoint_time = pygame.time.get_ticks()  # Set checkpoint time
                 if not self._lap_halfway and self.checkpoint_count == \
-                        ceil(len(checkpoint_rectangles) + 1 / 2):  # If hit halfway
+                        ceil(len(checkpoint_rectangles) / 2):  # If hit halfway
                     self._lap_halfway = True  # Set halfway
                 if self._lap_halfway and checkpoint_rectangles.index(checkpoint) == 0 and \
                         self.checkpoint_count <= checkpoint_rectangles.index(checkpoint):  # If checkpoint 0 and halfway
@@ -5057,8 +5055,6 @@ def game():  # All variables that are not constant
                 game_countdown_timer = game_countdown - pygame.time.get_ticks()
                 if game_countdown_timer // 1000 <= 0:
                     Game_end = True
-
-            print(player_list[0].laps, player_list[0]._lap_halfway, player_list[0].checkpoint_count)
 
             Player_positions = get_car_positions(player_list, npc_list)  # Update player positions
             gameplay_gui(player_list, game_countdown_timer, lap_timer)  # Draw GUI

@@ -67,8 +67,8 @@ Mute_volume = False  # Set default muted state
 Music_volume = 0.5  # Set default Volume level for music
 Sfx_volume = 0.5  # Set default Volume level for all sounds effects
 FPS = 60  # Controls the speed of the game ***changing from 60 will break EVERYTHING!***
-Intro_screen = False  # Enables the intro screen on game boot
-Countdown = False  # Enables the traffic light countdown on game start
+Intro_screen = True  # Enables the intro screen on game boot
+Countdown = True  # Enables the traffic light countdown on game start
 Load_settings = True  # Enables setting loading + saving
 Game_end = False  # Lets the game know if the game finished or if the player quit
 
@@ -3237,7 +3237,7 @@ def gameplay_gui(player_list, game_countdown_timer, lap_timer):
 
     draw_text(1800, 10, 'Total Laps', WHITE, 40)
     if Player_positions:
-        draw_text(1850, 50, Player_positions[0][3].name, WHITE, 40)
+        draw_text(1850, 50, Player_positions[0][3].laps, WHITE, 40)
         if lap_timer > pygame.time.get_ticks():
             draw_text(CENTRE[0], CENTRE[1], 'Lap ' + str(Player_positions[0][3].laps), WHITE, 70, bar=True)
     else:

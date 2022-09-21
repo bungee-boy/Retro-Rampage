@@ -298,7 +298,7 @@ class Player:
         self.name = ''
         self.veh_image = pygame.transform.scale(pygame.image.load(assets.car(self.veh_colour, self.veh_name)),
                                                 (175, 300))
-        self.start_pos = 6 - self.id
+        self.start_pos = self.id + 1
         self.default_controls = self.controls
 
     def update_image(self):
@@ -4986,13 +4986,11 @@ def game():  # All variables that are not constant
             for player in range(0, len(player_list)):  # For every player,
                 player_list[player].check_track_collisions(track_mask)  # Track collisions
                 player_list[player].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
-                if player_list[player].laps > Total_laps and not game_countdown:
+                if player_list[player].laps > Total_laps and not game_countdown:  # If player has finished
                     game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
                 for player2 in range(0, len(player_list)):  # For every player,
-                    if player2 == len(player_list) - 1:
-                        break
-                    else:
-                        player_list[player2].check_car_collision(player_list[player2 + 1])
+                    if player != player2:  # If not same player
+                        player_list[player].check_car_collision(player_list[player2])  # Check collision
                 for power_up in power_ups:  # Check powerup collisions for each player
                     if player_list[player].mask.overlap(power_up[3], (power_up[1][0] - player_list[player].rect.left,
                                                                       power_up[1][1] - player_list[player].rect.top)):
@@ -5477,6 +5475,7 @@ def main():
                         button_trigger = True
                         selected_text_entry = 0
                         Player_amount = 1
+                        Npc_amount = 3
                         while len(Players) != Player_amount:
                             if len(Players) < Player_amount:
                                 Players.append(Player(len(Players)))
@@ -5502,6 +5501,7 @@ def main():
                         button_trigger = True
                         selected_text_entry = 0
                         Player_amount = 2
+                        Npc_amount = 2
                         while len(Players) != Player_amount:
                             if len(Players) < Player_amount:
                                 Players.append(Player(len(Players)))
@@ -5527,6 +5527,7 @@ def main():
                         button_trigger = True
                         selected_text_entry = 0
                         Player_amount = 3
+                        Npc_amount = 3
                         while len(Players) != Player_amount:
                             if len(Players) < Player_amount:
                                 Players.append(Player(len(Players)))
@@ -5553,6 +5554,7 @@ def main():
                         button_trigger = True
                         selected_text_entry = 0
                         Player_amount = 4
+                        Npc_amount = 2
                         while len(Players) != Player_amount:
                             if len(Players) < Player_amount:
                                 Players.append(Player(len(Players)))
@@ -5579,6 +5581,7 @@ def main():
                         button_trigger = True
                         selected_text_entry = 0
                         Player_amount = 5
+                        Npc_amount = 1
                         while len(Players) != Player_amount:
                             if len(Players) < Player_amount:
                                 Players.append(Player(len(Players)))
@@ -5605,6 +5608,7 @@ def main():
                         button_trigger = True
                         selected_text_entry = 0
                         Player_amount = 6
+                        Npc_amount = 0
                         while len(Players) != Player_amount:
                             if len(Players) < Player_amount:
                                 Players.append(Player(len(Players)))

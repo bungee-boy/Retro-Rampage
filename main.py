@@ -990,7 +990,6 @@ class Car(pygame.sprite.Sprite):
             elif self._move_speed != self.max_speed or self._rotation_speed != self.max_rotation_speed:
                 self.set_move_speed(self.max_speed)
                 self.set_rotation_speed(self.max_rotation_speed)
-
         if not self.bullet_penalty:
             self.check_inputs()
 
@@ -3238,7 +3237,7 @@ def gameplay_gui(player_list, game_countdown_timer, lap_timer):
 
     draw_text(1800, 10, 'Total Laps', WHITE, 40)
     if Player_positions:
-        draw_text(1850, 50, Player_positions[0][3].name, WHITE, 40)
+        draw_text(1850, 50, Player_positions[0][3].laps, WHITE, 40)
         if lap_timer > pygame.time.get_ticks():
             draw_text(CENTRE[0], CENTRE[1], 'Lap ' + str(Player_positions[0][3].laps), WHITE, 70, bar=True)
     else:
@@ -4989,10 +4988,11 @@ def game():  # All variables that are not constant
                 player_list[player].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
                 if player_list[player].laps > Total_laps and not game_countdown:
                     game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
-                if len(player_list) == 2 and player == 0:
-                    player_list[player].check_car_collision(player_list[player + 1])  # Collisions between players
-                elif len(player_list) == 2 and player == 1:
-                    player_list[player].check_car_collision(player_list[player - 1])
+                for player2 in range(0, len(player_list)):  # For every player,
+                    if player2 == len(player_list) - 1:
+                        break
+                    else:
+                        player_list[player2].check_car_collision(player_list[player2 + 1])
                 for power_up in power_ups:  # Check powerup collisions for each player
                     if player_list[player].mask.overlap(power_up[3], (power_up[1][0] - player_list[player].rect.left,
                                                                       power_up[1][1] - player_list[player].rect.top)):
@@ -5006,6 +5006,10 @@ def game():  # All variables that are not constant
                                 elif vehicle[3].type == 'Player':
                                     if not vehicle[3].bullet_penalty:
                                         vehicle[3].power_up('lightning')  # Trigger animation and penalty
+                                        break
+                                elif vehicle[3].type == 'Player':
+                                    if not vehicle[3].bullet_penalty:
+                                        vehicle[3].power_up(power_up[4])
                                         break
                         else:
                             player_list[player].power_up(power_up[4])

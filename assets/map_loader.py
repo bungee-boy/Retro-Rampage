@@ -23,8 +23,8 @@ def racetrack(layer: str):
     elif layer == 'trk':
         return racetrack_dir + track_layer
     elif layer == 'checkpoints':
-        return [[1312, 233, 32, 183], [1428, 513, 215, 53], [1376, 665, 32, 183], [512, 665, 32, 183],
-                [928, 665, 32, 183], [276, 513, 215, 53], [512, 233, 32, 183], [928, 233, 32, 183]]
+        return [[1312, 233, 32, 183], [1428, 513, 215, 53], [1376, 665, 32, 183], [928, 665, 32, 183],
+                [512, 665, 32, 183], [276, 513, 215, 53], [512, 233, 32, 183], [928, 233, 32, 183]]
     else:
         raise ValueError("racetrack(layer) | layer must be 'bg', 'obj', 'trk' or 'checkpoints' not " + str(layer))
 
@@ -38,8 +38,8 @@ def snake(layer: str):
         return snake_dir + track_layer
     elif layer == 'checkpoints':
         return [[930, 773, 32, 183], [1172, 675, 216, 54], [1472, 449, 32, 183], [1556, 351, 216, 54],
-                [1376, 125, 32, 183], [660, 351, 216, 54], [928, 125, 32, 183],
-                [480, 449, 32, 183], [148, 675, 216, 54], [544, 773, 32, 183]]
+                [1376, 125, 32, 183], [928, 125, 32, 183], [660, 351, 216, 54], [480, 449, 32, 183],
+                [148, 675, 216, 54], [544, 773, 32, 183]]
     else:
         raise ValueError("racetrack(layer) | layer must be 'bg', 'obj', 'trk' or 'checkpoints' not " + str(layer))
 

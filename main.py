@@ -655,8 +655,12 @@ class Car(pygame.sprite.Sprite):
                         self._allow_forwards = False  # Do not allow forwards
                         self._allow_reverse = True
                         # print('do not allow forwards')
+                    elif self.image.get_size()[0] // 2 > self.mask_overlap[0]:  # If the collision is on the left half
+                        self._allow_forwards = True  # Do not allow reverse
+                        self._allow_reverse = False
+                        # print('do not allow reverse')
 
-                if self.mask_area > self.mask_size // 1.5:  # If over half of the car is colliding with the mask...
+                if self.mask_area > self.mask_size // 2:  # If over half of the car is colliding with the mask...
                     self.move(self._origin_pos[0], self._origin_pos[1])  # Reset the car to starting position + rotation
                     self.rotate(self._origin_rotation)
                     # print('reset to origin')

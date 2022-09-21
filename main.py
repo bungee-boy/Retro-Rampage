@@ -4266,11 +4266,16 @@ def game():  # All variables that are not constant
     if Debug:  # If debug outline track mask in red and outline lap triggers
         # CHECKPOINT TRIGGERS
         checkpoint_surfaces = []
+        font = pygame.font.Font(fonts.load(bold=True), 30)
         for point in checkpoint_rectangles:  # Convert each rect into an invisible surface
             checkpoint_surfaces.append(pygame.surface.Surface((point.width, point.height)))  # Create GREEN outline
             checkpoint_surfaces[len(checkpoint_surfaces) - 1].set_colorkey(BLACK)
             pygame.draw.rect(checkpoint_surfaces[len(checkpoint_surfaces) - 1], GREEN_CAR,
                              (0, 0, point.width, point.height), 1)
+            text = font.render(str(len(checkpoint_surfaces) - 1), False, GREEN_CAR)
+            text_rect = text.get_rect()
+            text_rect.center = point.width // 2, point.height // 2
+            checkpoint_surfaces[len(checkpoint_surfaces) - 1].blit(text, text_rect.topleft)
 
         # TRACK MASK OUTLINE
         for pos in track_mask.outline():  # Outline track mask
@@ -4409,8 +4414,6 @@ def game():  # All variables that are not constant
                 player.draw()
             for npc in npc_list:
                 npc.draw()
-
-            gameplay_gui(player_list, 0, 0)
             update_screen(full_screen=True)
 
     while not Game_end and not game_quit:  # Main game loop

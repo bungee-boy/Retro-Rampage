@@ -4985,10 +4985,11 @@ def game():  # All variables that are not constant
                 player_list[player].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
                 if player_list[player].laps > Total_laps and not game_countdown:
                     game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
-                if len(player_list) == 2 and player == 0:
-                    player_list[player].check_car_collision(player_list[player + 1])  # Collisions between players
-                elif len(player_list) == 2 and player == 1:
-                    player_list[player].check_car_collision(player_list[player - 1])
+                for player2 in range(0, len(player_list)):  # For every player,
+                    if player2 == len(player_list) - 1:
+                        break
+                    else:
+                        player_list[player2].check_car_collision(player_list[player2 + 1])
                 for power_up in power_ups:  # Check powerup collisions for each player
                     if player_list[player].mask.overlap(power_up[3], (power_up[1][0] - player_list[player].rect.left,
                                                                       power_up[1][1] - player_list[player].rect.top)):

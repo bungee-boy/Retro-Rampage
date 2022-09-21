@@ -6244,34 +6244,6 @@ def main():
                     elif pygame.mouse.get_pressed()[0] and selected_text_entry:
                         selected_text_entry = 0
 
-                # BACK BUTTON
-                elif 210 <= mouse_pos[0] <= 409 and 112 <= mouse_pos[1] <= 211:
-                    pos_x = 210
-                    pos_y = 112
-                    tile(pos_x, pos_y, 'sand road', 73, grid=False, scale=(100, 100))  # Back button
-                    tile(pos_x + 100, pos_y, 'sand road', 57, grid=False, scale=(100, 100))
-                    draw_text(pos_x + 100, pos_y + 23, 'Back', BLACK, 55)
-
-                    buttons = pygame.mouse.get_pressed()
-                    if buttons[0] and not button_trigger:
-                        selected_text_entry = 0
-                        button_trigger = True
-                        current_window = 'choose players'  # Set window to change to confirm quit
-                        play_sound('menu button')  # Play button click sounds
-                        new_bg = menu_background(top=True, bottom=True)
-                        if Menu_animation:
-                            car.animate('down', bg)
-                            animate_window(choose_players_window_2, choose_players_window, bg, new_bg, car, 'down')
-                        else:
-                            choose_players_window(new_bg)
-                            car.rotate(180)
-                            update_screen(full_screen=True)
-
-                        selected_text_entry = 0
-
-                    elif button_trigger and not buttons[0]:
-                        button_trigger = False
-
                 elif pygame.mouse.get_pressed()[0] and selected_text_entry:
                     selected_text_entry = 0
 
@@ -6370,13 +6342,13 @@ def main():
                         if buttons[0] and not button_trigger:
                             selected_text_entry = 0
                             button_trigger = True
-                            current_window = 'choose map'  # Set window to change to confirm quit
+                            current_window = 'choose players 2'  # Set window to change to confirm quit
                             play_sound('menu button')  # Play button click sounds
                             new_bg = menu_background(top=True, bottom=True)
                             if Menu_animation:
                                 car.animate('down', bg)
-                                animate_window(choose_players_window_3, choose_players_window_2,
-                                               bg, new_bg, car, 'down')
+                                animate_window(choose_players_window_3, choose_players_window_2, bg, new_bg, car,
+                                               'down')
                             else:
                                 choose_players_window_2(new_bg)
                                 car.rotate(180)
@@ -6525,14 +6497,15 @@ def main():
                         if buttons[0] and not button_trigger:
                             selected_text_entry = 0
                             button_trigger = True
-                            current_window = 'choose map'  # Set window to change to confirm quit
+                            current_window = 'choose players 2'  # Set window to change to confirm quit
                             play_sound('menu button')  # Play button click sounds
                             new_bg = menu_background(top=True, bottom=True)
                             if Menu_animation:
                                 car.animate('down', bg)
-                                animate_window(choose_players_window, choose_map_window, bg, new_bg, car, 'down')
+                                animate_window(choose_players_window_3, choose_players_window_2, bg, new_bg, car,
+                                               'down')
                             else:
-                                choose_map_window(new_bg)
+                                choose_players_window_2(new_bg)
                                 car.rotate(180)
                                 update_screen(full_screen=True)
 
@@ -6575,35 +6548,6 @@ def main():
 
                     elif pygame.mouse.get_pressed()[0] and selected_text_entry:
                         selected_text_entry = 0
-
-                # BACK BUTTON
-                elif 210 <= mouse_pos[0] <= 409 and 112 <= mouse_pos[1] <= 211:
-                    pos_x = 210
-                    pos_y = 112
-                    tile(pos_x, pos_y, 'sand road', 73, grid=False, scale=(100, 100))  # Back button
-                    tile(pos_x + 100, pos_y, 'sand road', 57, grid=False, scale=(100, 100))
-                    draw_text(pos_x + 100, pos_y + 23, 'Back', BLACK, 55)
-
-                    buttons = pygame.mouse.get_pressed()
-                    if buttons[0] and not button_trigger:
-                        selected_text_entry = 0
-                        button_trigger = True
-                        current_window = 'choose players'  # Set window to change to confirm quit
-                        play_sound('menu button')  # Play button click sounds
-                        new_bg = menu_background(top=True, bottom=True)
-                        if Menu_animation:
-                            car.animate('down', bg)
-                            animate_window(choose_players_window_3, choose_players_window_2, bg, new_bg, car,
-                                           'down')
-                        else:
-                            choose_players_window_2(new_bg)
-                            car.rotate(180)
-                            update_screen(full_screen=True)
-
-                        selected_text_entry = 0
-
-                    elif button_trigger and not buttons[0]:
-                        button_trigger = False
 
                 elif pygame.mouse.get_pressed()[0] and selected_text_entry:
                     selected_text_entry = 0

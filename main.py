@@ -190,7 +190,7 @@ Npc_names = [['John', False], ['Mark', False], ['Lilly', False], ['Jessica', Fal
              ['Emily', False], ['Ben', False], ['Tom', False], ['Anthony', False], ['Michael', False],
              ['Noah', False], ['Oliver', False], ['Jake', False], ['Olivia', False], ['Teddy', False],
              ['Tyler', False], ['Carmel', False], ['Jeremy', False], ['Joe', False], ['Steven', False],
-             ['Scott', False], ['Keith', False]]
+             ['Scott', False], ['Keith', False], ['Jules', False], ['Katharine', False]]
 controllers = []
 controls = []
 controller_prompts = []
@@ -3082,8 +3082,8 @@ def tutorial_window(curr_bg, pad_x=0, pad_y=0):
     surf.set_colorkey(BLACK)
     Window.blit(surf, (x, y))
     draw_text(x + 40, y + 80, 'Lightning', WHITE, 60)
-    draw_text(x + 40, y + 140, "Randomly causes an", WHITE, 40)
-    draw_text(x + 40, y + 180, "NPC to crash", WHITE, 40)
+    draw_text(x + 40, y + 140, "Strikes the car in 1st place,", WHITE, 40)
+    draw_text(x + 40, y + 180, "if not then 2nd and so on...", WHITE, 40)
 
     x = pad_x + 1435
     y = pad_y + 649
@@ -3094,7 +3094,7 @@ def tutorial_window(curr_bg, pad_x=0, pad_y=0):
     draw_text(x + 40, y + 140, "Penalises the player", WHITE, 40)
     draw_text(x + 40, y + 180, "by a few seconds", WHITE, 40)
 
-    draw_text(CENTRE[0], 923, 'All penalties are based on car speeds to be fair', WHITE, 40)
+    draw_text(CENTRE[0], 923, 'All penalties are based on car speeds to be fair,', WHITE, 40)
     draw_text(CENTRE[0], 963, 'Powerups can only be picked up by players!', WHITE, 40)
 
 

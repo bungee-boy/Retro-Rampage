@@ -2133,6 +2133,13 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
             else:
                 draw_text(x, y + 115, 'Enter name', LIGHT_GREY, 50)
 
+        x = pad_x + WIDTH - 477
+        y = pad_y + HEIGHT - 255
+        tile(x, y, 'road', 77, grid=False)  # 6 player button
+        tile(x + 128, y, 'road', 2, grid=False)
+        tile(x + 256, y, 'road', 61, grid=False)
+        draw_text(x + 190, y + 20, '6 Player', BLACK, 70)
+
     for player in Players:
         if player.controls in controllers:
             rect = draw_text(100, HEIGHT - 110, 'To unbind a controller, press ',
@@ -2150,13 +2157,6 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
         tile(x + 65, y, 'dirt road', 1, grid=False)
         tile(x + 190, y, 'dirt road', 60, grid=False)
         draw_text(x + 160, y + 20, 'Start', WHITE, 70)
-
-    x = pad_x + WIDTH - 477
-    y = pad_y + HEIGHT - 255
-    tile(x, y, 'road', 77, grid=False)  # 6 player button
-    tile(x + 128, y, 'road', 2, grid=False)
-    tile(x + 256, y, 'road', 61, grid=False)
-    draw_text(x + 190, y + 20, '6 Player', BLACK, 70)
 
 
 def choose_vehicle_window(curr_bg, pad_x=0, pad_y=0):
@@ -3329,6 +3329,7 @@ def menu_background(top=False, right=False, bottom=False, left=False):
 
 def animate_window(window, new_window, bg, new_bg, car, direction: str):
     if direction == 'up':
+        # Animate car to bottom from center
         if new_window == choose_map_window or new_window == choose_vehicle_window:
             for offset_y in range(0, HEIGHT + 1, menu_scroll_speed):  # Animate window transition
                 clock.tick(FPS)  # Ensure constant FPS between animations
@@ -3342,7 +3343,9 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
                 controller_popup()
                 update_screen(full_screen=True)
 
-        elif window == choose_map_window or window == choose_vehicle_window:
+        # Animate car to center from bottom
+        elif window == choose_map_window or window == choose_vehicle_window and \
+                new_window != choose_vehicle_window_2 or new_window == race_settings_window:
             for offset_y in reversed(range(540, 940, menu_scroll_speed)):
                 clock.tick(FPS)
                 window(bg)
@@ -3358,6 +3361,7 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
                 controller_popup()
                 update_screen(full_screen=True)
 
+        # Do not move the car on animation
         else:
             for offset_y in range(0, HEIGHT + 1, menu_scroll_speed):  # Animate window transition
                 clock.tick(FPS)  # Ensure constant FPS between animations
@@ -3368,7 +3372,10 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
                 update_screen(full_screen=True)
 
     elif direction == 'down':
-        if new_window == choose_map_window or new_window == choose_vehicle_window:
+        # Animate car to center from bottom
+        if new_window == choose_map_window or window == race_settings_window and \
+                (new_window == choose_vehicle_window or new_window == choose_vehicle_window_2 or
+                 new_window == choose_vehicle_window_3):
             for offset_y in range(540, 940, menu_scroll_speed):
                 clock.tick(FPS)
                 window(bg)
@@ -3384,6 +3391,7 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
                 controller_popup()
                 update_screen(full_screen=True)  # Since entire window moves, update entire screen
 
+        # Animate car from bottom to center
         elif window == choose_map_window or window == choose_vehicle_window:
             for offset_y in range(940, 1080, menu_scroll_speed):
                 clock.tick(FPS)
@@ -3404,6 +3412,7 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
                 controller_popup()
                 update_screen(full_screen=True)  # Since entire window moves, update entire screen
 
+        # Do not move the car on animation
         else:
             for offset_y in reversed(range(0, HEIGHT + 1, menu_scroll_speed)):  # Animate window transition
                 clock.tick(FPS)  # Ensure constant frame rate between animations
@@ -6330,7 +6339,7 @@ def main():
                         if buttons[0] and not button_trigger and selected_text_entry != 1:
                             button_trigger = True
                             play_sound('text entry')
-                            selected_text_entry = 3
+                            selected_text_entry = 5
                         elif button_trigger and not buttons[0]:
                             button_trigger = False
 
@@ -6385,7 +6394,7 @@ def main():
                             new_bg = menu_background(bottom=True, top=True)
                             if Menu_animation:
                                 car.animate('up', bg)
-                                animate_window(choose_players_window_2, choose_vehicle_window, bg, new_bg, car, 'up')
+                                animate_window(choose_players_window_3, choose_vehicle_window, bg, new_bg, car, 'up')
                             else:
                                 choose_vehicle_window(new_bg)
                                 car.rotate(0)
@@ -6398,7 +6407,7 @@ def main():
                         selected_text_entry = 0
 
                 elif Player_amount == 6:
-                    # PLAYER 1 CONTROLS LEFT
+                    # PLAYER 5 CONTROLS LEFT
                     if 427 <= mouse_pos[0] <= 452 and 355 <= mouse_pos[1] <= 406 and type(Players[4].controls) == str:
                         if not cycle_controls_left(Players[4].controls):
                             draw_triangle((440, 380), 'left', border=RED, width=25, height=50)
@@ -6415,7 +6424,7 @@ def main():
                             elif button_trigger and not buttons[0]:
                                 button_trigger = False
 
-                    # PLAYER 1 CONTROLS RIGHT
+                    # PLAYER 5 CONTROLS RIGHT
                     elif 667 <= mouse_pos[0] <= 692 and 355 <= mouse_pos[1] <= 406 and \
                             type(Players[4].controls) == str:
                         if not cycle_controls_right(Players[4].controls):
@@ -6433,7 +6442,7 @@ def main():
                             elif button_trigger and not buttons[0]:
                                 button_trigger = False
 
-                    # PLAYER 2 CONTROLS LEFT
+                    # PLAYER 6 CONTROLS LEFT
                     elif 1227 <= mouse_pos[0] <= 1252 and 355 <= mouse_pos[1] <= 406 and \
                             type(Players[5].controls) == str:
                         if not cycle_controls_left(Players[5].controls):
@@ -6451,7 +6460,7 @@ def main():
                             elif button_trigger and not buttons[0]:
                                 button_trigger = False
 
-                    # PLAYER 2 CONTROLS RIGHT
+                    # PLAYER 6 CONTROLS RIGHT
                     elif 1467 <= mouse_pos[0] <= 1493 and 355 <= mouse_pos[1] <= 406 and \
                             type(Players[5].controls) == str:
                         if not cycle_controls_right(Players[5].controls):
@@ -6469,7 +6478,7 @@ def main():
                             elif button_trigger and not buttons[0]:
                                 button_trigger = False
 
-                    # PLAYER 1 TEXT ENTRY
+                    # PLAYER 5 TEXT ENTRY
                     elif 354 <= mouse_pos[0] <= 766 and 764 <= mouse_pos[1] <= 802:
                         buttons = pygame.mouse.get_pressed()
                         if buttons[0] and not button_trigger and selected_text_entry != 5:
@@ -6479,7 +6488,7 @@ def main():
                         elif button_trigger and not buttons[0]:
                             button_trigger = False
 
-                    # PLAYER 2 TEXT ENTRY
+                    # PLAYER 6 TEXT ENTRY
                     elif 1154 <= mouse_pos[0] <= 1566 and 764 <= mouse_pos[1] <= 802:
                         buttons = pygame.mouse.get_pressed()
                         if buttons[0] and not button_trigger and selected_text_entry != 6:
@@ -7111,7 +7120,7 @@ def main():
                         new_bg = menu_background(bottom=True)
                         if Menu_animation:
                             car.animate('up', bg)
-                            animate_window(choose_vehicle_window, race_settings_window, bg, new_bg, car, 'up')
+                            animate_window(choose_vehicle_window_3, race_settings_window, bg, new_bg, car, 'up')
                         else:
                             race_settings_window(new_bg)
                             car.rotate(0)

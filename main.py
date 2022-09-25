@@ -80,51 +80,56 @@ Game_end = False  # Lets the game know if the game finished or if the player qui
 # -------- SETTINGS FUNCTIONS -------- #
 def save_settings():
     if Load_settings:
-        with open('settings.json', 'r+') as file:
-            data = json.load(file)
-            data['Debug'] = Debug
-            if Display_resolution == Desktop_info[Screen]:  # If resolution is automatic
-                data['Resolution'] = 0
-            else:  # If resolution is forced...
-                data['Resolution'] = Display_resolution
-            data['Screen'] = Screen
-            data['Menu animations'] = Menu_animation
-            data['Mute volume'] = Mute_volume
-            data['Music volume'] = Music_volume
-            data['Sfx volume'] = Sfx_volume
-            file.seek(0)
-            json.dump(data, file, indent=2)
-            file.truncate()
+        try:
+            with open('settings.json', 'r+') as file:
+                data = json.load(file)
+                data['Debug'] = Debug
+                if Display_resolution == Desktop_info[Screen]:  # If resolution is automatic
+                    data['Resolution'] = 0
+                else:  # If resolution is forced...
+                    data['Resolution'] = Display_resolution
+                data['Screen'] = Screen
+                data['Menu animations'] = Menu_animation
+                data['Mute volume'] = Mute_volume
+                data['Music volume'] = Music_volume
+                data['Sfx volume'] = Sfx_volume
+                file.seek(0)
+                json.dump(data, file, indent=2)
+                file.truncate()
+
+        except FileNotFoundError:
+            print("Error: Failed to save settings -> 'settings.json' not found!")
 
 
 def load_settings():
     if Load_settings:
         global Debug, Force_resolution, Screen, Menu_animation, Mute_volume, Music_volume, Sfx_volume
-        with open('settings.json') as file:
-            file = json.load(file)
-            Debug = file['Debug']
-            Force_resolution = file['Resolution']
-            Screen = file['Screen']
-            Menu_animation = file['Menu animations']
-            Mute_volume = file['Mute volume']
-            Music_volume = file['Music volume']
-            Sfx_volume = file['Sfx volume']
-            print('Successfully loaded settings from file.')
+        try:
+            with open('settings.json', 'r') as file:
+                file = json.load(file)
+                Debug = file['Debug']
+                Force_resolution = file['Resolution']
+                Screen = file['Screen']
+                Menu_animation = file['Menu animations']
+                Mute_volume = file['Mute volume']
+                Music_volume = file['Music volume']
+                Sfx_volume = file['Sfx volume']
+                print('Successfully loaded settings from file.')
+
+        except FileNotFoundError:
+            with open('settings.json', 'w') as settings:
+                default_settings = {'Debug': False,
+                                    'Resolution': 0,
+                                    'Screen': 0,
+                                    'Menu animations': True,
+                                    'Mute volume': False,
+                                    'Music volume': 0.5,
+                                    'Sfx volume': 0.5}
+                json.dump(default_settings, settings, indent=2)
 
 
 if Load_settings:
-    try:
-        load_settings()
-    except FileNotFoundError:
-        with open('settings.json', 'w') as settings:
-            default_settings = {'Debug': False,
-                                'Resolution': 0,
-                                'Screen': 0,
-                                'Menu animations': True,
-                                'Mute volume': False,
-                                'Music volume': 0.5,
-                                'Sfx volume': 0.5}
-            json.dump(default_settings, settings, indent=2)
+    load_settings()
 
 Desktop_info = pygame.display.get_desktop_sizes()
 if not Force_resolution:  # Automatically detect screen resolution and set display size

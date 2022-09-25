@@ -24,7 +24,7 @@ except ImportError:  # Attempt to install pygame if it doesn't exist with tkinte
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pygame'])
                 import pygame
                 messagebox.showinfo('Success', 'Pygame was successfully installed.')
-                loop = None
+                loop = False
                 user = None
             except subprocess.CalledProcessError or ModuleNotFoundError as error:
                 user = messagebox.askretrycancel('Could not Install', 'There was an error installing pygame.\n'

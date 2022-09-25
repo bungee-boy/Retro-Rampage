@@ -15,11 +15,14 @@ except ImportError:  # Attempt to install pygame if it doesn't exist with tkinte
     import subprocess
     import sys
     loop = True
+    confirm = False
+    user = False
 
     while loop:
-        user = messagebox.askyesno('Install Pygame?', 'Pygame is required for this game.\n'
-                                                      'Would you like to install Pygame?')
-        if user:
+        if not confirm:
+            user = messagebox.askyesno('Install Pygame?', 'Pygame is required for this game.\n'
+                                                          'Would you like to install Pygame?')
+        if user or confirm:
             try:
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pygame'])
                 import pygame
@@ -29,15 +32,16 @@ except ImportError:  # Attempt to install pygame if it doesn't exist with tkinte
             except subprocess.CalledProcessError or ModuleNotFoundError as error:
                 user = messagebox.askretrycancel('Could not Install', 'There was an error installing pygame.\n'
                                                                       'If the problem persists, you may have to'
-                                                                      ' manually install it.\n\n'
+                                                                      ' install it manually.\n\n'
                                                                       'Would you like to retry?', icon='error')
                 if not user:
                     quit()
         else:
             confirm = messagebox.askyesno('Are you sure?', 'If you do not install pygame,\n'
-                                                           'you will not be able to play this game!',
+                                                           'you will not be able to play this game!\n'
+                                                           'Do you want to install pygame?',
                                           icon='warning', default=messagebox.NO)
-            if confirm:
+            if not confirm:
                 quit()
 
 pygame.init()  # Initialise all libraries for pygame

@@ -9,10 +9,6 @@ powerups = assets + '/powerups'
 tiles = assets + '/tiles'
 
 
-def icon():
-    return assets + '/icon.ico'
-
-
 def animation(ver: str, frame: str or int, car_num='' or int):
     if ver == 'lightning':
         return animations + '/lightning/frame_' + str(frame) + '.png'

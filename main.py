@@ -153,25 +153,20 @@ else:
         save_settings()
     Display_resolution = Force_resolution
 
+print('Running at ' + str(Display_resolution[0]) + ' x ' + str(Display_resolution[1]))
+pygame.display.set_caption('Retro Rampage')  # Set display name
+try:
+    icon = pygame.surface.Surface((32, 32))
+    icon.set_colorkey(BLACK)
+    icon.blit(pygame.transform.scale(pygame.image.load(assets.car(RED_CAR, 'family car')), (20, 32)), (6, 0))
+    pygame.display.set_icon(icon)  # Set display icon
+except FileNotFoundError:
+    print('*** ERROR: Could not set window icon -> car_red_1.png not found! ***')
+
 if Desktop_info[Screen] != Display_resolution:
     Display = pygame.display.set_mode(Display_resolution, display=Screen)
 else:
     Display = pygame.display.set_mode(Display_resolution, display=Screen, flags=pygame.FULLSCREEN)
-
-print('Running at ' + str(Display_resolution[0]) + ' x ' + str(Display_resolution[1]))
-pygame.display.set_caption('Retro Rampage')  # Set display name
-try:
-    pygame.display.set_icon(pygame.image.load(assets.icon()))  # Set display icon
-except FileNotFoundError:
-    Display.fill(BLACK)
-    try:
-        Display.blit(pygame.font.Font(fonts.load(), 50).render("ERR: 'icon.ico' not found in files",
-                                                               True, WHITE), (0, 0))
-    except FileNotFoundError:
-        Display.blit(pygame.font.Font(None, 50).render("ERR: 'icon.ico' not found in files", True, WHITE), (0, 0))
-    pygame.time.wait(3000)
-    pygame.quit()
-    quit()
 
 '''
 Create virtual window at 1080p that game writes to, then when screen is updated scale the window 
@@ -4056,12 +4051,14 @@ def increase_resolution():
 
     if Window_resolution != Display_resolution:
         Display_scaling = True
+        pygame.display.set_caption('Retro Rampage')  # Set display name
+        pygame.display.set_icon(icon)  # Set display icon
         Display = pygame.display.set_mode(Display_resolution, display=Screen)
     else:
         Display_scaling = False
-        Display = pygame.display.set_mode(Display_resolution, display=Screen, flags=pygame.FULLSCREEN)
         pygame.display.set_caption('Retro Rampage')  # Set display name
-        pygame.display.set_icon(pygame.image.load(assets.icon()))  # Set display icon
+        pygame.display.set_icon(icon)  # Set display icon
+        Display = pygame.display.set_mode(Display_resolution, display=Screen, flags=pygame.FULLSCREEN)
     pygame.mouse.set_pos(*scale_to_display((619, 311)))
 
 
@@ -4083,13 +4080,14 @@ def decrease_resolution():
 
     if Window_resolution != Display_resolution:
         Display_scaling = True
+        pygame.display.set_caption('Retro Rampage')  # Set display name
+        pygame.display.set_icon(icon)  # Set display icon
         Display = pygame.display.set_mode(Display_resolution, display=Screen)
     else:
         Display_scaling = False
-        Display = pygame.display.set_mode(Display_resolution, display=Screen)
-        pygame.display.toggle_fullscreen()
         pygame.display.set_caption('Retro Rampage')  # Set display name
-        pygame.display.set_icon(pygame.image.load(assets.icon()))  # Set display icon
+        pygame.display.set_icon(icon)  # Set display icon
+        Display = pygame.display.set_mode(Display_resolution, display=Screen, flags=pygame.FULLSCREEN)
     pygame.mouse.set_pos(*scale_to_display((409, 311)))
 
 

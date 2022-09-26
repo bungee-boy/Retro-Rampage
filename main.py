@@ -4029,12 +4029,24 @@ def menu_music_loop():
 
 
 # -------- DISPLAY SCALING & UPDATING FUNCTIONS -------- #
+# Cycles up through supported resolutions
 def increase_resolution():
-    # Cycles up through supported resolutions
     global Display, Display_resolution, Display_scaling
-    if Desktop_info[Screen][0] >= 854 >= Display_resolution[1] and \
-            Desktop_info[Screen][1] >= 360 >= Display_resolution[1]:
+    # If window less than 854 and display larger than/equal to 854 and same for height then 480p
+    if Desktop_info[Screen][0] < 854 >= Display_resolution[0] and Desktop_info[Screen][1] < 480 >= Display_resolution[1] and Display_resolution != (3480, 2160):
         Display_resolution = 854, 480  # 480p
+    elif Desktop_info[Screen][0] < 1280 >= Display_resolution[0] and Desktop_info[Screen][1] < 720 >= Display_resolution[1] and Display_resolution != (640, 360):
+        Display_resolution = 1280, 720  # 720p
+    elif Desktop_info[Screen][0] < 1920 >= Display_resolution[0] and Desktop_info[Screen][1] < 1080 >= Display_resolution[1] and Display_resolution != (1280, 720):
+        Display_resolution = 1920, 1080  # 1080p
+    elif Desktop_info[Screen][0] < 2560 >= Display_resolution[0] and Desktop_info[Screen][1] < 1440 >= Display_resolution[1] and Display_resolution != (1920, 1080):
+        Display_resolution = 2560, 1440  # 1440p
+    elif Desktop_info[Screen][0] < 3840 >= Display_resolution[0] and Desktop_info[Screen][1] < 2160 >= Display_resolution[1] and Display_resolution != (2560, 1440):
+        Display_resolution = 3480, 2160  # 4K
+    elif Desktop_info[Screen][0] < 3480 >= Display_resolution[0] and Desktop_info[Screen][1] < 2160 >= Display_resolution[1] and Display_resolution != (3480, 2160):
+        Display_resolution = 640, 360  # 360p
+
+    '''
     elif Desktop_info[Screen][1] >= 480 >= Display_resolution[1]:
         Display_resolution = 1280, 720  # 720p
     elif Desktop_info[Screen][1] >= 720 >= Display_resolution[1]:
@@ -4045,9 +4057,9 @@ def increase_resolution():
         Display_resolution = 3840, 2160  # 4K
     elif Desktop_info[Screen][1] >= 2160 >= Display_resolution[1]:
         Display_resolution = 640, 360  # 360p
-
     elif Display_resolution[1] > Desktop_info[Screen][1]:
         Display_resolution = 640, 360
+    '''
 
     if Window_resolution != Display_resolution:
         Display_scaling = True
@@ -4062,8 +4074,8 @@ def increase_resolution():
     pygame.mouse.set_pos(*scale_to_display((619, 311)))
 
 
+# Cycles down through supported resolutions
 def decrease_resolution():
-    # Cycles through supported resolutions
     global Display, Display_resolution, Display_scaling
     if Desktop_info[Screen][1] >= 2160 and Display_resolution[1] == 2160:
         Display_resolution = 2560, 1440

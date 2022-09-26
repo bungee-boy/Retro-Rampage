@@ -96,9 +96,12 @@ def save_settings():
                 file.seek(0)
                 json.dump(data, file, indent=2)
                 file.truncate()
+                print('Successfully saved settings to file.')
 
         except FileNotFoundError:
-            print("Error: Failed to save settings -> 'settings.json' not found!")
+            print("*** ERROR: Failed to save settings -> 'settings.json' not found! ***")
+        except PermissionError:
+            print('*** ERROR: Failed to save settings -> permission denied! ***')
 
 
 def load_settings():
@@ -117,15 +120,23 @@ def load_settings():
                 print('Successfully loaded settings from file.')
 
         except FileNotFoundError:
-            with open('settings.json', 'w') as settings:
-                default_settings = {'Debug': False,
-                                    'Resolution': 0,
-                                    'Screen': 0,
-                                    'Menu animations': True,
-                                    'Mute volume': False,
-                                    'Music volume': 0.5,
-                                    'Sfx volume': 0.5}
-                json.dump(default_settings, settings, indent=2)
+            print("*** ERROR: Failed to save settings -> 'settings.json' not found! ***")
+            print('Creating new settings file...')
+            try:
+                with open('settings.json', 'w') as settings:
+                    default_settings = {'Debug': False,
+                                        'Resolution': 0,
+                                        'Screen': 0,
+                                        'Menu animations': True,
+                                        'Mute volume': False,
+                                        'Music volume': 0.5,
+                                        'Sfx volume': 0.5}
+                    json.dump(default_settings, settings, indent=2)
+                    print('Successfully created new settings file.')
+            except PermissionError:
+                print('*** ERROR: Failed to save settings -> permission denied! ***')
+        except PermissionError:
+            print('*** ERROR: Failed to save settings -> permission denied! ***')
 
 
 if Load_settings:

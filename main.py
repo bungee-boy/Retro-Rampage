@@ -165,8 +165,10 @@ except FileNotFoundError:
 
 if Desktop_info[Screen] != Display_resolution:
     Display = pygame.display.set_mode(Display_resolution, display=Screen)
+    Fullscreen = False
 else:
     Display = pygame.display.set_mode(Display_resolution, display=Screen, flags=pygame.FULLSCREEN)
+    Fullscreen = True
 
 '''
 Create virtual window at 1080p that game writes to, then when screen is updated scale the window 
@@ -4031,75 +4033,81 @@ def menu_music_loop():
 # -------- DISPLAY SCALING & UPDATING FUNCTIONS -------- #
 # Cycles up through supported resolutions
 def increase_resolution():
-    global Display, Display_resolution, Display_scaling
+    global Display, Display_resolution, Display_scaling, Fullscreen
     # If window less than 854 and display larger than/equal to 854 and same for height then 480p
-    if Desktop_info[Screen][0] < 854 >= Display_resolution[0] and Desktop_info[Screen][1] < 480 >= Display_resolution[1] and Display_resolution != (3480, 2160):
-        Display_resolution = 854, 480  # 480p
-    elif Desktop_info[Screen][0] < 1280 >= Display_resolution[0] and Desktop_info[Screen][1] < 720 >= Display_resolution[1] and Display_resolution != (640, 360):
-        Display_resolution = 1280, 720  # 720p
-    elif Desktop_info[Screen][0] < 1920 >= Display_resolution[0] and Desktop_info[Screen][1] < 1080 >= Display_resolution[1] and Display_resolution != (1280, 720):
-        Display_resolution = 1920, 1080  # 1080p
-    elif Desktop_info[Screen][0] < 2560 >= Display_resolution[0] and Desktop_info[Screen][1] < 1440 >= Display_resolution[1] and Display_resolution != (1920, 1080):
-        Display_resolution = 2560, 1440  # 1440p
-    elif Desktop_info[Screen][0] < 3840 >= Display_resolution[0] and Desktop_info[Screen][1] < 2160 >= Display_resolution[1] and Display_resolution != (2560, 1440):
-        Display_resolution = 3480, 2160  # 4K
-    elif Desktop_info[Screen][0] < 3480 >= Display_resolution[0] and Desktop_info[Screen][1] < 2160 >= Display_resolution[1] and Display_resolution != (3480, 2160):
-        Display_resolution = 640, 360  # 360p
-
-    '''
-    elif Desktop_info[Screen][1] >= 480 >= Display_resolution[1]:
-        Display_resolution = 1280, 720  # 720p
-    elif Desktop_info[Screen][1] >= 720 >= Display_resolution[1]:
-        Display_resolution = 1920, 1080  # 1080p
-    elif Desktop_info[Screen][1] >= 1080 >= Display_resolution[1]:
-        Display_resolution = 2560, 1440  # 1440p
-    elif Desktop_info[Screen][1] >= 1440 >= Display_resolution[1]:
-        Display_resolution = 3840, 2160  # 4K
-    elif Desktop_info[Screen][1] >= 2160 >= Display_resolution[1]:
-        Display_resolution = 640, 360  # 360p
-    elif Display_resolution[1] > Desktop_info[Screen][1]:
+    if Display_resolution[0] <= 640 and Display_resolution[1] <= 360:
+        Display_resolution = 854, 480
+    elif Display_resolution[0] <= 854 and Display_resolution[1] <= 480:
+        Display_resolution = 1280, 720
+    elif Display_resolution[0] <= 1280 and Display_resolution[1] <= 720:
+        Display_resolution = 1920, 1080
+    elif Display_resolution[0] <= 1920 and Display_resolution[1] <= 1080:
+        Display_resolution = 2560, 1440
+    elif Display_resolution[0] <= 2560 and Display_resolution[1] <= 1440:
+        Display_resolution = 3480, 2160
+    elif Display_resolution[0] <= 3480 and Display_resolution[1] <= 2160:
         Display_resolution = 640, 360
-    '''
 
-    if Window_resolution != Display_resolution:
-        Display_scaling = True
+    if Desktop_info[Screen][0] <= Display_resolution[0] and Desktop_info[Screen][1] <= Display_resolution[1]:
+        if Fullscreen:
+            Display_resolution = 640, 360
+            Fullscreen = False
+        else:
+            Display_resolution = Desktop_info[Screen]
+            Fullscreen = True
+
+    if Desktop_info[Screen] != Display_resolution:
+        if Window_resolution != Display_resolution:
+            Display_scaling = True
+        Fullscreen = False
         pygame.display.set_caption('Retro Rampage')  # Set display name
         pygame.display.set_icon(icon)  # Set display icon
         Display = pygame.display.set_mode(Display_resolution, display=Screen)
     else:
-        Display_scaling = False
+        if Window_resolution == Display_resolution:
+            Display_scaling = False
+        Fullscreen = True
         pygame.display.set_caption('Retro Rampage')  # Set display name
         pygame.display.set_icon(icon)  # Set display icon
         Display = pygame.display.set_mode(Display_resolution, display=Screen, flags=pygame.FULLSCREEN)
+
     pygame.mouse.set_pos(*scale_to_display((619, 311)))
 
 
 # Cycles down through supported resolutions
 def decrease_resolution():
-    global Display, Display_resolution, Display_scaling
-    if Desktop_info[Screen][1] >= 2160 and Display_resolution[1] == 2160:
+    global Display, Display_resolution, Display_scaling, Fullscreen
+    if Display_resolution[0] >= 3480 and Display_resolution[1] >= 2160:
         Display_resolution = 2560, 1440
-    elif Desktop_info[Screen][1] >= 1440 and Display_resolution[1] == 1440:
+    elif Display_resolution[0] >= 2560 and Display_resolution[1] >= 1440:
         Display_resolution = 1920, 1080
-    elif Desktop_info[Screen][1] >= 1080 and Display_resolution[1] == 1080:
+    elif Display_resolution[0] >= 1920 and Display_resolution[1] >= 1080:
         Display_resolution = 1280, 720
-    elif Desktop_info[Screen][1] >= 720 and Display_resolution[1] == 720:
+    elif Display_resolution[0] >= 1280 and Display_resolution[1] >= 720:
         Display_resolution = 854, 480
-    elif Desktop_info[Screen][1] >= 480 and Display_resolution[1] == 480:
+    elif Display_resolution[0] >= 854 and Display_resolution[1] >= 480:
         Display_resolution = 640, 360
-    elif Desktop_info[Screen][1] >= 360 and Display_resolution[1] == 360:
+    elif Display_resolution[0] >= 640 and Display_resolution[1] >= 360:
+        Display_resolution = 3480, 2160
+
+    if Desktop_info[Screen][0] < Display_resolution[0] or Desktop_info[Screen][1] < Display_resolution[1]:
         Display_resolution = Desktop_info[Screen]
 
-    if Window_resolution != Display_resolution:
-        Display_scaling = True
+    if Desktop_info[Screen] != Display_resolution:
+        if Window_resolution != Display_resolution:
+            Display_scaling = True
+        Fullscreen = False
         pygame.display.set_caption('Retro Rampage')  # Set display name
         pygame.display.set_icon(icon)  # Set display icon
         Display = pygame.display.set_mode(Display_resolution, display=Screen)
     else:
-        Display_scaling = False
+        if Window_resolution == Display_resolution:
+            Display_scaling = False
+        Fullscreen = True
         pygame.display.set_caption('Retro Rampage')  # Set display name
         pygame.display.set_icon(icon)  # Set display icon
         Display = pygame.display.set_mode(Display_resolution, display=Screen, flags=pygame.FULLSCREEN)
+
     pygame.mouse.set_pos(*scale_to_display((409, 311)))
 
 

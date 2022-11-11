@@ -1358,6 +1358,115 @@ class NpcCar(pygame.sprite.Sprite):
                     self.penalty_time = pygame.time.get_ticks() + 3000 + \
                                         (self.move_speed - global_car_move_speed) * 1000
 
+        if Debug:
+            if not self.allow_forwards:
+                if self.rotation <= 45 or self.rotation >= 315:  # Up
+                    draw_triangle((self.pos_x, self.pos_y - 20), 'up',
+                                  width=14, height=14, colour=GREEN_CAR, border=RED, border_width=2)  # red up
+                elif 135 <= self.rotation <= 225:  # Down
+                    draw_triangle((self.pos_x, self.pos_y + 20), 'down',
+                                  width=14, height=14, colour=GREEN_CAR, border=RED, border_width=2)  # red down
+                elif 45 < self.rotation < 135:  # Left
+                    draw_triangle((self.pos_x - 20, self.pos_y), 'left',
+                                  width=14, height=14, colour=GREEN_CAR, border=RED, border_width=2)  # red left
+                elif 225 < self.rotation < 315:  # Right
+                    draw_triangle((self.pos_x + 20, self.pos_y), 'right',
+                                  width=14, height=14, colour=GREEN_CAR, border=RED, border_width=2)  # red right
+            elif self.move_forward:
+                if self.rotation <= 45 or self.rotation >= 315:  # Up
+                    draw_triangle((self.pos_x, self.pos_y - 20), 'up',
+                                  width=14, height=14, colour=GREEN_CAR, border=GREY, border_width=2)  # grey up
+                elif 135 <= self.rotation <= 225:  # Down
+                    draw_triangle((self.pos_x, self.pos_y + 20), 'down',
+                                  width=14, height=14, colour=GREEN_CAR, border=GREY, border_width=2)  # grey down
+                elif 45 < self.rotation < 135:  # Left
+                    draw_triangle((self.pos_x - 20, self.pos_y), 'left',
+                                  width=14, height=14, colour=GREEN_CAR, border=GREY, border_width=2)  # grey left
+                elif 225 < self.rotation < 315:  # Right
+                    draw_triangle((self.pos_x + 20, self.pos_y), 'right',
+                                  width=14, height=14, colour=GREEN_CAR, border=GREY, border_width=2)  # grey right
+
+            if not self.allow_reverse:
+                if self.rotation <= 45 or self.rotation >= 315:  # Up
+                    draw_triangle((self.pos_x, self.pos_y + 20), 'down',
+                                  width=14, height=14, border=RED, border_width=2)  # red down
+                elif 135 <= self.rotation <= 225:  # Down
+                    draw_triangle((self.pos_x, self.pos_y - 20), 'up',
+                                  width=14, height=14, border=RED, border_width=2)  # red up
+                elif 45 < self.rotation < 135:  # Left
+                    draw_triangle((self.pos_x + 20, self.pos_y), 'right',
+                                  width=14, height=14, border=RED, border_width=2)  # red right
+                elif 225 < self.rotation < 315:  # Right
+                    draw_triangle((self.pos_x - 20, self.pos_y), 'left',
+                                  width=14, height=14, border=RED, border_width=2)  # red left
+            elif self.move_backwards:
+                if self.rotation <= 45 or self.rotation >= 315:  # Up
+                    draw_triangle((self.pos_x, self.pos_y + 20), 'down',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey down
+                elif 135 <= self.rotation <= 225:  # Down
+                    draw_triangle((self.pos_x, self.pos_y - 20), 'up',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey up
+                elif 45 < self.rotation < 135:  # Left
+                    draw_triangle((self.pos_x + 20, self.pos_y), 'right',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey right
+                elif 225 < self.rotation < 315:  # Right
+                    draw_triangle((self.pos_x - 20, self.pos_y), 'left',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey left
+
+            if not self.allow_left:
+                if self.rotation <= 45 or self.rotation >= 315:  # Up
+                    draw_triangle((self.pos_x - 20, self.pos_y), 'left',
+                                  width=14, height=14, border=RED, border_width=2)  # red left
+                elif 135 <= self.rotation <= 225:  # Down
+                    draw_triangle((self.pos_x + 20, self.pos_y), 'right',
+                                  width=14, height=14, border=RED, border_width=2)  # red right
+                elif 45 < self.rotation < 135:  # Left
+                    draw_triangle((self.pos_x, self.pos_y + 20), 'down',
+                                  width=14, height=14, border=RED, border_width=2)  # red down
+                elif 225 < self.rotation < 315:  # Right
+                    draw_triangle((self.pos_x, self.pos_y - 20), 'up',
+                                  width=14, height=14, border=RED, border_width=2)  # red up
+            elif self.move_left:
+                if self.rotation <= 45 or self.rotation >= 315:  # Up
+                    draw_triangle((self.pos_x - 20, self.pos_y), 'left',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey left
+                elif 135 <= self.rotation <= 225:  # Down
+                    draw_triangle((self.pos_x + 20, self.pos_y), 'right',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey right
+                elif 45 < self.rotation < 135:  # Left
+                    draw_triangle((self.pos_x, self.pos_y + 20), 'down',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey down
+                elif 225 < self.rotation < 315:  # Right
+                    draw_triangle((self.pos_x, self.pos_y - 20), 'up',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey up
+
+            if not self.allow_right:
+                if self.rotation <= 45 or self.rotation >= 315:  # Up
+                    draw_triangle((self.pos_x + 20, self.pos_y), 'right',
+                                  width=14, height=14, border=RED, border_width=2)  # red right
+                elif 135 <= self.rotation <= 225:  # Down
+                    draw_triangle((self.pos_x - 20, self.pos_y), 'left',
+                                  width=14, height=14, border=RED, border_width=2)  # red left
+                elif 45 < self.rotation < 135:  # Left
+                    draw_triangle((self.pos_x, self.pos_y - 20), 'up',
+                                  width=14, height=14, border=RED, border_width=2)  # red up
+                elif 225 < self.rotation < 315:  # Right
+                    draw_triangle((self.pos_x, self.pos_y + 20), 'down',
+                                  width=14, height=14, border=RED, border_width=2)  # red down
+            elif self.move_right:
+                if self.rotation <= 45 or self.rotation >= 315:  # Up
+                    draw_triangle((self.pos_x + 20, self.pos_y), 'right',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey right
+                elif 135 <= self.rotation <= 225:  # Down
+                    draw_triangle((self.pos_x - 20, self.pos_y), 'left',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey left
+                elif 45 < self.rotation < 135:  # Left
+                    draw_triangle((self.pos_x, self.pos_y - 20), 'up',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey up
+                elif 225 < self.rotation < 315:  # Right
+                    draw_triangle((self.pos_x, self.pos_y + 20), 'down',
+                                  width=14, height=14, border=GREY, border_width=2)  # grey down
+
     def update(self):  # Called each loop and checks if anything has changed
         if self.penalty_time and self.penalty_time > pygame.time.get_ticks():
             self.dmg_img = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(

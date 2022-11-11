@@ -1087,8 +1087,12 @@ class NpcCar(pygame.sprite.Sprite):
         # MOVEMENT variables
         self.allow_forwards = True
         self.allow_reverse = True
-        self.pressed_keys = None
-        self.path = self.get_path()
+        self.allow_left = True
+        self.allow_right = True
+        self.move_forward = False
+        self.move_back = False
+        self.move_left = False
+        self.move_right = False
         self.penalty_time = 0
         # NAME variables
         self.name = name
@@ -1102,12 +1106,6 @@ class NpcCar(pygame.sprite.Sprite):
         self.prev_checkpoint_position = self.origin_pos
         self.prev_checkpoint_rotation = self.origin_rotation
         self.prev_checkpoint_path_position = 0
-        # PATH variables
-        self.path_position = 0
-        self.diversion = False
-        self.diversion_path = paths.diversion(0)
-        self.diversion_position = 0
-        self.diversion_delay = 0
         # SOUND variables
         self.collision_sound = False
 
@@ -1127,10 +1125,6 @@ class NpcCar(pygame.sprite.Sprite):
                 if self.lap_halfway and self.checkpoint_count == 0:
                     self.lap_halfway = False
                     self.laps += 1
-
-    def get_path(self):  # Randomise path according to start position
-        return self.paths.path(self.rotation_speed - global_car_rotation_speed, self.start_position,
-                               self.move_speed - global_car_move_speed, randint(1, 3))
 
     def check_track_collisions(self, track_mask):  # Check if there are collisions and take action
         if not self.collision or self.collision == 'track':
@@ -1207,20 +1201,13 @@ class NpcCar(pygame.sprite.Sprite):
                     # print('reset to origin')
 
             else:  # If there are no collisions with the track
-                if self.diversion and self.diversion_delay + 2000 > pygame.time.get_ticks():
-                    self.collision_sound = False
-                    if not self.allow_forwards:  # Ensure that the player can move forwards and backwards
-                        self.allow_forwards = True
-                    if not self.allow_reverse:
-                        self.allow_reverse = True
-                else:
-                    self.collision = False
-                    self.collision_time = 0
-                    self.collision_sound = False
-                    if not self.allow_forwards:  # Ensure that the player can move forwards and backwards
-                        self.allow_forwards = True
-                    if not self.allow_reverse:
-                        self.allow_reverse = True
+                self.collision = False
+                self.collision_time = 0
+                self.collision_sound = False
+                if not self.allow_forwards:  # Ensure that the player can move forwards and backwards
+                    self.allow_forwards = True
+                if not self.allow_reverse:
+                    self.allow_reverse = True
 
     def check_car_collision(self, sprite):
         if not self.collision or self.collision == sprite:
@@ -1293,16 +1280,11 @@ class NpcCar(pygame.sprite.Sprite):
                     # print('reset to origin')
 
             else:  # If there are no collisions with the track
-                if self.diversion and self.diversion_delay + 2000 > pygame.time.get_ticks():
-                    self.collision_sound = False
-                    self.allow_forwards = True  # Ensure that the player can move forwards and backwards
-                    self.allow_reverse = True
-                else:
-                    self.collision = False
-                    self.collision_sound = False
-                    self.collision_time = 0
-                    self.allow_forwards = True  # Ensure that the player can move forwards and backwards
-                    self.allow_reverse = True
+                self.collision = False
+                self.collision_sound = False
+                self.collision_time = 0
+                # self.allow_forwards = True  # Ensure that the player can move forwards and backwards
+                # self.allow_reverse = True
 
     def move(self, x, y):  # Move car to new position
         self.pos_x = x
@@ -1332,116 +1314,28 @@ class NpcCar(pygame.sprite.Sprite):
 
     def reset_to_checkpoint(self):
         self.collision_time = 0
-        self.diversion_delay = 0
-        self.allow_forwards = True
+        self.allow_forwards = True #
         self.allow_reverse = True
         self.collision = False
-        self.diversion = False
-        self.path_position = self.prev_checkpoint_path_position  # Reset path position to start
         self.move(*self.prev_checkpoint_position)  # Move car to exact start position
         self.rotate(self.prev_checkpoint_rotation)
 
-    def follow_path(self):  # Check all inputs and take action
-        if self.allow_forwards:  # Only increment path position if they are allowed to go forwards
-            if len(self.path) <= self.path_position:  # If reached the end of path reset to start position and replay
-                self.path_position = 0  # Reset path position to start
-                self.move(*self.origin_pos)  # Move car to exact start position
-                self.rotate(self.origin_rotation)
-                self.path = self.get_path()  # Randomise next path
+    def auto_move(self):  # Check all inputs and take action
+        if self.move_forward and self.allow_forwards:  # FORWARD
+            self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
+                      self.pos_y + round(sin(radians(self.rotation - 90)) * self.move_speed))
+            # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
+        elif self.move_back and self.allow_reverse:  # BACK
+            self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self.move_speed),
+                      self.pos_y - round(sin(radians(self.rotation - 90)) * self.move_speed))
+            # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
 
-            self.pressed_keys = self.path[self.path_position]
-            if len(self.pressed_keys) == 1:
-                if self.pressed_keys[0] == 0 and self.allow_forwards:  # UP
-                    self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
-                              self.pos_y + round(sin(radians(self.rotation - 90)) * self.move_speed))
-                    # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-
-                elif self.pressed_keys[0] == 1 and self.allow_reverse:  # DOWN
-                    self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self.move_speed),
-                              self.pos_y - round(sin(radians(self.rotation - 90)) * self.move_speed))
-                    # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-
-            elif len(self.pressed_keys) == 2:
-                if self.pressed_keys[0] == 0 and self.pressed_keys[1] == 2 and self.allow_forwards:  # UP & LEFT
-                    self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
-                              self.pos_y + round(sin(radians(self.rotation - 90)) * self.move_speed))
-                    # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-                    self.rotate(self.rotation + self.rotation_speed)  # Rotate car to new position
-                    # print(self.rotation)
-
-                elif self.pressed_keys[0] == 0 and self.pressed_keys[1] == 3 and self.allow_forwards:  # UP & RIGHT
-                    self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
-                              self.pos_y + round(sin(radians(self.rotation - 90)) * self.move_speed))
-                    # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-                    self.rotate(self.rotation - self.rotation_speed)
-                    # print(self.rotation)
-
-                elif self.pressed_keys[0] == 1 and self.pressed_keys[1] == 2 and self.allow_reverse:  # DOWN & LEFT
-                    self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self.move_speed),
-                              self.pos_y - round(sin(radians(self.rotation - 90)) * self.move_speed))
-                    # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-                    self.rotate(self.rotation + self.rotation_speed)  # Rotate car to new position
-                    # print(self.rotation)
-
-                elif self.pressed_keys[0] == 1 and self.pressed_keys[1] == 2 and self.allow_reverse:  # DOWN & RIGHT
-                    self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self.move_speed),
-                              self.pos_y - round(sin(radians(self.rotation - 90)) * self.move_speed))
-                    # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-                    self.rotate(self.rotation - self.rotation_speed)  # Rotate car to new position
-                    # print(self.rotation)
-
-            self.path_position += 1
-
-    def follow_diversion(self):
-        if len(self.diversion_path) <= self.diversion_position:  # If it is the end of the diversion...
-            self.diversion_position = 0  # Reset diversion variables as diversion finished and return
-            self.diversion_delay = 0
-            self.diversion = False
-            return
-
-        self.pressed_keys = self.diversion_path[self.diversion_position]
-        if self.allow_reverse and self.diversion_delay:
-            # self._pressed_keys == [0] and self._allow_forwards and self.diversion_delay:  # Only move if allowed to
-
-            if len(self.pressed_keys) == 1:
-                if self.pressed_keys[0] == 0 and self.allow_forwards:  # UP
-                    self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
-                              self.pos_y + round(sin(radians(self.rotation - 90)) * self.move_speed))
-                    # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-
-                elif self.pressed_keys[0] == 1 and self.allow_reverse:  # DOWN
-                    self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self.move_speed),
-                              self.pos_y - round(sin(radians(self.rotation - 90)) * self.move_speed))
-                    # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-
-            elif len(self.pressed_keys) == 2:
-                self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
-                          self.pos_y + round(sin(radians(self.rotation - 90)) * self.move_speed))
-                # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-                self.rotate(self.rotation + self.rotation_speed)  # Rotate car to new position
-                # print(self.rotation)
-
-            elif self.pressed_keys[0] == 0 and self.pressed_keys[1] == 3 and self.allow_forwards:  # UP & RIGHT
-                self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
-                          self.pos_y + round(sin(radians(self.rotation - 90)) * self.move_speed))
-                # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-                self.rotate(self.rotation - self.rotation_speed)
-                # print(self.rotation)
-
-            elif self.pressed_keys[0] == 1 and self.pressed_keys[1] == 2 and self.allow_reverse:  # DOWN & LEFT
-                self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self.move_speed),
-                          self.pos_y - round(sin(radians(self.rotation - 90)) * self.move_speed))
-                # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-                self.rotate(self.rotation + self.rotation_speed)  # Rotate car to new position
-                # print(self.rotation)
-
-            elif self.pressed_keys[0] == 1 and self.pressed_keys[1] == 2 and self.allow_reverse:  # DOWN & RIGHT
-                self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self.move_speed),
-                          self.pos_y - round(sin(radians(self.rotation - 90)) * self.move_speed))
-                # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-                self.rotate(self.rotation - self.rotation_speed)  # Rotate car to new position
-                # print(self.rotation)
-            self.diversion_position += 1
+        if self.move_left and self.allow_left:  # LEFT
+            self.rotate(self.rotation + self.rotation_speed)  # Rotate car to new position
+            # print('car rotate: ' + str(self.rotation))
+        elif self.move_right and self.allow_right:  # RIGHT
+            self.rotate(self.rotation - self.rotation_speed)  # Rotate car to new position
+            # print('car rotate: ' + str(self.rotation))
 
     def power_up(self, ver):
         if ver == 'lightning' and not self.collision and not self.penalty_time:
@@ -1484,20 +1378,9 @@ class NpcCar(pygame.sprite.Sprite):
                 if pygame.time.get_ticks() >= self.collision_time + 5000:
                     self.reset_to_checkpoint()
                     # print('reset')
-                elif pygame.time.get_ticks() >= self.collision_time + 2000:
-                    self.diversion = True
-                    self.diversion_delay = pygame.time.get_ticks() + (randint(0, 10) * 100)
-                    if self.allow_reverse:  # Determine forwards or backwards diversion
-                        self.diversion_path = paths.diversion(0)
-                    elif self.allow_forwards:
-                        self.diversion_path = paths.diversion(1)
 
-            if self.diversion and pygame.time.get_ticks() >= self.diversion_delay and self.allow_reverse:
-                self.follow_diversion()
-                # print('follow diversion')
-            else:
-                self.follow_path()
-                # print('follow path')
+            self.auto_move()
+            # print('auto move')
 
 
 # -------- CAR FUNCTIONS -------- #

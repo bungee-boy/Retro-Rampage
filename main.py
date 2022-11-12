@@ -1,13 +1,13 @@
-from math import cos, sin, radians, ceil, floor
-import assets.audio_loader as sounds
-import assets.image_loader as assets
-import assets.font_loader as fonts
-import assets.path_loader as paths
-import assets.map_loader as maps
-from threading import Thread
-from random import randint
-from time import sleep
 import json
+from math import cos, sin, radians, ceil, floor
+from random import randint
+from threading import Thread
+from time import sleep
+import assets.audio_loader as sounds
+import assets.font_loader as fonts
+import assets.image_loader as assets
+import assets.map_loader as maps
+import assets.path_loader as paths
 try:
     import pygame
 except ImportError:  # Attempt to install pygame if it doesn't exist with tkinter UI
@@ -1399,7 +1399,7 @@ class NpcCar(pygame.sprite.Sprite):
                 elif 225 < self.rotation < 315:  # Right
                     draw_triangle((self.pos_x - 20, self.pos_y), 'left',
                                   width=14, height=14, border=RED, border_width=2)  # red left
-            elif self.move_backwards:
+            elif self.move_back:
                 if self.rotation <= 45 or self.rotation >= 315:  # Up
                     draw_triangle((self.pos_x, self.pos_y + 20), 'down',
                                   width=14, height=14, border=GREY, border_width=2)  # grey down

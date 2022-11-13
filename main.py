@@ -1,19 +1,21 @@
 import json
 from math import cos, sin, radians, ceil, floor
 from random import randint
-from threading import Thread
+from threading import Thread, Event
 from time import sleep
 import assets.audio_loader as sounds
 import assets.font_loader as fonts
 import assets.image_loader as assets
 import assets.map_loader as maps
 import assets.path_loader as paths
+
 try:
     import pygame
 except ImportError:  # Attempt to install pygame if it doesn't exist with tkinter UI
     from tkinter import messagebox, Toplevel, Message
     import subprocess
     import sys
+
     loop = True
     confirm = False
     user = False
@@ -26,6 +28,7 @@ except ImportError:  # Attempt to install pygame if it doesn't exist with tkinte
             try:
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pygame'])
                 import pygame
+
                 messagebox.showinfo('Success', 'Pygame was successfully installed.')
                 loop = False
                 user = None
@@ -66,7 +69,7 @@ BLACK_CAR = 93, 91, 91
 Debug = False  # Enables Debug mode for detecting issues. (Changes various things other than visual changes)
 Force_resolution = []  # Manual window size ([] = Automatic, [width, height] = Forced)
 Screen = 0  # If the user has multiple monitors, sets which monitor to use (starts at 0)
-Menu_animation = False  # Enables animations on the main menu
+Animations = False  # Enables animations on the main menu
 Mute_volume = False  # Set default muted state
 Music_volume = 0.5  # Set default Volume level for music
 Sfx_volume = 0.5  # Set default Volume level for all sounds effects
@@ -89,7 +92,7 @@ def save_settings():
                 else:  # If resolution is forced...
                     data['Resolution'] = Display_resolution
                 data['Screen'] = Screen
-                data['Menu animations'] = Menu_animation
+                data['Menu animations'] = Animations
                 data['Mute volume'] = Mute_volume
                 data['Music volume'] = Music_volume
                 data['Sfx volume'] = Sfx_volume
@@ -106,14 +109,14 @@ def save_settings():
 
 def load_settings():
     if Load_settings:
-        global Debug, Force_resolution, Screen, Menu_animation, Mute_volume, Music_volume, Sfx_volume
+        global Debug, Force_resolution, Screen, Animations, Mute_volume, Music_volume, Sfx_volume
         try:
             with open('settings.json', 'r') as file:
                 file = json.load(file)
                 Debug = file['Debug']
                 Force_resolution = file['Resolution']
                 Screen = file['Screen']
-                Menu_animation = file['Menu animations']
+                Animations = file['Menu animations']
                 Mute_volume = file['Mute volume']
                 Music_volume = file['Music volume']
                 Sfx_volume = file['Sfx volume']
@@ -200,7 +203,6 @@ Map = 'snake'
 Total_laps = 3
 Current_lap = 0
 Race_time = 0
-Music_loop = True
 Player_positions = []
 Npc_names = [['John', False], ['Mark', False], ['Lilly', False], ['Jessica', False], ['Matthew', False],
              ['James', False], ['Jack', False], ['Holly', False], ['Aimee', False], ['Harrison', False],
@@ -232,8 +234,11 @@ menu_car_speed = 10  # Default = 6
 button_trigger = False  # only press single button with single click
 selected_text_entry = 0
 current_song = ''
-clock = pygame.time.Clock()  # Used for timing display updates and keeping constant FPS
+Clock = pygame.time.Clock()  # Used for timing display updates and keeping constant FPS
 music_thread = Thread()
+loading_thread = Thread()
+loading_thread_event = Event()
+music_thread_event = Event()
 
 # Define game variables
 powerups = True
@@ -386,13 +391,13 @@ class MenuCar:  # Create car sprite
             if self.rotation != 0:
                 if self.rotation < 180:
                     for rotation in reversed(range(0, self.rotation, self.speed)):
-                        clock.tick(FPS)  # Ensure constant FPS between animations
+                        Clock.tick(FPS)  # Ensure constant FPS between animations
                         Window.blit(bg, (0, 0))
                         self.rotate(rotation)
                         self.draw(update=True)
                 else:
                     for rotation in range(self.rotation, 360 + 1, self.speed):
-                        clock.tick(FPS)  # Ensure constant FPS between animations
+                        Clock.tick(FPS)  # Ensure constant FPS between animations
                         Window.blit(bg, (0, 0))
                         self.rotate(rotation)
                         self.draw(update=True)
@@ -402,14 +407,14 @@ class MenuCar:  # Create car sprite
             if self.rotation != 180:
                 if self.rotation < 180:
                     for rotation in range(self.rotation, 180 + 1, self.speed):
-                        clock.tick(FPS)  # Ensure constant FPS between animations
+                        Clock.tick(FPS)  # Ensure constant FPS between animations
                         Window.blit(bg, (0, 0))  # Draw background and assets to remove old car frame
                         self.rotate(rotation)  # Rotate car by set degree
                         self.draw(update=True)  # Only update area around car
 
                 else:
                     for rotation in reversed(range(180, self.rotation, self.speed)):
-                        clock.tick(FPS)  # Ensure constant FPS between animations
+                        Clock.tick(FPS)  # Ensure constant FPS between animations
                         Window.blit(bg, (0, 0))  # Draw background and assets to remove old car frame
                         self.rotate(rotation)  # Rotate car by set degree
                         self.draw(update=True)  # Only update area around car
@@ -418,13 +423,13 @@ class MenuCar:  # Create car sprite
             if self.rotation != 90:
                 if self.rotation > 90:
                     for rotation in reversed(range(90, self.rotation, self.speed)):
-                        clock.tick(FPS)  # Ensure constant FPS between animations
+                        Clock.tick(FPS)  # Ensure constant FPS between animations
                         Window.blit(bg, (0, 0))
                         self.rotate(rotation)
                         self.draw(update=True)
                 else:
                     for rotation in range(self.rotation, 90 + 1, self.speed):
-                        clock.tick(FPS)  # Ensure constant FPS between animations
+                        Clock.tick(FPS)  # Ensure constant FPS between animations
                         Window.blit(bg, (0, 0))
                         self.rotate(rotation)
                         self.draw(update=True)
@@ -433,20 +438,20 @@ class MenuCar:  # Create car sprite
             if self.rotation != 270:
                 if self.rotation > 270:
                     for rotation in reversed(range(270, self.rotation, menu_car_speed)):
-                        clock.tick(FPS)  # Ensure constant FPS between animations
+                        Clock.tick(FPS)  # Ensure constant FPS between animations
                         Window.blit(bg, (0, 0))
                         self.rotate(rotation)
                         self.draw(update=True)
                 elif self.rotation < 90:
                     for rotation in reversed(range(-90, self.rotation, menu_car_speed)):
-                        clock.tick(FPS)
+                        Clock.tick(FPS)
                         Window.blit(bg, (0, 0))
                         self.rotate(rotation)
                         self.draw(update=True)
                     self.rotation = 270
                 else:
                     for rotation in range(self.rotation, 270 + 1, menu_car_speed):
-                        clock.tick(FPS)  # Ensure constant FPS between animations
+                        Clock.tick(FPS)  # Ensure constant FPS between animations
                         Window.blit(bg, (0, 0))
                         self.rotate(rotation)
                         self.draw(update=True)
@@ -960,7 +965,7 @@ class Car(pygame.sprite.Sprite):
         elif not self.bullet_penalty and self._smoke_ani_frame >= 14:  # If smoke timeout finished
             self._smoke_ani_frame = -1  # Reset animation at end of loop
         if self._smoke_ani_frame >= 0:  # If smoke animation playing
-            self._ani_frame = smoke_frames[floor(self._smoke_ani_frame/2)]
+            self._ani_frame = smoke_frames[floor(self._smoke_ani_frame / 2)]
             self._ani_frame_rect = self._ani_frame.get_rect()
             self._ani_frame_rect.centerx = self.rect.centerx
             self._ani_frame_rect.bottom = self.rect.centery
@@ -970,7 +975,7 @@ class Car(pygame.sprite.Sprite):
         if self._repair_ani_frame >= 22:  # If repair animation finished...
             self._repair_ani_frame = -1  # Reset animation
         if self._repair_ani_frame >= 0:
-            self._ani_frame = repair_frames[floor(self._repair_ani_frame/2)]
+            self._ani_frame = repair_frames[floor(self._repair_ani_frame / 2)]
             self._ani_frame_rect = self._ani_frame.get_rect()
             self._ani_frame_rect.center = self.rect.center
             surf.blit(self._ani_frame, (self._ani_frame_rect.left, self._ani_frame_rect.top))
@@ -1093,6 +1098,11 @@ class NpcCar(pygame.sprite.Sprite):
         self.move_back = False
         self.move_left = False
         self.move_right = False
+        self.movement_rects = [pygame.rect.Rect(0, 0, 5, 5)]
+        self.movement_surfs = []
+        for rect in self.movement_rects:
+            self.movement_surfs.append(pygame.surface.Surface(rect.size))
+            pygame.draw.rect(self.movement_surfs[self.movement_rects.index(rect)], RED, rect, width=1)
         self.penalty_time = 0
         # NAME variables
         self.name = name
@@ -1127,7 +1137,7 @@ class NpcCar(pygame.sprite.Sprite):
                     self.laps += 1
 
     def check_track_collisions(self, track_mask):  # Check if there are collisions and take action
-        if not self.collision or self.collision == 'track':
+        if not self.collision or self.collision == 'track':  # Do not allow driving off track
             if Debug:  # If debug then outline car mask in red
                 for pos in self.mask.outline():
                     pos_x, pos_y = pos
@@ -1320,7 +1330,7 @@ class NpcCar(pygame.sprite.Sprite):
         self.move(*self.prev_checkpoint_position)  # Move car to exact start position
         self.rotate(self.prev_checkpoint_rotation)
 
-    def auto_move(self):  # Check all inputs and take action
+    def auto_move(self):  # Check allowed movements and desired action
         if self.move_forward and self.allow_forwards:  # FORWARD
             self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
                       self.pos_y + round(sin(radians(self.rotation - 90)) * self.move_speed))
@@ -1740,10 +1750,10 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
 
     for player in Players:
         if player.controls in controllers:
-            rect = draw_text(100, HEIGHT-108, 'To unbind a controller, press ',
+            rect = draw_text(100, HEIGHT - 108, 'To unbind a controller, press ',
                              WHITE, 32, center_x=False, return_rect=True)
             Window.blit(pygame.transform.scale(pygame.image.load(assets.controller_button('b')), (34, 34)),
-                        (100 + rect.width, HEIGHT-109))
+                        (100 + rect.width, HEIGHT - 109))
 
     # START BUTTON
     if Player_amount == 1 and Players[0].name.strip() and Players[0].controls != 'controller' or \
@@ -3154,7 +3164,7 @@ def settings_window(curr_bg, pad_x=0, pad_y=0, surf=Window):
 
     x = pad_x + 1408
     y = pad_y + 345
-    if Menu_animation:
+    if Animations:
         text = 'On'
     else:
         text = 'Off'
@@ -3341,7 +3351,7 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
         # Animate car to bottom from center
         if new_window == choose_map_window or new_window == choose_vehicle_window:
             for offset_y in range(0, HEIGHT + 1, menu_scroll_speed):  # Animate window transition
-                clock.tick(FPS)  # Ensure constant FPS between animations
+                Clock.tick(FPS)  # Ensure constant FPS between animations
                 window(bg, pad_y=offset_y)
                 new_window(new_bg, pad_y=offset_y - HEIGHT)
                 if offset_y // 2 + HEIGHT // 2 < 940:
@@ -3356,14 +3366,14 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
         elif window == choose_map_window or window == choose_vehicle_window and \
                 new_window != choose_vehicle_window_2 or new_window == race_settings_window:
             for offset_y in reversed(range(540, 940, menu_scroll_speed)):
-                clock.tick(FPS)
+                Clock.tick(FPS)
                 window(bg)
                 car.move(960, offset_y)
                 car.draw()
                 controller_popup()
                 update_screen(full_screen=True)
             for offset_y in range(0, HEIGHT + 1, menu_scroll_speed):  # Animate window transition
-                clock.tick(FPS)  # Ensure constant FPS between animations
+                Clock.tick(FPS)  # Ensure constant FPS between animations
                 window(bg, pad_y=offset_y)
                 new_window(new_bg, pad_y=offset_y - HEIGHT)
                 car.draw()
@@ -3373,7 +3383,7 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
         # Do not move the car on animation
         else:
             for offset_y in range(0, HEIGHT + 1, menu_scroll_speed):  # Animate window transition
-                clock.tick(FPS)  # Ensure constant FPS between animations
+                Clock.tick(FPS)  # Ensure constant FPS between animations
                 window(bg, pad_y=offset_y)
                 new_window(new_bg, pad_y=offset_y - HEIGHT)
                 car.draw()
@@ -3386,14 +3396,14 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
                 (new_window == choose_vehicle_window or new_window == choose_vehicle_window_2 or
                  new_window == choose_vehicle_window_3):
             for offset_y in range(540, 940, menu_scroll_speed):
-                clock.tick(FPS)
+                Clock.tick(FPS)
                 window(bg)
                 car.move(960, offset_y)
                 car.draw()
                 controller_popup()
                 update_screen(full_screen=True)
             for offset_y in reversed(range(0, HEIGHT + 1, menu_scroll_speed)):  # Animate window transition
-                clock.tick(FPS)  # Ensure constant frame rate between animations
+                Clock.tick(FPS)  # Ensure constant frame rate between animations
                 window(bg, pad_y=offset_y - HEIGHT)  # Draw main menu screen
                 new_window(new_bg, pad_y=offset_y)  # Draw confirm quit screen
                 car.draw()
@@ -3403,14 +3413,14 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
         # Animate car from bottom to center
         elif window == choose_map_window or window == choose_vehicle_window:
             for offset_y in range(940, 1080, menu_scroll_speed):
-                clock.tick(FPS)
+                Clock.tick(FPS)
                 window(bg)
                 car.move(960, offset_y)
                 car.draw()
                 controller_popup()
                 update_screen(full_screen=True)
             for offset_y in reversed(range(0, HEIGHT + 1, menu_scroll_speed)):  # Animate window transition
-                clock.tick(FPS)  # Ensure constant frame rate between animations
+                Clock.tick(FPS)  # Ensure constant frame rate between animations
                 window(bg, pad_y=offset_y - HEIGHT)  # Draw main menu screen
                 new_window(new_bg, pad_y=offset_y)  # Draw confirm quit screen
                 if offset_y // 2 <= CENTRE[1]:
@@ -3424,7 +3434,7 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
         # Do not move the car on animation
         else:
             for offset_y in reversed(range(0, HEIGHT + 1, menu_scroll_speed)):  # Animate window transition
-                clock.tick(FPS)  # Ensure constant frame rate between animations
+                Clock.tick(FPS)  # Ensure constant frame rate between animations
                 window(bg, pad_y=offset_y - HEIGHT)  # Draw main menu screen
                 new_window(new_bg, pad_y=offset_y)  # Draw confirm quit screen
                 car.draw()
@@ -3433,7 +3443,7 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
 
     elif direction == 'left':
         for offset_x in range(0, WIDTH + 1, menu_scroll_speed):
-            clock.tick(FPS)  # Ensure constant FPS between animations
+            Clock.tick(FPS)  # Ensure constant FPS between animations
             window(bg, pad_x=offset_x)
             new_window(new_bg, pad_x=offset_x - WIDTH)  # Draw main menu screen with an offset
             car.draw()
@@ -3442,7 +3452,7 @@ def animate_window(window, new_window, bg, new_bg, car, direction: str):
 
     elif direction == 'right':
         for offset_x in reversed(range(0, WIDTH + 1, menu_scroll_speed)):
-            clock.tick(FPS)  # Ensure constant FPS between animations
+            Clock.tick(FPS)  # Ensure constant FPS between animations
             window(bg, pad_x=offset_x - WIDTH)
             new_window(new_bg, pad_x=offset_x)  # Draw main menu screen with an offset
             car.draw()
@@ -3681,7 +3691,7 @@ def fade_to_black(speed=12, show_loading=False, paused=False, car=None):
         paused_window()
 
     for alpha in reversed(range(0, alpha, speed)):
-        clock.tick(FPS)
+        Clock.tick(FPS)
         Window.set_alpha(alpha)
         Display.blit(pygame.transform.scale(Secondary_window, Display_resolution), (0, 0))
         Display.blit(pygame.transform.scale(Window, Display_resolution), (0, 0))
@@ -3694,6 +3704,9 @@ def fade_to_black(speed=12, show_loading=False, paused=False, car=None):
 
 def fade_from_black(speed=12, show_loading=False, paused=False, window=''):
     alpha = Window.get_alpha()
+    if not alpha:
+        alpha = 0
+        Window.set_alpha(alpha)
 
     Secondary_window.fill(BLACK)
 
@@ -3711,13 +3724,80 @@ def fade_from_black(speed=12, show_loading=False, paused=False, window=''):
             paused_window()
 
     for alpha in range(alpha, 256, speed):
-        clock.tick(FPS)
+        Clock.tick(FPS)
         Window.set_alpha(alpha)  # Set transparency
         Display.blit(pygame.transform.scale(Secondary_window, Display_resolution), (0, 0))
         Display.blit(pygame.transform.scale(Window, Display_resolution), (0, 0))
         pygame.display.update()
 
-    Window.set_alpha(255)  # Remove transparency
+    Window.set_alpha(None)  # Remove transparency
+
+
+def loading_animation(x: int, y: int):
+    size = 80, 80
+    dot_size = 18
+    speed = 8
+
+    prev_frame_timestamp = pygame.time.get_ticks()
+    dots = []
+    for dot in range(0, 8):
+        dots.append(pygame.surface.Surface((dot_size, dot_size)))
+        dots[dot].fill((1, 1, 1))
+        dots[dot].set_colorkey((1, 1, 1))
+        pygame.draw.circle(dots[dot], WHITE, (dot_size / 2, dot_size / 2), dot_size / 2)
+        dots[dot].set_alpha(255 // 8 * dot)
+        dots[dot] = dots[dot], dots[dot].get_rect()
+
+    dots[0][1].center = x, y - size[1] / 2
+    dots[1][1].center = x + size[0] / 3, y - size[1] / 3
+    dots[2][1].center = x + size[0] / 2, y
+    dots[3][1].center = x + size[0] / 3, y + size[1] / 3
+    dots[4][1].center = x, y + size[1] / 2
+    dots[5][1].center = x - size[0] / 3, y + size[1] / 3
+    dots[6][1].center = x - size[0] / 2, y
+    dots[7][1].center = x - size[0] / 3, y - size[1] / 3
+
+    while not loading_thread_event.is_set():  # While loading...
+        Clock.tick(FPS)
+
+        for event in pygame.event.get():  # Must call event.get() to keep game running
+            if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                raise KeyboardInterrupt
+
+        if prev_frame_timestamp != pygame.time.get_ticks():  # Loop alpha for each dot
+            for dot in dots:
+                alpha = dot[0].get_alpha()
+                if alpha - speed < 0 and alpha != 0:
+                    alpha = 0
+                elif alpha - speed <= 0:
+                    alpha = 255
+                else:
+                    alpha -= speed
+                dot[0].set_alpha(alpha)
+            prev_frame_timestamp = pygame.time.get_ticks()
+
+        Secondary_window.fill(BLACK)  # Draw frame on screen and display
+        draw_text(CENTRE[0], CENTRE[1] - 50, 'Retro Rampage', WHITE, 100,
+                  bar=True, three_d=True, surf=Secondary_window)
+        draw_text(CENTRE[0], CENTRE[1] + 150, 'Loading...', WHITE, 50, surf=Secondary_window)
+        Secondary_window.blit(dots[0][0], dots[0][1].topleft)
+        Secondary_window.blit(dots[1][0], dots[1][1].topleft)
+        Secondary_window.blit(dots[2][0], dots[2][1].topleft)
+        Secondary_window.blit(dots[3][0], dots[3][1].topleft)
+        Secondary_window.blit(dots[4][0], dots[4][1].topleft)
+        Secondary_window.blit(dots[5][0], dots[5][1].topleft)
+        Secondary_window.blit(dots[6][0], dots[6][1].topleft)
+        Secondary_window.blit(dots[7][0], dots[7][1].topleft)
+        Display.blit(pygame.transform.scale(Secondary_window, Display_resolution), (0, 0))
+        pygame.display.update()
+
+    Secondary_window.fill(BLACK)  # Remove loading animation as loading completed
+    draw_text(CENTRE[0], CENTRE[1] - 50, 'Retro Rampage', WHITE, 100,
+              bar=True, three_d=True, surf=Secondary_window)
+    draw_text(CENTRE[0], CENTRE[1] + 150, 'Loading...', WHITE, 50, surf=Secondary_window)
+    Display.blit(pygame.transform.scale(Secondary_window, Display_resolution), (0, 0))
+    pygame.display.update()
+    return
 
 
 def cycle_veh_right(player: Player):
@@ -4008,7 +4088,9 @@ def game_music_loop():
 
 def menu_music_loop():
     if not Mute_volume:
-        while Music_loop:
+        while True:
+            if music_thread_event.is_set():
+                break
             if not Window_sleep:
                 if current_window != 'leaderboard':
                     menu_music()
@@ -4018,8 +4100,8 @@ def menu_music_loop():
                 if pygame.mixer.music.get_busy():
                     pygame.mixer.music.pause()
                 sleep(0.5)
-        return  # Make sure to return properly as this is a thread
-    return
+
+    return  # Make sure to return properly as this is a thread
 
 
 # -------- DISPLAY SCALING & UPDATING FUNCTIONS -------- #
@@ -4206,8 +4288,8 @@ def get_mouse_pos():
 # -------- GAME LOOPS -------- #
 def game():  # All variables that are not constant
     global Player_positions, Race_time, Countdown, Window_screenshot, button_trigger, \
-        Debug, Screen, Menu_animation, Mute_volume, Music_volume, Sfx_volume, loaded_assets, loaded_sounds, \
-        Current_lap, Window_sleep, Game_end, Music_loop, music_thread, current_window, Game_paused
+        Debug, Screen, Animations, Mute_volume, Music_volume, Sfx_volume, loaded_assets, loaded_sounds, \
+        Current_lap, Window_sleep, Game_end, Music_loop, music_thread, current_window, Game_paused, loading_thread
     layers = []
     Game_paused = False
     current_window = ''
@@ -4383,19 +4465,22 @@ def game():  # All variables that are not constant
 
     if not player_list and not npc_list:
         raise ValueError("There are no players or NPCs!")
-
-    Window.blit(full_map, (0, 0))
+    pygame.time.wait(1000)
+    if Animations:
+        loading_thread_event.set()  # Stop loading animation (still loading screen)
+        if loading_thread.is_alive():
+            loading_thread.join()  # !! Must stop animation first as can only blit from one thread at a time !!
+    Window.blit(full_map, (0, 0))  # Draw everything to new screen
     for player in player_list:
         player.draw()
     for npc in npc_list:
         npc.draw()
-
     gameplay_gui(player_list, 0, 0)
-    fade_from_black(show_loading=True)
+    fade_from_black(show_loading=True)  # Reveal new screen
 
     if Countdown and not Debug:
         for pos_y in range(-108, 1, 2):  # Animate traffic light into screen
-            clock.tick(FPS)
+            Clock.tick(FPS)
             Window.blit(pygame.image.load(assets.traffic_light(0)), (822, pos_y))
             if Debug:
                 pygame.draw.rect(Window, WHITE, (822, pos_y, 276, 108), 1)
@@ -4410,7 +4495,7 @@ def game():  # All variables that are not constant
         tl_stage = 0  # traffic light stage
         start_time = pygame.time.get_ticks()
         while Countdown:
-            clock.tick(FPS)
+            Clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -4471,9 +4556,9 @@ def game():  # All variables that are not constant
             Current_lap = 0
 
         if not Window_sleep:
-            clock.tick(20)  # Set FPS in game to 20 so the cars are not too fast, since they move every frame
+            Clock.tick(20)  # Set FPS in game to 20 so the cars are not too fast, since they move every frame
         else:
-            clock.tick(5)
+            Clock.tick(5)
 
         if not music_thread.is_alive() and not Mute_volume:
             music_thread = Thread(target=game_music_loop)
@@ -4706,10 +4791,10 @@ def game():  # All variables that are not constant
                     if buttons[0] and not button_trigger:
                         button_trigger = True
                         play_sound('option down')
-                        if Menu_animation:
-                            Menu_animation = False
+                        if Animations:
+                            Animations = False
                         else:
-                            Menu_animation = True
+                            Animations = True
 
                     elif not buttons[0] and button_trigger:
                         button_trigger = False
@@ -4722,10 +4807,10 @@ def game():  # All variables that are not constant
                     if buttons[0] and not button_trigger:
                         button_trigger = True
                         play_sound('option up')
-                        if Menu_animation:
-                            Menu_animation = False
+                        if Animations:
+                            Animations = False
                         else:
-                            Menu_animation = True
+                            Animations = True
 
                     elif not buttons[0] and button_trigger:
                         button_trigger = False
@@ -5135,15 +5220,19 @@ def game():  # All variables that are not constant
         if player.controller:
             player.controller.stop_rumble()
     fade_to_black(show_loading=True)
+    if Animations:
+        loading_thread_event.clear()
+        loading_thread = Thread(target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
+        loading_thread.start()  # Begin loading animation
     pygame.time.wait(1000)
     return game_quit
 
 
 def main():
     global Player_amount, Npc_amount, Total_laps, Debug, loaded_assets, Music_volume, Screen, \
-        Sfx_volume, loaded_sounds, Mute_volume, Menu_animation, Map, selected_text_entry, button_trigger, Window_sleep,\
-        Music_loop, music_thread, powerups, Npc_force_veh, Npc_force_colour, current_window, Players, controllers, \
-        controls, selected_text_entry
+        Sfx_volume, loaded_sounds, Mute_volume, Animations, Map, selected_text_entry, button_trigger, Window_sleep,\
+        Music_loop, music_thread, loading_thread, powerups, Npc_force_veh, Npc_force_colour, current_window, \
+        Players, controllers, controls, selected_text_entry
 
     Music_loop = True
     menu_loop = True  # Set game sub-loop to menus
@@ -5155,6 +5244,7 @@ def main():
     bg = menu_background(top=True, right=True, bottom=True, left=True)  # Set initial values of background(s)
     new_bg = bg
     music_thread = Thread(target=menu_music_loop)
+    loading_thread = Thread(target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
 
     Players.append(Player(0))
 
@@ -5169,9 +5259,9 @@ def main():
     while True:  # Entire infinite game loop
         while menu_loop:  # When player is in the menus...
             if not Window_sleep:
-                clock.tick(FPS)  # Update the pygame clock every cycle
+                Clock.tick(FPS)  # Update the pygame clock every cycle
             else:
-                clock.tick(2)
+                Clock.tick(2)
 
             if not music_thread.is_alive() and not Mute_volume:
                 music_thread = Thread(target=menu_music_loop)
@@ -5270,7 +5360,7 @@ def main():
                         current_window = 'confirm quit'  # Set window to change to confirm quit
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(top=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('down', bg)
                             animate_window(main_window, confirm_quit_window, bg, new_bg, car, 'down')
                         else:
@@ -5297,7 +5387,7 @@ def main():
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(bottom=True, top=True)
                         get_map_preview()  # Run map preview on startup to declare values
-                        if Menu_animation:
+                        if Animations:
                             car.animate('up', bg)
                             animate_window(main_window, choose_map_window, bg, new_bg, car, 'up')
                         else:
@@ -5324,7 +5414,7 @@ def main():
                         current_window = 'credits'  # Change current window to choose players
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(right=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('left', bg)
                             animate_window(main_window, credits_window, bg, new_bg, car, 'left')
                         else:
@@ -5350,7 +5440,7 @@ def main():
                         current_window = 'settings'  # Change current window to choose players
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(left=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('right', bg)
                             animate_window(main_window, settings_window, bg, new_bg, car, 'right')
                         else:
@@ -5451,7 +5541,7 @@ def main():
                         current_window = 'main menu'
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(top=True, right=True, bottom=True, left=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('down', bg)
                             animate_window(choose_map_window, main_window, bg, new_bg, car, 'down')
                         else:
@@ -5478,7 +5568,7 @@ def main():
                         current_window = 'choose players'
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(top=True, bottom=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('up', bg)
                             animate_window(choose_map_window, choose_players_window, bg, new_bg, car, 'up')
                         else:
@@ -5678,7 +5768,7 @@ def main():
                         current_window = 'choose map'  # Set window to change to confirm quit
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(top=True, bottom=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('down', bg)
                             animate_window(choose_players_window, choose_map_window, bg, new_bg, car, 'down')
                         else:
@@ -5752,7 +5842,7 @@ def main():
                             current_window = 'choose map'  # Set window to change to confirm quit
                             play_sound('menu button')  # Play button click sounds
                             new_bg = menu_background(top=True, bottom=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('down', bg)
                                 animate_window(choose_players_window, choose_map_window, bg, new_bg, car, 'down')
                             else:
@@ -5785,7 +5875,7 @@ def main():
                                 player.name = player.name.strip()
                             play_sound('menu button')  # Play button click sound
                             new_bg = menu_background(bottom=True, top=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('up', bg)
                                 animate_window(choose_players_window, choose_vehicle_window, bg, new_bg, car, 'up')
                             else:
@@ -5906,7 +5996,7 @@ def main():
                             current_window = 'choose map'  # Set window to change to confirm quit
                             play_sound('menu button')  # Play button click sounds
                             new_bg = menu_background(top=True, bottom=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('down', bg)
                                 animate_window(choose_players_window, choose_map_window, bg, new_bg, car, 'down')
                             else:
@@ -5943,7 +6033,7 @@ def main():
                                 player.name = player.name.strip()
                             play_sound('menu button')  # Play button click sound
                             new_bg = menu_background(bottom=True, top=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('up', bg)
                                 if Player_amount == 2:
                                     animate_window(choose_players_window, choose_vehicle_window,
@@ -6063,7 +6153,7 @@ def main():
                             current_window = 'choose players'  # Set window to change to confirm quit
                             play_sound('menu button')  # Play button click sounds
                             new_bg = menu_background(top=True, bottom=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('down', bg)
                                 animate_window(choose_players_window_2, choose_players_window, bg, new_bg, car, 'down')
                             else:
@@ -6099,7 +6189,7 @@ def main():
                                 player.name = player.name.strip()
                             play_sound('menu button')  # Play button click sound
                             new_bg = menu_background(bottom=True, top=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('up', bg)
                                 if Player_amount == 3:
                                     animate_window(choose_players_window_2, choose_vehicle_window, bg, new_bg, car,
@@ -6228,7 +6318,7 @@ def main():
                             current_window = 'choose players'  # Set window to change to confirm quit
                             play_sound('menu button')  # Play button click sounds
                             new_bg = menu_background(top=True, bottom=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('down', bg)
                                 animate_window(choose_players_window_2, choose_players_window, bg, new_bg, car, 'down')
                             else:
@@ -6265,7 +6355,7 @@ def main():
                                 player.name = player.name.strip()
                             play_sound('menu button')  # Play button click sound
                             new_bg = menu_background(bottom=True, top=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('up', bg)
                                 if Player_amount == 4:
                                     animate_window(choose_players_window_2, choose_vehicle_window,
@@ -6388,7 +6478,7 @@ def main():
                             current_window = 'choose players 2'  # Set window to change to confirm quit
                             play_sound('menu button')  # Play button click sounds
                             new_bg = menu_background(top=True, bottom=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('down', bg)
                                 animate_window(choose_players_window_3, choose_players_window_2, bg, new_bg, car,
                                                'down')
@@ -6422,7 +6512,7 @@ def main():
                                 player.name = player.name.strip()
                             play_sound('menu button')  # Play button click sound
                             new_bg = menu_background(bottom=True, top=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('up', bg)
                                 animate_window(choose_players_window_3, choose_vehicle_window, bg, new_bg, car, 'up')
                             else:
@@ -6543,7 +6633,7 @@ def main():
                             current_window = 'choose players 2'  # Set window to change to confirm quit
                             play_sound('menu button')  # Play button click sounds
                             new_bg = menu_background(top=True, bottom=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('down', bg)
                                 animate_window(choose_players_window_3, choose_players_window_2, bg, new_bg, car,
                                                'down')
@@ -6578,7 +6668,7 @@ def main():
                                 player.name = player.name.strip()
                             play_sound('menu button')  # Play button click sound
                             new_bg = menu_background(bottom=True, top=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('up', bg)
                                 animate_window(choose_players_window_3, choose_vehicle_window, bg, new_bg, car, 'up')
                             else:
@@ -6654,7 +6744,7 @@ def main():
                             current_window = 'choose players 3'
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(top=True, bottom=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('down', bg)
                             if Player_amount == 1 or Player_amount == 2:
                                 animate_window(choose_vehicle_window, choose_players_window, bg, new_bg, car, 'down')
@@ -6696,7 +6786,7 @@ def main():
                             current_window = 'choose vehicle 2'
                             new_bg = menu_background(top=True, bottom=True)
                         play_sound('menu button')  # Play button click sound
-                        if Menu_animation:
+                        if Animations:
                             car.animate('up', bg)
                             if Player_amount <= 2:
                                 animate_window(choose_vehicle_window, race_settings_window, bg, new_bg, car, 'up')
@@ -6892,7 +6982,7 @@ def main():
                         current_window = 'choose vehicle'
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(top=True, bottom=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('down', bg)
                             animate_window(choose_vehicle_window_2, choose_vehicle_window, bg, new_bg, car, 'down')
                         else:
@@ -6924,7 +7014,7 @@ def main():
                             current_window = 'choose vehicle 3'
                             new_bg = menu_background(top=True, bottom=True)
                         play_sound('menu button')  # Play button click sound
-                        if Menu_animation:
+                        if Animations:
                             car.animate('up', bg)
                             if Player_amount <= 4:
                                 animate_window(choose_vehicle_window_2, race_settings_window, bg, new_bg, car, 'up')
@@ -7120,7 +7210,7 @@ def main():
                         current_window = 'choose vehicle 2'
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(top=True, bottom=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('down', bg)
                             animate_window(choose_vehicle_window_3, choose_vehicle_window_2, bg, new_bg, car, 'down')
                         else:
@@ -7148,7 +7238,7 @@ def main():
                         current_window = 'race settings'
                         play_sound('menu button')  # Play button click sound
                         new_bg = menu_background(bottom=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('up', bg)
                             animate_window(choose_vehicle_window_3, race_settings_window, bg, new_bg, car, 'up')
                         else:
@@ -7700,7 +7790,7 @@ def main():
                             current_window = 'choose vehicle 3'
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(top=True, bottom=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('down', bg)
                             if Player_amount == 1 or Player_amount == 2:
                                 animate_window(race_settings_window, choose_vehicle_window, bg, new_bg, car, 'down')
@@ -7801,7 +7891,7 @@ def main():
                         else:
                             current_window = 'main menu'
                             new_bg = menu_background(top=True, right=True, bottom=True, left=True)
-                            if Menu_animation:
+                            if Animations:
                                 car.animate('up', bg)
                                 animate_window(confirm_quit_window, main_window, bg, new_bg, car, 'up')
                             else:
@@ -7839,7 +7929,7 @@ def main():
                         current_window = 'main menu'
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(top=True, right=True, bottom=True, left=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('right', bg)
                             animate_window(credits_window, main_window, bg, new_bg, car, 'right')
                         else:
@@ -7958,10 +8048,10 @@ def main():
                     if buttons[0] and not button_trigger:
                         button_trigger = True
                         play_sound('option down')
-                        if Menu_animation:
-                            Menu_animation = False
+                        if Animations:
+                            Animations = False
                         else:
-                            Menu_animation = True
+                            Animations = True
                     elif not buttons[0] and button_trigger:
                         button_trigger = False
 
@@ -7973,10 +8063,10 @@ def main():
                     if buttons[0] and not button_trigger:
                         button_trigger = True
                         play_sound('option up')
-                        if Menu_animation:
-                            Menu_animation = False
+                        if Animations:
+                            Animations = False
                         else:
-                            Menu_animation = True
+                            Animations = True
                     elif not buttons[0] and button_trigger:
                         button_trigger = False
 
@@ -8154,7 +8244,7 @@ def main():
                         current_window = 'main menu'
                         play_sound('menu button')  # Play button click sounds
                         new_bg = menu_background(top=True, right=True, bottom=True, left=True)
-                        if Menu_animation:
+                        if Animations:
                             car.animate('left', bg)
                             animate_window(settings_window, main_window, bg, new_bg, car, 'left')
                         else:
@@ -8240,8 +8330,16 @@ def main():
                 update_screen()
 
         Music_loop = False
-        fade_to_black(show_loading=True)  # Start game
+        fade_to_black(show_loading=True)  # Fade out current screen
+        if Animations:
+            loading_thread_event.clear()
+            loading_thread = Thread(target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
+            loading_thread.start()  # Begin loading animation
         game_quit = game()  # Begin game
+        if Animations:
+            loading_thread_event.set()  # Stop loading animation (still loading screen)
+            if loading_thread.is_alive():
+                loading_thread.join()  # !! Must stop animation first as can only blit from one thread at a time !!
         if game_quit:
             new_bg = menu_background(top=True, right=True, bottom=True, left=True)
             main_window(new_bg)
@@ -8265,17 +8363,25 @@ if __name__ == '__main__':
     else:
         try:
             main()
+
         except KeyboardInterrupt:
             Music_loop = False
             if music_thread.is_alive():
                 music_thread.join(timeout=0.25)
+            if loading_thread.is_alive():
+                loading_thread_event.set()
+                loading_thread.join()
             pygame.quit()
             quit()
+
         except Exception as error:  # If error and debug is off then update screen with error and quit
             print(error)
             Music_loop = False
             if music_thread.is_alive():
                 music_thread.join(timeout=0.25)
+            if loading_thread.is_alive():
+                loading_thread_event.set()
+                loading_thread.join()
             pygame.mixer.music.stop()
             pygame.mixer.stop()
             pygame.time.wait(100)
@@ -8290,6 +8396,16 @@ if __name__ == '__main__':
                 Display.blit(pygame.font.Font(None, 50).render(str(error), True, WHITE, 50), (0, 50))
             pygame.display.update()
             pygame.time.wait(3000)
+            pygame.quit()
+            quit()
+
+        finally:
+            Music_loop = False
+            if music_thread.is_alive():
+                music_thread.join()
+            if loading_thread.is_alive():
+                loading_thread_event.set()
+                loading_thread.join()
             pygame.quit()
             quit()
 

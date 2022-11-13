@@ -1477,6 +1477,9 @@ class NpcCar(pygame.sprite.Sprite):
                     draw_triangle((self.pos_x, self.pos_y + 20), 'down',
                                   width=14, height=14, border=GREY, border_width=2)  # grey down
 
+            for surface in self.movement_surfs:
+                surf.blit(surface, self.movement_rects[self.movement_surfs.index(surface)])
+
     def update(self):  # Called each loop and checks if anything has changed
         if self.penalty_time and self.penalty_time > pygame.time.get_ticks():
             self.dmg_img = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
@@ -3675,6 +3678,7 @@ def draw_asset(asset, pos, rotation, scale, return_rect=False):
         return surf.get_rect()
 
 
+# Fades current window to secondary window
 def fade_to_black(speed=12, show_loading=False, paused=False, car=None):
     alpha = Window.get_alpha()
     if not alpha:
@@ -3702,6 +3706,7 @@ def fade_to_black(speed=12, show_loading=False, paused=False, car=None):
     Window.set_alpha(0)  # Ensure final transparency is 0
 
 
+# Fades to current window from secondary window
 def fade_from_black(speed=12, show_loading=False, paused=False, window=''):
     alpha = Window.get_alpha()
     if not alpha:
@@ -3733,13 +3738,14 @@ def fade_from_black(speed=12, show_loading=False, paused=False, window=''):
     Window.set_alpha(None)  # Remove transparency
 
 
+# Threaded animation for loading screen
 def loading_animation(x: int, y: int):
-    size = 80, 80
-    dot_size = 18
-    speed = 8
+    size = 80, 80  # Overall size
+    dot_size = 18  # Dot diameter
+    speed = 8  # Speed of animation
 
     prev_frame_timestamp = pygame.time.get_ticks()
-    dots = []
+    dots = []  # Create dots
     for dot in range(0, 8):
         dots.append(pygame.surface.Surface((dot_size, dot_size)))
         dots[dot].fill((1, 1, 1))
@@ -3748,7 +3754,7 @@ def loading_animation(x: int, y: int):
         dots[dot].set_alpha(255 // 8 * dot)
         dots[dot] = dots[dot], dots[dot].get_rect()
 
-    dots[0][1].center = x, y - size[1] / 2
+    dots[0][1].center = x, y - size[1] / 2  # Position dots
     dots[1][1].center = x + size[0] / 3, y - size[1] / 3
     dots[2][1].center = x + size[0] / 2, y
     dots[3][1].center = x + size[0] / 3, y + size[1] / 3
@@ -3756,6 +3762,14 @@ def loading_animation(x: int, y: int):
     dots[5][1].center = x - size[0] / 3, y + size[1] / 3
     dots[6][1].center = x - size[0] / 2, y
     dots[7][1].center = x - size[0] / 3, y - size[1] / 3
+
+    if Debug:
+        debug_surf = pygame.surface.Surface((size[0] + dot_size, size[1] + dot_size))
+        debug_surf.fill((1, 1, 1, 1))
+        debug_surf.set_colorkey((1, 1, 1, 1))
+        pygame.draw.rect(debug_surf, WHITE, (0, 0, size[0] + dot_size, size[1] + dot_size), width=1)
+    else:
+        debug_surf = None
 
     while not loading_thread_event.is_set():  # While loading...
         Clock.tick(FPS)
@@ -3788,6 +3802,8 @@ def loading_animation(x: int, y: int):
         Secondary_window.blit(dots[5][0], dots[5][1].topleft)
         Secondary_window.blit(dots[6][0], dots[6][1].topleft)
         Secondary_window.blit(dots[7][0], dots[7][1].topleft)
+        if Debug:
+            Secondary_window.blit(debug_surf, (x - dot_size / 2 - size[0] / 2, y - dot_size / 2 - size[1] / 2))
         Display.blit(pygame.transform.scale(Secondary_window, Display_resolution), (0, 0))
         pygame.display.update()
 

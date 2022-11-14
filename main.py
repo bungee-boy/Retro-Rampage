@@ -44,8 +44,6 @@ except ImportError:  # Attempt to install pygame if it doesn't exist with tkinte
             if not confirm:
                 quit()
 
-from pprint import pprint
-
 pygame.init()  # Initialise all libraries for pygame
 pygame.joystick.init()
 pygame.mixer.init()
@@ -3597,7 +3595,7 @@ def draw_text(x, y, text, colour, size, bold=False, bar=False, three_d=False,
     except KeyError:
         font = pygame.font.Font(fonts.load(bold, bar, three_d), size)
         loaded_fonts[font_name] = font
-        pprint(loaded_fonts)
+
     render = font.render(str(text), True, colour)
     if center_x:
         x -= render.get_width() // 2  # Centre text x position

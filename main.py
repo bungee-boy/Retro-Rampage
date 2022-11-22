@@ -1,5 +1,5 @@
 import json
-from math import cos, sin, radians, ceil, floor
+from math import cos, sin, radians, ceil, floor, sqrt
 from random import randint
 from threading import Thread, Event
 from time import sleep
@@ -1067,7 +1067,8 @@ class NpcCar(pygame.sprite.Sprite):
         # SURFACE variables
         self.colour = colour
         self.image_dir = assets.car(self.colour, self.vehicle)
-        self.image = pygame.transform.scale(pygame.image.load(self.image_dir).convert(), size)
+        self.origin_img = pygame.transform.scale(pygame.image.load(self.image_dir).convert(), size)
+        self.image = self.origin_img.copy()
         self.image.set_colorkey(BLACK)
         self.dmg_img = None
         self.size = self.image.get_size()
@@ -1077,9 +1078,6 @@ class NpcCar(pygame.sprite.Sprite):
         self.pos_x = self.rect.x
         self.pos_y = self.rect.y
         self.rotation = self.origin_rotation
-        self.move(self.origin_pos[0], self.origin_pos[1])
-        if self.origin_rotation != 0:  # If start rotation is not 0 then rotate
-            self.rotate(self.rotation)
         # COLLISION variables
         self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
         self.mask_overlap = None  # Used for checking collision position
@@ -1090,23 +1088,34 @@ class NpcCar(pygame.sprite.Sprite):
         self.lightning_animation = False
         self._lightning_frame = None
         # MOVEMENT variables
-        self.allow_forwards = True
-        self.allow_reverse = True
+        self.allow_forward = True
+        self.allow_back = True
         self.allow_left = True
         self.allow_right = True
         self.move_forward = False
         self.move_back = False
         self.move_left = False
         self.move_right = False
-        self.movement_rects = [pygame.rect.Rect(0, 0, 5, 5)]
+        self.rect_radius = 100
+        # 1 - 4 = Track collision
+        self.movement_rects = []
         self.movement_surfs = []
-        for rect in self.movement_rects:
-            self.movement_surfs.append(pygame.surface.Surface(rect.size))
-            pygame.draw.rect(self.movement_surfs[self.movement_rects.index(rect)], RED, rect, width=1)
+        for index in range(0, 4):
+            surf = pygame.surface.Surface((5, 5))
+            rect = surf.get_rect()
+            surf.fill((1, 1, 1))
+            surf.set_colorkey((1, 1, 1))
+            if index == 1:
+                pygame.draw.rect(surf, GREEN_CAR, rect, width=1)
+            else:
+                pygame.draw.rect(surf, RED_CAR, rect, width=1)
+            draw_text(rect.centerx, rect.centery, str(len(self.movement_rects)), RED_CAR, rect.height,
+                      surf=surf)
+            self.movement_surfs.append(surf)
+            self.movement_rects.append(rect)
         self.penalty_time = 0
         # NAME variables
         self.name = name
-        self.name_rect = None
         # LAP variables
         self.lap_halfway = True
         self.laps = 0
@@ -1118,6 +1127,9 @@ class NpcCar(pygame.sprite.Sprite):
         self.prev_checkpoint_path_position = 0
         # SOUND variables
         self.collision_sound = False
+        self.move(self.origin_pos[0], self.origin_pos[1])
+        if self.origin_rotation != 0:  # If start rotation is not 0 then rotate
+            self.rotate(self.rotation)
 
     def set_move_speed(self, speed):
         self.move_speed = global_car_move_speed + speed
@@ -1164,45 +1176,45 @@ class NpcCar(pygame.sprite.Sprite):
                 if self.rotation <= 45 or self.rotation >= 315:  # If car is pointing up...
                     # print('pointing up')
                     if self.image.get_size()[1] // 2 > self.mask_overlap[1]:  # If the collision is on the top half
-                        self.allow_forwards = False  # Do not allow forwards
-                        self.allow_reverse = True
+                        self.allow_forward = False  # Do not allow forwards
+                        self.allow_back = True
                         # print('do not allow forwards')
                     elif self.image.get_size()[1] // 2 < self.mask_overlap[1]:  # If the collision is on the bottom half
-                        self.allow_forwards = True  # Do not allow reverse
-                        self.allow_reverse = False
+                        self.allow_forward = True  # Do not allow reverse
+                        self.allow_back = False
                         # print('do not allow reverse')
 
                 elif 45 < self.rotation < 135:  # If the car is pointing left...
                     # print('pointing left')
                     if self.image.get_size()[0] // 2 > self.mask_overlap[0]:  # If the collision is on the left half
-                        self.allow_forwards = False  # Do not allow forwards
-                        self.allow_reverse = True
+                        self.allow_forward = False  # Do not allow forwards
+                        self.allow_back = True
                         # print('do not allow forwards')
                     elif self.image.get_size()[0] // 2 < self.mask_overlap[0]:  # If the collision is on the right half
-                        self.allow_forwards = True  # Do not allow reverse
-                        self.allow_reverse = False
+                        self.allow_forward = True  # Do not allow reverse
+                        self.allow_back = False
                         # print('do not allow reverse')
 
                 elif 135 <= self.rotation <= 225:  # If the car is pointing down...
                     # print('pointing down')
                     if self.image.get_size()[1] // 2 < self.mask_overlap[1]:  # If the collision is on the bottom half
-                        self.allow_forwards = False  # Do not allow forwards
-                        self.allow_reverse = True
+                        self.allow_forward = False  # Do not allow forwards
+                        self.allow_back = True
                         # print('do not allow forwards')
                     elif self.image.get_size()[1] // 2 > self.mask_overlap[1]:  # If the collision is on the top half
-                        self.allow_forwards = True  # Do not allow reverse
-                        self.allow_reverse = False
+                        self.allow_forward = True  # Do not allow reverse
+                        self.allow_back = False
                         # print('do not allow reverse')
 
                 elif 225 < self.rotation < 315:  # If the car is pointing right...
                     # print('pointing right')
                     if self.image.get_size()[0] // 2 < self.mask_overlap[0]:  # If the collision is on the right half
-                        self.allow_forwards = False  # Do not allow forwards
-                        self.allow_reverse = True
+                        self.allow_forward = False  # Do not allow forwards
+                        self.allow_back = True
                         # print('do not allow forwards')
                     elif self.image.get_size()[0] // 2 > self.mask_overlap[0]:  # If the collision is on the left half
-                        self.allow_forwards = True  # Do not allow reverse
-                        self.allow_reverse = False
+                        self.allow_forward = True  # Do not allow reverse
+                        self.allow_back = False
                         # print('do not allow reverse')
 
                 if self.mask_area > self.mask_size // 1.5:  # If over half of the car is colliding with the mask...
@@ -1214,10 +1226,10 @@ class NpcCar(pygame.sprite.Sprite):
                 self.collision = False
                 self.collision_time = 0
                 self.collision_sound = False
-                if not self.allow_forwards:  # Ensure that the player can move forwards and backwards
-                    self.allow_forwards = True
-                if not self.allow_reverse:
-                    self.allow_reverse = True
+                if not self.allow_forward:  # Ensure that the player can move forwards and backwards
+                    self.allow_forward = True
+                if not self.allow_back:
+                    self.allow_back = True
 
     def check_car_collision(self, sprite):
         if not self.collision or self.collision == sprite:
@@ -1243,45 +1255,45 @@ class NpcCar(pygame.sprite.Sprite):
                 if self.rotation <= 45 or self.rotation >= 315:  # If car is pointing up...
                     # print('pointing up')
                     if self.image.get_size()[1] // 2 > self.mask_overlap[1]:  # If the collision is on the top half
-                        self.allow_forwards = False  # Do not allow forwards
-                        self.allow_reverse = True
+                        self.allow_forward = False  # Do not allow forwards
+                        self.allow_back = True
                         # print('do not allow forwards')
                     elif self.image.get_size()[1] // 2 < self.mask_overlap[1]:  # If the collision is on the bottom half
-                        self.allow_forwards = True  # Do not allow reverse
-                        self.allow_reverse = False
+                        self.allow_forward = True  # Do not allow reverse
+                        self.allow_back = False
                         # print('do not allow reverse')
 
                 elif 45 < self.rotation < 135:  # If the car is pointing left...
                     # print('pointing left')
                     if self.image.get_size()[0] // 2 > self.mask_overlap[0]:  # If the collision is on the left half
-                        self.allow_forwards = False  # Do not allow forwards
-                        self.allow_reverse = True
+                        self.allow_forward = False  # Do not allow forwards
+                        self.allow_back = True
                         # print('do not allow forwards')
                     elif self.image.get_size()[0] // 2 < self.mask_overlap[0]:  # If the collision is on the right half
-                        self.allow_forwards = True  # Do not allow reverse
-                        self.allow_reverse = False
+                        self.allow_forward = True  # Do not allow reverse
+                        self.allow_back = False
                         # print('do not allow reverse')
 
                 elif 135 <= self.rotation <= 225:  # If the car is pointing down...
                     # print('pointing down')
                     if self.image.get_size()[1] // 2 < self.mask_overlap[1]:  # If the collision is on the bottom half
-                        self.allow_forwards = False  # Do not allow forwards
-                        self.allow_reverse = True
+                        self.allow_forward = False  # Do not allow forwards
+                        self.allow_back = True
                         # print('do not allow forwards')
                     elif self.image.get_size()[1] // 2 > self.mask_overlap[1]:  # If the collision is on the top half
-                        self.allow_forwards = True  # Do not allow reverse
-                        self.allow_reverse = False
+                        self.allow_forward = True  # Do not allow reverse
+                        self.allow_back = False
                         # print('do not allow reverse')
 
                 elif 225 < self.rotation < 315:  # If the car is pointing right...
                     # print('pointing right')
                     if self.image.get_size()[0] // 2 < self.mask_overlap[0]:  # If the collision is on the right half
-                        self.allow_forwards = False  # Do not allow forwards
-                        self.allow_reverse = True
+                        self.allow_forward = False  # Do not allow forwards
+                        self.allow_back = True
                         # print('do not allow forwards')
                     elif self.image.get_size()[0] // 2 > self.mask_overlap[0]:  # If the collision is on the left half
-                        self.allow_forwards = True  # Do not allow reverse
-                        self.allow_reverse = False
+                        self.allow_forward = True  # Do not allow reverse
+                        self.allow_back = False
                         # print('do not allow reverse')
 
                 if self.mask_area > self.mask_size // 1.5:  # If over half of the car is colliding with the mask...
@@ -1300,6 +1312,10 @@ class NpcCar(pygame.sprite.Sprite):
         self.pos_x = x
         self.pos_y = y
         self.rect.center = x, y
+        self.movement_rects[0].center = self.rect.topleft
+        self.movement_rects[1].center = self.rect.topright
+        self.movement_rects[2].center = self.rect.bottomleft
+        self.movement_rects[3].center = self.rect.bottomright
 
     def rotate(self, degree):  # Rotate car to new angle
         self.rotation = degree  # Set current rotation as rotation
@@ -1313,29 +1329,78 @@ class NpcCar(pygame.sprite.Sprite):
             self.rotation = 180
         elif 270 - global_car_rotation_speed + 1 <= self.rotation <= 270 + global_car_rotation_speed + 1:
             self.rotation = 270
-        self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
-            self.image_dir).convert(), self.size), self.rotation)  # Rotate image
+        self.image = pygame.transform.rotate(self.origin_img.copy(), self.rotation)  # Rotate image
         self.image.set_colorkey(BLACK)
         self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
         self.rect = self.image.get_rect()  # Set surface size to image size
         if Debug:
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)
         self.rect.center = self.pos_x, self.pos_y
+        self.movement_rects[0].center = self.rect.topleft
+        self.movement_rects[1].center = self.rect.topright
+        self.movement_rects[2].center = self.rect.bottomleft
+        self.movement_rects[3].center = self.rect.bottomright
+
+    def rotate_rect(self, rect, angle):
+        a = rect.centerx
+        b = rect.centery
+        x = self.pos_x
+        y = self.pos_y
+        # c = new_x
+        # d = new_y
+        # angle = angle
+        r = self.rect_radius
+        equation_1 = 2*((a - x**2) + (b - y**2)) - 2*(((a - x**2) + (b - y**2)) * cos(angle))
+        pass
 
     def reset_to_checkpoint(self):
         self.collision_time = 0
-        self.allow_forwards = True #
-        self.allow_reverse = True
+        self.allow_forward = True #
+        self.allow_back = True
         self.collision = False
         self.move(*self.prev_checkpoint_position)  # Move car to exact start position
         self.rotate(self.prev_checkpoint_rotation)
 
+    def auto_decide(self):
+        self.allow_forward = False
+        self.allow_back = False
+        self.allow_left = False
+        self.allow_right = False
+        self.move_forward = False
+        self.move_back = False
+        self.move_left = False
+        self.move_right = False
+
+        if self.movement_rects[0].collidelist([pygame.rect.Rect(1, 1, 1, 1)]):
+            pass
+
     def auto_move(self):  # Check allowed movements and desired action
-        if self.move_forward and self.allow_forwards:  # FORWARD
+        pressed_keys = pygame.key.get_pressed()
+        if pressed_keys[pygame.K_t]:
+            self.move_forward = True
+            self.move_back = False
+        elif pressed_keys[pygame.K_g]:
+            self.move_back = True
+            self.move_forward = False
+        else:
+            self.move_forward = False
+            self.move_back = False
+
+        if pressed_keys[pygame.K_f]:
+            self.move_left = True
+            self.move_right = False
+        elif pressed_keys[pygame.K_h]:
+            self.move_left = False
+            self.move_right = True
+        else:
+            self.move_left = False
+            self.move_right = False
+
+        if self.move_forward and self.allow_forward:  # FORWARD
             self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
                       self.pos_y + round(sin(radians(self.rotation - 90)) * self.move_speed))
             # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-        elif self.move_back and self.allow_reverse:  # BACK
+        elif self.move_back and self.allow_back:  # BACK
             self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self.move_speed),
                       self.pos_y - round(sin(radians(self.rotation - 90)) * self.move_speed))
             # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
@@ -1356,7 +1421,7 @@ class NpcCar(pygame.sprite.Sprite):
 
         draw_triangle((self.rect.centerx, self.rect.top - 14), 'down',  # Name and arrow
                       width=10, height=10, border=self.colour, border_width=3, surface=surf)
-        self.name_rect = draw_text(self.rect.centerx, self.rect.top - 35, self.name, WHITE, 12, surf=surf)
+        draw_text(self.rect.centerx, self.rect.top - 35, self.name, WHITE, 12, surf=surf)
 
         if self.lightning_animation:  # Lightning animation
             self._lightning_frame = pygame.time.get_ticks() // 70 - self.lightning_animation
@@ -1369,7 +1434,7 @@ class NpcCar(pygame.sprite.Sprite):
                                         (self.move_speed - global_car_move_speed) * 1000
 
         if Debug:
-            if not self.allow_forwards:
+            if not self.allow_forward:
                 if self.rotation <= 45 or self.rotation >= 315:  # Up
                     draw_triangle((self.pos_x, self.pos_y - 20), 'up',
                                   width=14, height=14, colour=GREEN_CAR, border=RED, border_width=2)  # red up
@@ -1396,7 +1461,7 @@ class NpcCar(pygame.sprite.Sprite):
                     draw_triangle((self.pos_x + 20, self.pos_y), 'right',
                                   width=14, height=14, colour=GREEN_CAR, border=GREY, border_width=2)  # grey right
 
-            if not self.allow_reverse:
+            if not self.allow_back:
                 if self.rotation <= 45 or self.rotation >= 315:  # Up
                     draw_triangle((self.pos_x, self.pos_y + 20), 'down',
                                   width=14, height=14, border=RED, border_width=2)  # red down
@@ -1478,7 +1543,7 @@ class NpcCar(pygame.sprite.Sprite):
                                   width=14, height=14, border=GREY, border_width=2)  # grey down
 
             for surface in self.movement_surfs:
-                surf.blit(surface, self.movement_rects[self.movement_surfs.index(surface)])
+                surf.blit(surface, self.movement_rects[self.movement_surfs.index(surface)].topleft)
 
     def update(self):  # Called each loop and checks if anything has changed
         if self.penalty_time and self.penalty_time > pygame.time.get_ticks():
@@ -1489,14 +1554,13 @@ class NpcCar(pygame.sprite.Sprite):
             return
         elif self.penalty_time and self.penalty_time < pygame.time.get_ticks():
             self.penalty_time = 0
-            self.image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
-                self.image_dir).convert(), self.size), self.rotation)  # Load new image to reset damage
+            self.image = pygame.transform.rotate(self.origin_img.copy(), self.rotation)  # Load new image to reset dmg
             self.image.set_colorkey(BLACK)
             self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
             self.rect = self.image.get_rect()  # Set surface size to image size
             self.rect.center = self.pos_x, self.pos_y
         else:
-            if self.collision_time != 0 and self.allow_reverse:
+            if self.collision_time != 0 and self.allow_back:
                 if pygame.time.get_ticks() >= self.collision_time + 5000:
                     self.reset_to_checkpoint()
                     # print('reset')

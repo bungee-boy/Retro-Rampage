@@ -1,5 +1,5 @@
 import json
-from math import cos, sin, radians, ceil, floor, sqrt
+from math import cos, sin, radians, ceil, floor
 from random import randint
 from threading import Thread, Event
 from time import sleep
@@ -1101,16 +1101,15 @@ class NpcCar(pygame.sprite.Sprite):
         self.movement_rects = []
         self.movement_surfs = []
         for index in range(0, 4):
-            surf = pygame.surface.Surface((5, 5))
-            rect = surf.get_rect()
+            surf = pygame.surface.Surface((10, 10))
+            rect = pygame.rect.Rect(0, 0, 10, 10)
+            rect.center = self.rect.centerx, self.rect.centery - self.rect_radius
             surf.fill((1, 1, 1))
             surf.set_colorkey((1, 1, 1))
-            if index == 1:
-                pygame.draw.rect(surf, GREEN_CAR, rect, width=1)
-            else:
-                pygame.draw.rect(surf, RED_CAR, rect, width=1)
-            draw_text(rect.centerx, rect.centery, str(len(self.movement_rects)), RED_CAR, rect.height,
-                      surf=surf)
+            surf.fill(RED)
+            rect = self.rotate_rect(rect, 45 + (90 * index) + self.rotation)
+            print('Rotate: {0} Pos: {1}, {2}'.format(45 + (90 * index) + self.rotation, rect.centerx, rect.centery))
+            # draw_text(rect.centerx, rect.centery, str(len(self.movement_rects)), RED_CAR, rect.height, surf=surf)
             self.movement_surfs.append(surf)
             self.movement_rects.append(rect)
         self.penalty_time = 0
@@ -1309,13 +1308,12 @@ class NpcCar(pygame.sprite.Sprite):
                 # self.allow_reverse = True
 
     def move(self, x, y):  # Move car to new position
+        for rect in self.movement_rects:
+            rect.centerx -= self.pos_x - x
+            rect.centery -= self.pos_y - y
         self.pos_x = x
         self.pos_y = y
         self.rect.center = x, y
-        self.movement_rects[0].center = self.rect.topleft
-        self.movement_rects[1].center = self.rect.topright
-        self.movement_rects[2].center = self.rect.bottomleft
-        self.movement_rects[3].center = self.rect.bottomright
 
     def rotate(self, degree):  # Rotate car to new angle
         self.rotation = degree  # Set current rotation as rotation
@@ -1336,22 +1334,13 @@ class NpcCar(pygame.sprite.Sprite):
         if Debug:
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)
         self.rect.center = self.pos_x, self.pos_y
-        self.movement_rects[0].center = self.rect.topleft
-        self.movement_rects[1].center = self.rect.topright
-        self.movement_rects[2].center = self.rect.bottomleft
-        self.movement_rects[3].center = self.rect.bottomright
 
     def rotate_rect(self, rect, angle):
-        a = rect.centerx
-        b = rect.centery
-        x = self.pos_x
-        y = self.pos_y
-        # c = new_x
-        # d = new_y
-        # angle = angle
-        r = self.rect_radius
-        equation_1 = 2*((a - x**2) + (b - y**2)) - 2*(((a - x**2) + (b - y**2)) * cos(angle))
-        pass
+        rect.centerx = cos(radians(angle)) * (rect.centerx - self.rect.centerx) - \
+                       sin(radians(angle)) * (rect.centery - self.rect.centery) + self.rect.centerx
+        rect.centery = sin(radians(angle)) * (rect.centerx - self.rect.centerx) + \
+                       cos(radians(angle)) * (rect.centery - self.rect.centery) + self.rect.centery
+        return rect
 
     def reset_to_checkpoint(self):
         self.collision_time = 0
@@ -1372,6 +1361,7 @@ class NpcCar(pygame.sprite.Sprite):
         self.move_right = False
 
         if self.movement_rects[0].collidelist([pygame.rect.Rect(1, 1, 1, 1)]):
+            print('Rect 1 collision')
             pass
 
     def auto_move(self):  # Check allowed movements and desired action

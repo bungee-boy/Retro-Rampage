@@ -67,6 +67,7 @@ BLUE_CAR = 47, 149, 208
 BLACK_CAR = 93, 91, 91
 # Other variables
 Debug = False  # Enables Debug mode for detecting issues. (Changes various things other than visual changes)
+Race_debug = True  # Enables Debug mode and starts game on race settings menu
 Force_resolution = []  # Manual window size ([] = Automatic, [width, height] = Forced)
 Screen = 0  # If the user has multiple monitors, sets which monitor to use (starts at 0)
 Animations = False  # Enables animations on the main menu
@@ -1107,7 +1108,7 @@ class NpcCar(pygame.sprite.Sprite):
             surf.fill((1, 1, 1))
             surf.set_colorkey((1, 1, 1))
             surf.fill(RED)
-            rect = self.rotate_rect(rect, 45 + (90 * index) + self.rotation)
+            rect = self.rotate_rect(rect, (90 * index) + self.rotation)
             print('Rotate: {0} Pos: {1}, {2}'.format(45 + (90 * index) + self.rotation, rect.centerx, rect.centery))
             # draw_text(rect.centerx, rect.centery, str(len(self.movement_rects)), RED_CAR, rect.height, surf=surf)
             self.movement_surfs.append(surf)
@@ -1126,6 +1127,7 @@ class NpcCar(pygame.sprite.Sprite):
         self.prev_checkpoint_path_position = 0
         # SOUND variables
         self.collision_sound = False
+
         self.move(self.origin_pos[0], self.origin_pos[1])
         if self.origin_rotation != 0:  # If start rotation is not 0 then rotate
             self.rotate(self.rotation)
@@ -1337,9 +1339,9 @@ class NpcCar(pygame.sprite.Sprite):
 
     def rotate_rect(self, rect, angle):
         rect.centerx = cos(radians(angle)) * (rect.centerx - self.rect.centerx) - \
-                       sin(radians(angle)) * (rect.centery - self.rect.centery) + self.rect.centerx
+            sin(radians(angle)) * (rect.centery - self.rect.centery) + self.rect.centerx
         rect.centery = sin(radians(angle)) * (rect.centerx - self.rect.centerx) + \
-                       cos(radians(angle)) * (rect.centery - self.rect.centery) + self.rect.centery
+            cos(radians(angle)) * (rect.centery - self.rect.centery) + self.rect.centery
         return rect
 
     def reset_to_checkpoint(self):
@@ -4531,6 +4533,8 @@ def game():  # All variables that are not constant
                 else:
                     name[1] = False
                     break
+            elif Player_amount <= 0:
+                raise ValueError("There are no players!")
             npc_pos += 1
 
     if not player_list and not npc_list:
@@ -5317,6 +5321,14 @@ def main():
     loading_thread = Thread(target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
 
     Players.append(Player(0))
+    Player_amount = 1
+
+    if Race_debug:
+        Debug = True
+        Players[0].name = 'Debug'
+        Npc_amount = 1
+        Map = 'hairpin'
+        current_window = 'race settings'
 
     if Intro_screen and not Debug:
         intro_bg = menu_background()

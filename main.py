@@ -251,6 +251,7 @@ global_car_move_speed = 4
 screen_updates = []
 loaded_assets = []
 loaded_sounds = []
+loaded_fonts = {}
 recorded_keys = []  # Empty list for creating NPC paths
 
 
@@ -3642,7 +3643,20 @@ def draw_slider(pos: tuple[int, int], size: tuple[int, int],
 # Draws text on screen
 def draw_text(x, y, text, colour, size, bold=False, bar=False, three_d=False,
               center_x=True, return_rect=False, surf=Window):
-    font = pygame.font.Font(fonts.load(bold, bar, three_d), size)
+    global loaded_fonts
+    font_name = str(size)
+    if bold:
+        font_name += 'bold'
+    if bar:
+        font_name += 'bar'
+    if three_d:
+        font_name += '3d'
+    try:
+        font = loaded_fonts[font_name]
+    except KeyError:
+        font = pygame.font.Font(fonts.load(bold, bar, three_d), size)
+        loaded_fonts[font_name] = font
+
     render = font.render(str(text), True, colour)
     if center_x:
         x -= render.get_width() // 2  # Centre text x position
@@ -8441,7 +8455,11 @@ def main():
 
 if __name__ == '__main__':
     if Debug:  # If in debug mode then do not handle errors
-        main()
+        try:
+            main()
+        except KeyboardInterrupt:
+            pygame.quit()
+            quit()
     else:
         try:
             main()
@@ -8449,7 +8467,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             Music_loop = False
             if music_thread.is_alive():
-                music_thread.join(timeout=0.25)
+                music_thread.join()
             if loading_thread.is_alive():
                 loading_thread_event.set()
                 loading_thread.join()
@@ -8460,10 +8478,11 @@ if __name__ == '__main__':
             print(error)
             Music_loop = False
             if music_thread.is_alive():
-                music_thread.join(timeout=0.25)
+                music_thread.join()
             if loading_thread.is_alive():
                 loading_thread_event.set()
                 loading_thread.join()
+
             pygame.mixer.music.stop()
             pygame.mixer.stop()
             pygame.time.wait(100)

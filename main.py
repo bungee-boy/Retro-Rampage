@@ -150,12 +150,12 @@ Desktop_info = pygame.display.get_desktop_sizes()
 if not Force_resolution:  # Automatically detect screen resolution and set display size
     if len(Desktop_info) < Screen + 1:  # Always default to 1st screen if previously set to other and only have one
         Screen = 0
-    Display_resolution = Desktop_info[Screen]
+    Display_resolution = tuple(Desktop_info[Screen])
 else:
     if len(Desktop_info) < Screen + 1:  # Always default to 1st screen if previously set to second and only have one
         Screen = 0
         save_settings()
-    Display_resolution = Force_resolution
+    Display_resolution = tuple(Force_resolution)
 
 print('Running at ' + str(Display_resolution[0]) + ' x ' + str(Display_resolution[1]))
 pygame.display.set_caption('Retro Rampage')  # Set display name
@@ -201,6 +201,7 @@ Selected_player = []
 Player_amount = 0
 Npc_amount = 3
 Map = 'snake'
+Track_mask = pygame.mask.Mask((WIDTH, HEIGHT))
 Total_laps = 3
 Current_lap = 0
 Race_time = 0
@@ -256,6 +257,13 @@ recorded_keys = []  # Empty list for creating NPC paths
 
 
 # -------- CLASSES -------- #
+class Object:
+    def __init__(self, surf: pygame.surface.Surface, rect: pygame.rect.Rect, mask: pygame.mask.Mask):
+        self.surf = surf
+        self.rect = rect
+        self.mask = mask
+
+
 class Player:
     def __init__(self, player: int):
         self.id = player
@@ -610,13 +618,13 @@ class Car(pygame.sprite.Sprite):
                     self._lap_halfway = False  # Halfway reset
                     self.laps += 1
 
-    def check_track_collisions(self, track_mask):  # Check if there are collisions and take action
+    def check_track_collisions(self):  # Check if there are collisions and take action
         if not self.collision or self.collision == 'track':
             if Debug:  # If debug then outline car mask in red
                 for pos in self.mask.outline():
                     pos_x, pos_y = pos
                     pygame.draw.circle(self.image, RED, (pos_x, pos_y), 1)
-            self.mask_overlap = self.mask.overlap(track_mask, (-self.rect.left, -self.rect.top))
+            self.mask_overlap = self.mask.overlap(Track_mask, (-self.rect.left, -self.rect.top))
             if self.mask_overlap:
                 self.collision = 'track'
                 if not self._collision_sound:
@@ -633,7 +641,7 @@ class Car(pygame.sprite.Sprite):
                         self.image.blit(self._dmg_img, (0, 0))  # Overlay damage on top of image
 
                 # If there is a collision between masks...
-                self.mask_area = self.mask.overlap_area(track_mask, (-self.rect.left, -self.rect.top))
+                self.mask_area = self.mask.overlap_area(Track_mask, (-self.rect.left, -self.rect.top))
                 self.mask_size = self.mask.count()
 
                 if Debug:  # If debug then show collision position via small yellow square
@@ -1098,22 +1106,23 @@ class NpcCar(pygame.sprite.Sprite):
         self.move_back = False
         self.move_left = False
         self.move_right = False
-        self.rect_radius = 100
+        self.rect_radius = 130
+        self.rect_offset = 25
         # 1 - 4 = Track collision
-        self.movement_rects = []
-        self.movement_surfs = []
+        self.movements_obj = []
+        # self.movement_surfs = []
         for index in range(0, 4):
             surf = pygame.surface.Surface((10, 10))
-            rect = pygame.rect.Rect(0, 0, 10, 10)
+            rect = surf.get_rect()
+            mask = pygame.mask.from_surface(surf)
             rect.center = self.rect.centerx, self.rect.centery - self.rect_radius
             surf.fill((1, 1, 1))
             surf.set_colorkey((1, 1, 1))
             surf.fill(RED)
-            rect = self.rotate_rect(rect, (90 * index) + self.rotation)
-            print('Rotate: {0} Pos: {1}, {2}'.format(45 + (90 * index) + self.rotation, rect.centerx, rect.centery))
-            # draw_text(rect.centerx, rect.centery, str(len(self.movement_rects)), RED_CAR, rect.height, surf=surf)
-            self.movement_surfs.append(surf)
-            self.movement_rects.append(rect)
+            # print('Rotate: {0} Pos: {1}, {2}'.format(-self.rotation + (90 * index) + 45, rect.centerx, rect.centery))
+            # self.movement_surfs.append(surf)
+            # self.movement_masks.append(mask)
+            self.movements_obj.append(Object(surf, rect, mask))
         self.penalty_time = 0
         # NAME variables
         self.name = name
@@ -1150,13 +1159,13 @@ class NpcCar(pygame.sprite.Sprite):
                     self.lap_halfway = False
                     self.laps += 1
 
-    def check_track_collisions(self, track_mask):  # Check if there are collisions and take action
+    def check_track_collisions(self):  # Check if there are collisions and take action
         if not self.collision or self.collision == 'track':  # Do not allow driving off track
             if Debug:  # If debug then outline car mask in red
                 for pos in self.mask.outline():
                     pos_x, pos_y = pos
                     pygame.draw.circle(self.image, RED, (pos_x, pos_y), 1)
-            self.mask_overlap = self.mask.overlap(track_mask, (-self.rect.left, -self.rect.top))
+            self.mask_overlap = self.mask.overlap(Track_mask, (-self.rect.left, -self.rect.top))
             if self.mask_overlap:
                 self.collision = 'track'
                 if not self.collision_sound:
@@ -1168,7 +1177,7 @@ class NpcCar(pygame.sprite.Sprite):
                     self.collision_time = pygame.time.get_ticks()
 
                 # If there is a collision between masks...
-                self.mask_area = self.mask.overlap_area(track_mask, (-self.rect.left, -self.rect.top))
+                self.mask_area = self.mask.overlap_area(Track_mask, (-self.rect.left, -self.rect.top))
                 self.mask_size = self.mask.count()
 
                 if Debug:  # If debug then show collision position via small yellow square
@@ -1228,10 +1237,10 @@ class NpcCar(pygame.sprite.Sprite):
                 self.collision = False
                 self.collision_time = 0
                 self.collision_sound = False
-                if not self.allow_forward:  # Ensure that the player can move forwards and backwards
-                    self.allow_forward = True
-                if not self.allow_back:
-                    self.allow_back = True
+                # if not self.allow_forward:  # Ensure that the player can move forwards and backwards
+                #    self.allow_forward = True
+                # if not self.allow_back:
+                #    self.allow_back = True
 
     def check_car_collision(self, sprite):
         if not self.collision or self.collision == sprite:
@@ -1311,9 +1320,9 @@ class NpcCar(pygame.sprite.Sprite):
                 # self.allow_reverse = True
 
     def move(self, x, y):  # Move car to new position
-        for rect in self.movement_rects:
-            rect.centerx -= self.pos_x - x
-            rect.centery -= self.pos_y - y
+        for obj in self.movements_obj:
+            obj.rect.centerx -= self.pos_x - x
+            obj.rect.centery -= self.pos_y - y
         self.pos_x = x
         self.pos_y = y
         self.rect.center = x, y
@@ -1337,13 +1346,21 @@ class NpcCar(pygame.sprite.Sprite):
         if Debug:
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)
         self.rect.center = self.pos_x, self.pos_y
+        # print('Rotate: {0}'.format(self.rotation))
+        self.rotate_rect(self.movements_obj[0].rect, -self.rotation - self.rect_offset)  # Topleft
+        self.rotate_rect(self.movements_obj[1].rect, -self.rotation + self.rect_offset - 180)  # Bottomleft
+        self.rotate_rect(self.movements_obj[2].rect, -self.rotation - self.rect_offset - 180)  # Bottomright
+        self.rotate_rect(self.movements_obj[3].rect, -self.rotation + self.rect_offset)  # Topright
 
     def rotate_rect(self, rect, angle):
-        rect.centerx = cos(radians(angle)) * (rect.centerx - self.rect.centerx) - \
-            sin(radians(angle)) * (rect.centery - self.rect.centery) + self.rect.centerx
-        rect.centery = sin(radians(angle)) * (rect.centerx - self.rect.centerx) + \
-            cos(radians(angle)) * (rect.centery - self.rect.centery) + self.rect.centery
-        return rect
+        # print('Center: {0}, {1} Angle: {2}'.format(self.pos_x, self.pos_y, angle))
+        origin_x, origin_y = self.pos_x, self.pos_y
+        radius = self.rect_radius
+        rect.center = origin_x, origin_y - radius
+        x, y = rect.centerx, rect.centery
+        angle = radians(angle)
+        rect.centerx = cos(angle) * (x - origin_x) - sin(angle) * (y - origin_y) + origin_x
+        rect.centery = sin(angle) * (x - origin_x) + cos(angle) * (y - origin_y) + origin_y
 
     def reset_to_checkpoint(self):
         self.collision_time = 0
@@ -1354,20 +1371,38 @@ class NpcCar(pygame.sprite.Sprite):
         self.rotate(self.prev_checkpoint_rotation)
 
     def auto_decide(self):
-        self.allow_forward = False
-        self.allow_back = False
-        self.allow_left = False
-        self.allow_right = False
-        self.move_forward = False
+        self.allow_forward = True
+        self.allow_back = True
+        self.allow_left = True
+        self.allow_right = True
+        self.move_forward = True
+        '''
+        self.move_forward = True
         self.move_back = False
         self.move_left = False
         self.move_right = False
+        '''
 
-        if self.movement_rects[0].collidelist([pygame.rect.Rect(1, 1, 1, 1)]):
-            print('Rect 1 collision')
-            pass
+        obj = self.movements_obj[0]
+        if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
+            print('Front left collision')
+            self.move_right = True
+
+        obj = self.movements_obj[1]
+        if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
+            print('Back left collision')
+
+        obj = self.movements_obj[2]
+        if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
+            print('Back right collision')
+
+        obj = self.movements_obj[3]
+        if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
+            print('Front right collision')
+            self.move_left = True
 
     def auto_move(self):  # Check allowed movements and desired action
+        # '''  # MANUAL MOVEMENT
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[pygame.K_t]:
             self.move_forward = True
@@ -1388,6 +1423,9 @@ class NpcCar(pygame.sprite.Sprite):
         else:
             self.move_left = False
             self.move_right = False
+        # '''  # MANUAL MOVEMENT
+
+        self.auto_decide()  # AUTOMATED MOVEMENT
 
         if self.move_forward and self.allow_forward:  # FORWARD
             self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
@@ -1535,8 +1573,8 @@ class NpcCar(pygame.sprite.Sprite):
                     draw_triangle((self.pos_x, self.pos_y + 20), 'down',
                                   width=14, height=14, border=GREY, border_width=2)  # grey down
 
-            for surface in self.movement_surfs:
-                surf.blit(surface, self.movement_rects[self.movement_surfs.index(surface)].topleft)
+            for obj in self.movements_obj:
+                surf.blit(obj.surf, obj.rect.topleft)
 
     def update(self):  # Called each loop and checks if anything has changed
         if self.penalty_time and self.penalty_time > pygame.time.get_ticks():
@@ -4373,7 +4411,7 @@ def get_mouse_pos():
 
 # -------- GAME LOOPS -------- #
 def game():  # All variables that are not constant
-    global Player_positions, Race_time, Countdown, Window_screenshot, button_trigger, \
+    global Track_mask, Player_positions, Race_time, Countdown, Window_screenshot, button_trigger, \
         Debug, Screen, Animations, Mute_volume, Music_volume, Sfx_volume, loaded_assets, loaded_sounds, \
         Current_lap, Window_sleep, Game_end, Music_loop, music_thread, current_window, Game_paused, loading_thread
     layers = []
@@ -4471,7 +4509,7 @@ def game():  # All variables that are not constant
     else:
         raise ValueError('Map is not any track | Map = ' + str(Map))
 
-    track_mask = pygame.mask.from_surface(layers[2])
+    Track_mask = pygame.mask.from_surface(layers[2])
 
     if Debug:  # If debug outline track mask in red and outline lap triggers
         # CHECKPOINT TRIGGERS
@@ -4488,12 +4526,12 @@ def game():  # All variables that are not constant
             checkpoint_surfaces[len(checkpoint_surfaces) - 1].blit(text, text_rect.topleft)
 
         # TRACK MASK OUTLINE
-        for pos in track_mask.outline():  # Outline track mask
+        for pos in Track_mask.outline():  # Outline track mask
             pygame.draw.circle(full_map, RED, (pos[0], pos[1]), 1)
     else:
         checkpoint_surfaces = []
 
-    track_mask.invert()
+    Track_mask.invert()
     if not Debug:  # Hide mouse when not in debug mode
         pygame.mouse.set_visible(False)
 
@@ -5186,7 +5224,7 @@ def game():  # All variables that are not constant
                     while not on_track:
                         pos_x = randint(0, WIDTH)
                         pos_y = randint(0, HEIGHT)
-                        if not track_mask.overlap(mask, (pos_x, pos_y)):
+                        if not Track_mask.overlap(mask, (pos_x, pos_y)):
                             on_track = True
                             power_ups.append((surf, (pos_x, pos_y, 30, 30), (pos_x, pos_y),
                                               mask, ver, pygame.time.get_ticks() + 15000))  # 15s timeout trigger
@@ -5200,7 +5238,7 @@ def game():  # All variables that are not constant
             for player in player_list:
                 player.update()
             for player in range(0, len(player_list)):  # For every player,
-                player_list[player].check_track_collisions(track_mask)  # Track collisions
+                player_list[player].check_track_collisions()  # Track collisions
                 player_list[player].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
                 if player_list[player].laps > Total_laps and not game_countdown:  # If player has finished
                     game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
@@ -5233,7 +5271,7 @@ def game():  # All variables that are not constant
 
             for npc_pos in range(0, len(npc_list)):
                 npc_list[npc_pos].update()  # Update position
-                npc_list[npc_pos].check_track_collisions(track_mask)  # Track collisions
+                npc_list[npc_pos].check_track_collisions()  # Track collisions
                 npc_list[npc_pos].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
                 if npc_list[npc_pos].laps > Total_laps and not game_countdown:
                     game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
@@ -5338,11 +5376,13 @@ def main():
     Player_amount = 1
 
     if Race_debug:
-        Debug = True
+        # Debug = True
         Players[0].name = 'Debug'
-        Npc_amount = 1
+        Npc_amount = 5
         Map = 'hairpin'
         current_window = 'race settings'
+        game()
+        current_window = 'leaderboard'
 
     if Intro_screen and not Debug:
         intro_bg = menu_background()

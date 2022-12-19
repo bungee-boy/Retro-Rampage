@@ -5,7 +5,6 @@ import main as game
 class TestLibrary(unittest.TestCase):
     def test_image_loader(self):
         err_msg = 'Image loader test failed!'
-        self.assertEqual(game.assets.icon(), game.assets.assets + '/icon.ico', err_msg)
 
         self.assertRaises(ValueError, game.assets.animation, 'x', 0)
         self.assertRaises(ValueError, game.assets.animation, 'flame', 0, car_num=-1)

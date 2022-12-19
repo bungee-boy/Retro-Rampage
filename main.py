@@ -1,5 +1,5 @@
 import json
-from math import cos, sin, radians, ceil, floor, sqrt
+from math import cos, sin, radians, ceil, floor
 from random import randint
 from threading import Thread, Event
 from time import sleep
@@ -67,7 +67,7 @@ BLUE_CAR = 47, 149, 208
 BLACK_CAR = 93, 91, 91
 # Other variables
 Debug = False  # Enables Debug mode for detecting issues. (Changes various things other than visual changes)
-Race_debug = True  # Enables Debug mode and starts game on race settings menu
+Race_debug = False  # Enables Debug mode and starts game on race settings menu
 Force_resolution = []  # Manual window size ([] = Automatic, [width, height] = Forced)
 Screen = 0  # If the user has multiple monitors, sets which monitor to use (starts at 0)
 Animations = False  # Enables animations on the main menu
@@ -165,7 +165,7 @@ try:
     icon.blit(pygame.transform.scale(pygame.image.load(assets.car(RED_CAR, 'family car')), (20, 32)), (6, 0))
     pygame.display.set_icon(icon)  # Set display icon
 except FileNotFoundError:
-    print('*** ERROR: Could not set window icon -> car_red_1.png not found! ***')
+    print('*** ERROR: Could not set window icon -> {0} not found! ***'.format(assets.car(RED_CAR, 'family car')))
 
 if Desktop_info[Screen] != Display_resolution:
     Display = pygame.display.set_mode(Display_resolution, display=Screen)
@@ -603,7 +603,8 @@ class Car(pygame.sprite.Sprite):
             self.input_type = 'controller'
             self.controller = control
         else:
-            raise ValueError("Car | controls is not == 'wasd' or 'arrows' or controller. : " + str(control))
+            raise ValueError("Car | controls is not == 'wasd' or 'arrows'"
+                             " or controller : {0} as {1}".format(control, type(control)))
 
     def check_checkpoints(self, checkpoint_rectangles):
         for checkpoint in checkpoint_rectangles:  # For each checkpoint
@@ -1049,23 +1050,23 @@ class NpcCar(pygame.sprite.Sprite):
         self.rotation_speed = global_car_rotation_speed
         if type(self.vehicle) == str:
             self.vehicle = self.vehicle.lower()
-        if self.vehicle == 'family car':
+        if self.vehicle == 'family car' or self.vehicle == 1:
             self.max_speed = 3
             self.max_rotation_speed = 2
             self.durability = 4
-        elif self.vehicle == 'sports car':
+        elif self.vehicle == 'sports car' or self.vehicle == 2:
             self.max_speed = 4
             self.max_rotation_speed = 3
             self.durability = 2
-        elif self.vehicle == 'luxury car':
+        elif self.vehicle == 'luxury car' or self.vehicle == 2:
             self.max_speed = 3
             self.max_rotation_speed = 3
             self.durability = 3
-        elif self.vehicle == 'truck':
+        elif self.vehicle == 'truck' or self.vehicle == 3:
             self.max_speed = 2
             self.max_rotation_speed = 2
             self.durability = 5
-        elif self.vehicle == 'race car':
+        elif self.vehicle == 'race car' or self.vehicle == 4:
             self.max_speed = 5
             self.max_rotation_speed = 3
             self.durability = 1
@@ -1123,23 +1124,23 @@ class NpcCar(pygame.sprite.Sprite):
         self.move_back = False
         self.move_left = False
         self.move_right = False
-        self.rect_radius = 140
-        self.rect_offset = 30
+        self.rect_radius = 90  # randint(132, 140)
+        self.rect_offset = 30  # randint(22, 30)
+        self.layer_offset = 30
         # 1 - 4 = Track collision
         self.movements_obj = []
-        # self.movement_surfs = []
-        for index in range(0, 4):
-            surf = pygame.surface.Surface((10, 10))
-            rect = surf.get_rect()
-            mask = pygame.mask.from_surface(surf)
-            rect.center = self.rect.centerx, self.rect.centery - self.rect_radius
-            surf.fill((1, 1, 1))
-            surf.set_colorkey((1, 1, 1))
-            surf.fill(RED)
-            # print('Rotate: {0} Pos: {1}, {2}'.format(-self.rotation + (90 * index) + 45, rect.centerx, rect.centery))
-            # self.movement_surfs.append(surf)
-            # self.movement_masks.append(mask)
-            self.movements_obj.append(Object(surf, rect, mask))
+        for layer_num in range(0, 4):
+            layer = []
+            for index in range(0, 4):
+                surf = pygame.surface.Surface((10, 10))
+                rect = surf.get_rect()
+                mask = pygame.mask.from_surface(surf)
+                rect.center = self.rect.centerx, self.rect.centery - self.rect_radius
+                surf.fill((1, 1, 1))
+                surf.set_colorkey((1, 1, 1))
+                surf.fill(RED)
+                layer.append(Object(surf, rect, mask))
+            self.movements_obj.append(layer)
         self.penalty_time = 0
         # NAME variables
         self.name = name
@@ -1337,9 +1338,10 @@ class NpcCar(pygame.sprite.Sprite):
                 # self.allow_reverse = True
 
     def move(self, x, y):  # Move car to new position
-        for obj in self.movements_obj:
-            obj.rect.centerx -= self.pos_x - x
-            obj.rect.centery -= self.pos_y - y
+        for layer in self.movements_obj:
+            for obj in layer:
+                obj.rect.centerx -= self.pos_x - x
+                obj.rect.centery -= self.pos_y - y
         self.pos_x = x
         self.pos_y = y
         self.rect.center = x, y
@@ -1364,15 +1366,20 @@ class NpcCar(pygame.sprite.Sprite):
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)
         self.rect.center = self.pos_x, self.pos_y
         # print('Rotate: {0}'.format(self.rotation))
-        self.rotate_rect(self.movements_obj[0].rect, -self.rotation - self.rect_offset)  # Top left
-        self.rotate_rect(self.movements_obj[1].rect, -self.rotation + self.rect_offset - 180)  # Bottom left
-        self.rotate_rect(self.movements_obj[2].rect, -self.rotation - self.rect_offset - 180)  # Bottom right
-        self.rotate_rect(self.movements_obj[3].rect, -self.rotation + self.rect_offset)  # Top right
+        for layer in self.movements_obj:
+            layer_num = self.movements_obj.index(layer)
+            self.rotate_rect(layer[0].rect, -self.rotation - self.rect_offset,
+                             self.rect_radius + self.layer_offset * layer_num)
+            self.rotate_rect(layer[1].rect, -self.rotation + self.rect_offset - 180,
+                             self.rect_radius + self.layer_offset * layer_num)
+            self.rotate_rect(layer[2].rect, -self.rotation - self.rect_offset - 180,
+                             self.rect_radius + self.layer_offset * layer_num)
+            self.rotate_rect(layer[3].rect, -self.rotation + self.rect_offset,
+                             self.rect_radius + self.layer_offset * layer_num)
 
-    def rotate_rect(self, rect, angle):
+    def rotate_rect(self, rect, angle, radius):
         # print('Center: {0}, {1} Angle: {2}'.format(self.pos_x, self.pos_y, angle))
         origin_x, origin_y = self.pos_x, self.pos_y
-        radius = self.rect_radius
         rect.center = origin_x, origin_y - radius
         x, y = rect.centerx, rect.centery
         angle = radians(angle)
@@ -1381,44 +1388,67 @@ class NpcCar(pygame.sprite.Sprite):
 
     def reset_to_checkpoint(self):
         self.collision_time = 0
-        self.allow_forward = True #
+        self.allow_forward = True
         self.allow_back = True
         self.collision = False
         self.move(*self.prev_checkpoint_position)  # Move car to exact start position
         self.rotate(self.prev_checkpoint_rotation)
 
-    def auto_decide(self):
+    def decide_movement(self):
         self.allow_forward = True
         self.allow_back = True
         self.allow_left = True
         self.allow_right = True
-        self.move_forward = True
-        '''
-        self.move_forward = True
-        self.move_back = False
-        self.move_left = False
-        self.move_right = False
-        '''
+        # self.move_forward = False
+        # self.move_back = False
+        # self.move_left = False
+        # self.move_right = False
 
-        obj = self.movements_obj[0]
-        if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
-            print('Front left collision')
+        front_left = 5
+        back_left = 5
+        back_right = 5
+        front_right = 5
+
+        for layer in reversed(self.movements_obj):
+            obj = layer[0]
+            if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
+                # print('Front left {0}'.format(self.movements_obj.index(layer) + 1))
+                front_left = self.movements_obj.index(layer) + 1
+
+            obj = layer[1]
+            if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
+                # print('Back left {0}'.format(self.movements_obj.index(layer) + 1))
+                back_left = self.movements_obj.index(layer) + 1
+
+            obj = layer[2]
+            if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
+                # print('Back right {0}'.format(self.movements_obj.index(layer) + 1))
+                back_right = self.movements_obj.index(layer) + 1
+
+            obj = layer[3]
+            if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
+                # print('Front right {0}'.format(self.movements_obj.index(layer) + 1))
+                front_right = self.movements_obj.index(layer) + 1
+
+        if front_left <= 3:
             self.move_right = True
-
-        obj = self.movements_obj[1]
-        if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
-            print('Back left collision')
-
-        obj = self.movements_obj[2]
-        if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
-            print('Back right collision')
-
-        obj = self.movements_obj[3]
-        if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
-            print('Front right collision')
+        if front_right <= 3:
             self.move_left = True
 
-    def auto_move(self):  # Check allowed movements and desired action
+        if self.move_left and self.move_right:
+            if front_left > front_right:
+                self.move_left = False
+                self.move_right = True
+            elif front_left < front_right:
+                self.move_left = True
+                self.move_right = False
+            else:
+                self.move_left = False
+                self.move_right = False
+
+        # print(front_left, front_right, back_left, back_right)
+
+    def take_movement(self):  # Check allowed movements and desired action
         # '''  # MANUAL MOVEMENT
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[pygame.K_t]:
@@ -1442,7 +1472,8 @@ class NpcCar(pygame.sprite.Sprite):
             self.move_right = False
         # '''  # MANUAL MOVEMENT
 
-        self.auto_decide()  # AUTOMATED MOVEMENT
+        self.decide_movement()  # AUTOMATED MOVEMENT
+        self.move_forward = True
 
         if self.move_forward and self.allow_forward:  # FORWARD
             self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
@@ -1647,8 +1678,9 @@ class NpcCar(pygame.sprite.Sprite):
                     draw_triangle((self.pos_x, self.pos_y + 20), 'down',
                                   width=14, height=14, border=GREY, border_width=2)  # grey down
 
-            for obj in self.movements_obj:
-                surf.blit(obj.surf, obj.rect.topleft)
+            for layer in self.movements_obj:
+                for obj in layer:
+                    surf.blit(obj.surf, obj.rect.topleft)
 
     def update(self):  # Called each loop and checks if anything has changed
         if self._boost_timeout and self._boost_timeout < pygame.time.get_ticks():  # If boost timeout has expired
@@ -1687,7 +1719,7 @@ class NpcCar(pygame.sprite.Sprite):
                         self.reset_to_checkpoint()
                         # print('reset')
 
-                self.auto_move()
+                self.take_movement()
                 # print('auto move')
 
 
@@ -1955,6 +1987,7 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
         tile(x + 190, y, 'dirt road', 60, grid=False)
         draw_text(x + 160, y + 20, 'Start', WHITE, 70)
 
+    # Option for more players
     if len(controllers) >= 1:
         x = pad_x + 93
         y = pad_y + HEIGHT - 255
@@ -1999,6 +2032,7 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
         tile(x + 190, y, 'dirt road', 60, grid=False)
         draw_text(x + 160, y + 20, 'Dual', WHITE, 70)
 
+    # Selected amount of players
     if Player_amount == 1:
         x = pad_x + 400
         y = pad_y + 476
@@ -4523,7 +4557,7 @@ def game():  # All variables that are not constant
     Music_loop = True
     saved_timer = 0
     lap_timer = 0
-    music_thread = Thread(target=game_music_loop)
+    music_thread = Thread(name='music_thread', target=game_music_loop)
 
     if Map == 'racetrack':
         layers.append(pygame.transform.scale(pygame.image.load(maps.racetrack('bg')), (WIDTH, HEIGHT)))
@@ -4797,7 +4831,7 @@ def game():  # All variables that are not constant
                 pygame.display.toggle_fullscreen()
                 update_screen(full_screen=True)
 
-            elif event.type == pygame.WINDOWFOCUSLOST and not game_countdown:
+            elif event.type == pygame.WINDOWFOCUSLOST and not game_countdown and not Debug:
                 if not game_countdown:
                     if not Game_paused:
                         Game_paused = True
@@ -5293,7 +5327,7 @@ def game():  # All variables that are not constant
                 Countdown -= 2
 
             if len(power_ups) < 10 * Player_amount and powerups:  # Spawn random power-ups
-                rand = randint(0, 1400 // (10 + Player_amount + Npc_amount))
+                rand = randint(0, 1800 // (10 + Player_amount + Npc_amount))
                 if not rand:
                     rand = randint(0, 3)
                     if not rand:
@@ -5315,12 +5349,12 @@ def game():  # All variables that are not constant
                         pygame.draw.rect(border, WHITE, (0, 0, 30, 30), 1)
                         surf.blit(border, (0, 0))
                     mask = pygame.mask.from_surface(surf)
-                    on_track = False
-                    while not on_track:
+                    overlapping = False
+                    while not overlapping:
                         pos_x = randint(0, WIDTH)
                         pos_y = randint(0, HEIGHT)
                         if not Track_mask.overlap(mask, (pos_x, pos_y)):
-                            on_track = True
+                            overlapping = True
                             power_ups.append((surf, (pos_x, pos_y, 30, 30), (pos_x, pos_y),
                                               mask, ver, pygame.time.get_ticks() + 15000))  # 15s timeout trigger
 
@@ -5466,7 +5500,7 @@ def game():  # All variables that are not constant
     fade_to_black(show_loading=True)
     if Animations:
         loading_thread_event.clear()
-        loading_thread = Thread(target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
+        loading_thread = Thread(name='loading_thread', target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
         loading_thread.start()  # Begin loading animation
     pygame.time.wait(1000)
     return game_quit
@@ -5487,8 +5521,8 @@ def main():
     car = MenuCar()
     bg = menu_background(top=True, right=True, bottom=True, left=True)  # Set initial values of background(s)
     new_bg = bg
-    music_thread = Thread(target=menu_music_loop)
-    loading_thread = Thread(target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
+    music_thread = Thread(name='music_thread', target=menu_music_loop)
+    loading_thread = Thread(name='loading_thread', target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
 
     Players.append(Player(0))
     Player_amount = 1
@@ -5497,6 +5531,7 @@ def main():
         # Debug = True
         Players[0].name = 'Debug'
         Npc_amount = 5
+        Total_laps = 999
         Map = 'hairpin'
         current_window = 'race settings'
         game()
@@ -5518,7 +5553,7 @@ def main():
                 Clock.tick(2)
 
             if not music_thread.is_alive() and not Mute_volume:
-                music_thread = Thread(target=menu_music_loop)
+                music_thread = Thread(name='music_thread', target=menu_music_loop)
                 music_thread.start()
 
             for event in pygame.event.get():
@@ -8587,7 +8622,7 @@ def main():
         fade_to_black(show_loading=True)  # Fade out current screen
         if Animations:
             loading_thread_event.clear()
-            loading_thread = Thread(target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
+            loading_thread = Thread(name='loading_thread', target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
             loading_thread.start()  # Begin loading animation
         game_quit = game()  # Begin game
         if Animations:
@@ -8672,15 +8707,15 @@ if __name__ == '__main__':
     quit()
 
 elif __name__ == 'main':
-    Display = pygame.display.set_mode([840, 480])
-    Display_resolution = 840, 480
+    Display_resolution = 1280, 720
+    Display = pygame.display.set_mode(Display_resolution)
     Music_volume = 0.02
     Sfx_volume = 0.02
     try:
-        Window.blit(pygame.font.Font(fonts.load(bar=True), 100).render('Retro Rampage', True, WHITE),
-                    (CENTRE[0] - 412, CENTRE[1] - 60))
-        Window.blit(pygame.font.Font(fonts.load(), 100).render('Testing mode', True, WHITE),
-                    (CENTRE[0] - 346, CENTRE[1] + 60))
+        Window.blit(pygame.font.Font(fonts.load(bar=True), 100).render(
+            'Retro Rampage', True, WHITE), (CENTRE[0] - 412, CENTRE[1] - 60))
+        Window.blit(pygame.font.Font(fonts.load(), 100).render(
+            'Testing mode', True, WHITE), (CENTRE[0] - 346, CENTRE[1] + 60))
 
     except FileNotFoundError:
         Window.blit(pygame.font.Font(None, 100).render('Retro Rampage', True, WHITE),
@@ -8689,4 +8724,3 @@ elif __name__ == 'main':
                     (CENTRE[0] - 224, CENTRE[1] + 60))
     Display.blit(pygame.transform.scale(Window, Display_resolution), (0, 0))
     pygame.display.update()
-    pygame.time.wait(500)

@@ -67,7 +67,7 @@ BLUE_CAR = 47, 149, 208
 BLACK_CAR = 93, 91, 91
 # Other variables
 Debug = False  # Enables Debug mode for detecting issues. (Changes various things other than visual changes)
-Race_debug = False  # Enables Debug mode and starts game on race settings menu
+Race_debug = True  # Enables Debug mode and starts game on race settings menu
 Force_resolution = []  # Manual window size ([] = Automatic, [width, height] = Forced)
 Screen = 0  # If the user has multiple monitors, sets which monitor to use (starts at 0)
 Animations = False  # Enables animations on the main menu
@@ -559,6 +559,8 @@ class Car(pygame.sprite.Sprite):
         self._ani_frame = None
         self._ani_frame_rect = None
         self.lightning_animation = False
+        self.lightning_target = False
+        self.lightning_indicator = pygame.transform.scale(pygame.image.load(assets.power_up('lightning')), (16, 16))
         self._lightning_frame = None
         # NAME variables
         self.name = self.player.name
@@ -958,7 +960,11 @@ class Car(pygame.sprite.Sprite):
 
         draw_triangle((self.rect.centerx, self.rect.top - 14), 'down',  # Name
                       width=10, height=10, border=self.colour, border_width=3, surface=surf)
-        self._name_rect = draw_text(self.rect.centerx, self.rect.top - 35, self.name, WHITE, 12, surf=surf)
+        self._name_rect = draw_text(self.rect.centerx, self.rect.top - 35,
+                                    self.name, WHITE, 12, surf=surf, return_rect=True)
+        if self.lightning_target:
+            surf.blit(self.lightning_indicator, (self.rect.centerx - self._name_rect.width/2 -
+                                                 self.lightning_indicator.get_width() - 8, self.rect.top - 38))
 
         if self._boost_ani_frame == 4 and self._boost_timeout:  # If boost animation finished
             self._boost_ani_frame = 0  # Replay animation
@@ -1114,6 +1120,8 @@ class NpcCar(pygame.sprite.Sprite):
         self._ani_frame = None
         self._ani_frame_rect = None
         self.lightning_animation = False
+        self.lightning_target = False
+        self.lightning_indicator = pygame.transform.scale(pygame.image.load(assets.power_up('lightning')), (16, 16))
         self._lightning_frame = None
         # MOVEMENT variables
         self.allow_forward = True
@@ -1144,6 +1152,7 @@ class NpcCar(pygame.sprite.Sprite):
         self.penalty_time = 0
         # NAME variables
         self.name = name
+        self._name_rect = None
         # LAP variables
         self.lap_halfway = True
         self.laps = 0
@@ -1523,9 +1532,13 @@ class NpcCar(pygame.sprite.Sprite):
     def draw(self, surf=Window):
         surf.blit(self.image, (self.rect.left, self.rect.top))  # Car image
 
-        draw_triangle((self.rect.centerx, self.rect.top - 14), 'down',  # Name and arrow
-                      width=10, height=10, border=self.colour, border_width=3, surface=surf)
-        draw_text(self.rect.centerx, self.rect.top - 35, self.name, WHITE, 12, surf=surf)
+        draw_triangle((self.rect.centerx, self.rect.top - 14), 'down', width=10, height=10,
+                      border=self.colour, border_width=3, surface=surf)
+        self._name_rect = draw_text(self.rect.centerx, self.rect.top - 35, self.name,
+                                    WHITE, 12, surf=surf, return_rect=True)
+        if self.lightning_target:
+            surf.blit(self.lightning_indicator, (self.rect.centerx - self._name_rect.width/2 -
+                                                 self.lightning_indicator.get_width() - 8, self.rect.top - 38))
 
         if self._boost_ani_frame == 4 and self._boost_timeout:  # If boost animation finished
             self._boost_ani_frame = 0  # Replay animation
@@ -4207,7 +4220,7 @@ def rand_color():
 
 # -------- MUSIC & SOUND FUNCTIONS -------- #
 def menu_music():
-    if not Mute_volume:
+    if not Mute_volume and Music_volume != 0:
         playing = pygame.mixer.music.get_busy()
         if not playing:
             global current_song
@@ -4324,8 +4337,9 @@ def play_sound(event: str):
 
 
 def game_music_loop():
-    if not Mute_volume:
-        while Music_loop:
+    print('Game music started')
+    if not Mute_volume and Music_volume != 0:
+        while not music_thread_event.is_set() and not Mute_volume and Music_volume != 0:
             if not Window_sleep:
                 if Current_lap > Total_laps:  # Advance game music every lap except end and starting lap
                     game_music(Current_lap - 2)
@@ -4336,14 +4350,16 @@ def game_music_loop():
                     pygame.mixer.music.pause()
                 sleep(0.5)
         return  # Make sure to return properly as this is a thread
+    if pygame.mixer.music.get_busy():
+        pygame.mixer.music.pause()
+    print('Game music stopped')
     return
 
 
 def menu_music_loop():
-    if not Mute_volume:
-        while True:
-            if music_thread_event.is_set():
-                break
+    print('Menu loop started')
+    if not Mute_volume and Music_volume != 0:
+        while not music_thread_event.is_set() and Music_volume != 0 and not Mute_volume:
             if not Window_sleep:
                 if current_window != 'leaderboard':
                     menu_music()
@@ -4353,7 +4369,9 @@ def menu_music_loop():
                 if pygame.mixer.music.get_busy():
                     pygame.mixer.music.pause()
                 sleep(0.5)
-
+    if pygame.mixer.music.get_busy():
+        pygame.mixer.music.pause()
+    print('Menu loop stopped')
     return  # Make sure to return properly as this is a thread
 
 
@@ -4542,7 +4560,7 @@ def get_mouse_pos():
 def game():  # All variables that are not constant
     global Track_mask, Player_positions, Race_time, Countdown, Window_screenshot, button_trigger, \
         Debug, Screen, Animations, Mute_volume, Music_volume, Sfx_volume, loaded_assets, loaded_sounds, \
-        Current_lap, Window_sleep, Game_end, Music_loop, music_thread, current_window, Game_paused, loading_thread
+        Current_lap, Window_sleep, Game_end, music_thread, current_window, Game_paused, loading_thread
     layers = []
     Game_paused = False
     current_window = ''
@@ -4554,7 +4572,6 @@ def game():  # All variables that are not constant
     Race_time = pygame.time.get_ticks()
     Game_end = False
     game_quit = False
-    Music_loop = True
     saved_timer = 0
     lap_timer = 0
     music_thread = Thread(name='music_thread', target=game_music_loop)
@@ -4798,6 +4815,7 @@ def game():  # All variables that are not constant
                 npc.draw()
             update_screen(full_screen=True)
 
+    pygame.mixer.music.unpause()
     while not Game_end and not game_quit:  # Main game loop
         if Player_positions:
             if Current_lap != Player_positions[0][3].laps:
@@ -4815,14 +4833,18 @@ def game():  # All variables that are not constant
         else:
             Clock.tick(5)
 
-        if not music_thread.is_alive() and not Mute_volume:
-            music_thread = Thread(target=game_music_loop)
+        if not music_thread.is_alive() and not Mute_volume and Music_volume:
+            music_thread_event.clear()
+            music_thread = Thread(name='music_thread', target=game_music_loop)
             music_thread.start()
+        elif music_thread.is_alive() and (Mute_volume or not Music_volume):
+            music_thread_event.set()
+            music_thread.join()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                Music_loop = False
                 if music_thread.is_alive():
+                    music_thread_event.set()
                     music_thread.join(timeout=0.25)
                 pygame.quit()
                 quit()
@@ -4836,7 +4858,7 @@ def game():  # All variables that are not constant
                     if not Game_paused:
                         Game_paused = True
                         play_sound('pause out')
-                        Music_volume = ((Music_volume * 10) / 30)
+                        Music_volume -= 0.05 if Music_volume >= 0.06 else 0
                         pygame.mixer.music.set_volume(Music_volume)
                         pygame.mouse.set_visible(True)
                         Window_screenshot = Window.copy()
@@ -4857,7 +4879,7 @@ def game():  # All variables that are not constant
                         if not Game_paused:
                             Game_paused = True
                             play_sound('pause out')
-                            Music_volume = round(Music_volume / 2, 3)
+                            Music_volume -= 0.05 if Music_volume >= 0.06 else 0
                             pygame.mixer.music.set_volume(Music_volume)
                             pygame.mouse.set_visible(True)
                             Window_screenshot = Window.copy()
@@ -4866,7 +4888,7 @@ def game():  # All variables that are not constant
                         else:
                             Game_paused = False
                             play_sound('pause in')
-                            Music_volume = round(Music_volume * 2, 3)
+                            Music_volume += 0.05 if Music_volume >= 0.06 else 0
                             pygame.mixer.music.set_volume(Music_volume)
                             if not Debug:
                                 pygame.mouse.set_visible(False)
@@ -4874,10 +4896,10 @@ def game():  # All variables that are not constant
                             current_window = ''
 
                 elif event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:  # DEBUGGING
-                    Music_loop = False
                     print(get_mouse_pos())
                     print(recorded_keys)
                     if music_thread.is_alive():
+                        music_thread_event.set()
                         music_thread.join(timeout=0.25)
                     pygame.quit()
                     quit()
@@ -4889,7 +4911,7 @@ def game():  # All variables that are not constant
                         if not Game_paused:
                             Game_paused = True
                             play_sound('pause out')
-                            Music_volume = round(Music_volume / 2, 3)
+                            Music_volume -= 0.05 if Music_volume >= 0.06 else 0
                             pygame.mixer.music.set_volume(Music_volume)
                             pygame.mouse.set_visible(True)
                             Window_screenshot = Window.copy()
@@ -4898,7 +4920,7 @@ def game():  # All variables that are not constant
                         else:
                             Game_paused = False
                             play_sound('pause in')
-                            Music_volume = round(Music_volume * 2, 3)
+                            Music_volume += 0.05 if Music_volume >= 0.06 else 0
                             pygame.mixer.music.set_volume(Music_volume)
                             if not Debug:
                                 pygame.mouse.set_visible(False)
@@ -4925,7 +4947,7 @@ def game():  # All variables that are not constant
                         button_trigger = True
                         Game_paused = False
                         play_sound('pause in')
-                        Music_volume = round(Music_volume * 2, 3)
+                        Music_volume += 0.05 if Music_volume >= 0.06 else 0
                         pygame.mixer.music.set_volume(Music_volume)
                         if not Debug:
                             pygame.mouse.set_visible(False)
@@ -4948,7 +4970,7 @@ def game():  # All variables that are not constant
                         button_trigger = True
                         play_sound('menu button')
                         current_window = 'settings'
-                        Music_volume = round(Music_volume * 2, 3)
+                        Music_volume += 0.05 if Music_volume >= 0.06 else 0
                         pygame.mixer.music.set_volume(Music_volume)
                         Secondary_window.fill(BLACK)
                         settings_window(Window_screenshot, surf=Secondary_window)
@@ -5079,12 +5101,16 @@ def game():  # All variables that are not constant
                         button_trigger = True
                         if Mute_volume:
                             Mute_volume = False
-                            Music_loop = True
+                            music_thread_event.clear()
+                            music_thread = Thread(name='music_thread', target=game_music_loop)
                             pygame.mixer.music.unpause()
+                            music_thread.start()
                         else:
                             Mute_volume = True
-                            Music_loop = False
-                            pygame.mixer.music.pause()
+                            if music_thread.is_alive():
+                                music_thread_event.set()
+                                music_thread.join()
+                                pygame.mixer.music.pause()
                         loaded_sounds = []
                         play_sound('option down')
 
@@ -5100,13 +5126,16 @@ def game():  # All variables that are not constant
                         button_trigger = True
                         if Mute_volume:
                             Mute_volume = False
-                            Music_loop = True
+                            music_thread_event.clear()
+                            music_thread = Thread(name='music_thread', target=game_music_loop)
                             pygame.mixer.music.unpause()
+                            music_thread.start()
                         else:
-                            play_sound('option up')
                             Mute_volume = True
-                            Music_loop = False
-                            pygame.mixer.music.pause()
+                            if music_thread.is_alive():
+                                music_thread_event.set()
+                                music_thread.join()
+                                pygame.mixer.music.pause()
                         loaded_sounds = []
                         play_sound('option up')
 
@@ -5160,6 +5189,7 @@ def game():  # All variables that are not constant
                             button_trigger = True
                             if Music_volume - 0.01 <= 0:
                                 Music_volume = 0
+                                pygame.mixer.music.pause()
                             elif Music_volume - 0.01 > 0:
                                 Music_volume = round(Music_volume - 0.01, 3)
                             play_sound('option down')
@@ -5181,6 +5211,8 @@ def game():  # All variables that are not constant
                                 Music_volume = 1
                             elif Music_volume + 0.01 < 1:
                                 Music_volume = round(Music_volume + 0.01, 3)
+                            if not pygame.mixer.music.get_busy() and not Mute_volume:
+                                pygame.mixer.music.unpause()
                             play_sound('option up')
                             pygame.mixer.music.set_volume(Music_volume)
                         elif not buttons[0] and button_trigger:
@@ -5288,7 +5320,7 @@ def game():  # All variables that are not constant
                     buttons = pygame.mouse.get_pressed()
                     if buttons[0] and not button_trigger:
                         button_trigger = True
-                        Music_volume = round(Music_volume * 2, 3)
+                        Music_volume += 0.05 if Music_volume >= 0.06 else 0
                         play_sound('menu button')  # Play button click sounds
                         game_quit = True
 
@@ -5326,8 +5358,8 @@ def game():  # All variables that are not constant
                     pygame.draw.rect(Window, WHITE, (822, Countdown * 2, 276, 108), 1)
                 Countdown -= 2
 
-            if len(power_ups) < 10 * Player_amount and powerups:  # Spawn random power-ups
-                rand = randint(0, 1800 // (10 + Player_amount + Npc_amount))
+            if len(power_ups) < 15 * Player_amount and powerups:  # Spawn random power-ups
+                rand = randint(0, 1000 // (10 + Player_amount + Npc_amount))
                 if not rand:
                     rand = randint(0, 3)
                     if not rand:
@@ -5364,6 +5396,25 @@ def game():  # All variables that are not constant
                 else:
                     Window.blit(power_up[0], power_up[1])
 
+            lightning_target = None
+            if powerups:
+                for vehicle in Player_positions:
+                    if vehicle[3].type == 'NPC':
+                        if not vehicle[3].penalty_time:
+                            vehicle[3].lightning_target = True
+                            lightning_target = vehicle[3]
+                            break
+
+                    elif vehicle[3].type == 'Player':
+                        if not vehicle[3].bullet_penalty:
+                            vehicle[3].lightning_target = True
+                            lightning_target = vehicle[3]
+                            break
+
+                for vehicle in Player_positions:
+                    if vehicle[3].lightning_target and vehicle[3] != lightning_target:
+                        vehicle[3].lightning_target = False
+
             for player in player_list:
                 player.update()
             for player in range(0, len(player_list)):  # For every player,
@@ -5387,10 +5438,6 @@ def game():  # All variables that are not constant
                                 elif vehicle[3].type == 'Player':
                                     if not vehicle[3].bullet_penalty:
                                         vehicle[3].power_up('lightning')  # Trigger animation and penalty
-                                        break
-                                elif vehicle[3].type == 'Player':
-                                    if not vehicle[3].bullet_penalty:
-                                        vehicle[3].power_up(power_up[4])
                                         break
                         else:
                             player_list[player].power_up(power_up[4])
@@ -5423,10 +5470,6 @@ def game():  # All variables that are not constant
                                 elif vehicle[3].type == 'Player':
                                     if not vehicle[3].bullet_penalty:
                                         vehicle[3].power_up('lightning')  # Trigger animation and penalty
-                                        break
-                                elif vehicle[3].type == 'Player':
-                                    if not vehicle[3].bullet_penalty:
-                                        vehicle[3].power_up(power_up[4])
                                         break
                         else:
                             npc.power_up(power_up[4])
@@ -5493,7 +5536,9 @@ def game():  # All variables that are not constant
             Race_time = str(hours) + 'h ' + str(minutes) + 'm ' + str(seconds) + 's'
 
     pygame.mixer.music.fadeout(250)
-    Music_loop = False
+    if music_thread.is_alive():
+        music_thread_event.set()
+        music_thread.join()
     for player in player_list:
         if player.controller:
             player.controller.stop_rumble()
@@ -5507,12 +5552,12 @@ def game():  # All variables that are not constant
 
 
 def main():
-    global Player_amount, Npc_amount, Total_laps, Debug, loaded_assets, Music_volume, Screen, \
-        Sfx_volume, loaded_sounds, Mute_volume, Animations, Map, selected_text_entry, button_trigger, Window_sleep,\
-        Music_loop, music_thread, loading_thread, powerups, Npc_force_veh, Npc_force_colour, current_window, \
-        Players, controllers, controls, selected_text_entry
+    global Player_amount, Npc_amount, Total_laps, Debug, loaded_assets, Music_volume, Screen, Sfx_volume, \
+        loaded_sounds, Mute_volume, Animations, Map, selected_text_entry, button_trigger, Window_sleep, music_thread, \
+        loading_thread, powerups, Npc_force_veh, Npc_force_colour, current_window, Players, controllers, controls, \
+        selected_text_entry
 
-    Music_loop = True
+    music_thread_event.clear()
     menu_loop = True  # Set game sub-loop to menus
     saved_timer = None  # Timer for settings save
     leaderboard = False
@@ -5530,6 +5575,7 @@ def main():
     if Race_debug:
         # Debug = True
         Players[0].name = 'Debug'
+        Players[0].veh_name = 'Race Car'
         Npc_amount = 5
         Total_laps = 999
         Map = 'hairpin'
@@ -5552,14 +5598,18 @@ def main():
             else:
                 Clock.tick(2)
 
-            if not music_thread.is_alive() and not Mute_volume:
+            if not music_thread.is_alive() and not Mute_volume and Music_volume:
+                music_thread_event.clear()
                 music_thread = Thread(name='music_thread', target=menu_music_loop)
                 music_thread.start()
+            elif music_thread.is_alive() and (Mute_volume or not Music_volume):
+                music_thread_event.set()
+                music_thread.join()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    Music_loop = False
                     if music_thread.is_alive():
+                        music_thread_event.set()
                         music_thread.join(timeout=0.25)
                     pygame.quit()
                     quit()
@@ -5601,8 +5651,8 @@ def main():
 
                     elif event.key == pygame.K_ESCAPE:  # DEBUGGING
                         # print(get_mouse_pos())
-                        Music_loop = False
                         if music_thread.is_alive():
+                            music_thread_event.set()
                             music_thread.join(timeout=0.25)
                         pygame.quit()
                         quit()
@@ -8151,8 +8201,8 @@ def main():
                         play_sound('menu button')  # Play button click sounds
                         pygame.mixer.fadeout(50)
                         pygame.mixer.music.fadeout(500)
-                        Music_loop = False
                         if music_thread.is_alive():
+                            music_thread_event.set()
                             music_thread.join(timeout=0.25)
                         sleep(0.5)
                         pygame.quit()
@@ -8368,12 +8418,16 @@ def main():
                         button_trigger = True
                         if Mute_volume:
                             Mute_volume = False
-                            Music_loop = True
+                            music_thread_event.clear()
+                            music_thread = Thread(name='music_thread', target=menu_music_loop)
                             pygame.mixer.music.unpause()
+                            music_thread.start()
                         else:
                             Mute_volume = True
-                            Music_loop = False
-                            pygame.mixer.music.pause()
+                            if music_thread.is_alive():
+                                music_thread_event.set()
+                                music_thread.join()
+                                pygame.mixer.music.pause()
                         loaded_sounds = []
                         play_sound('option down')
 
@@ -8389,13 +8443,16 @@ def main():
                         button_trigger = True
                         if Mute_volume:
                             Mute_volume = False
-                            Music_loop = True
+                            music_thread_event.clear()
+                            music_thread = Thread(name='music_thread', target=menu_music_loop)
                             pygame.mixer.music.unpause()
+                            music_thread.start()
                         else:
-                            play_sound('option up')
                             Mute_volume = True
-                            Music_loop = False
-                            pygame.mixer.music.pause()
+                            if music_thread.is_alive():
+                                music_thread_event.set()
+                                music_thread.join()
+                                pygame.mixer.music.pause()
                         loaded_sounds = []
                         play_sound('option up')
 
@@ -8454,6 +8511,7 @@ def main():
                             button_trigger = True
                             if Music_volume - 0.01 <= 0:
                                 Music_volume = 0
+                                pygame.mixer.music.pause()
                             elif Music_volume - 0.01 > 0:
                                 Music_volume = round(Music_volume - 0.01, 4)
                             play_sound('option down')
@@ -8475,6 +8533,8 @@ def main():
                                 Music_volume = 1
                             elif Music_volume + 0.01 < 1:
                                 Music_volume = round(Music_volume + 0.01, 4)
+                            if not pygame.mixer.music.get_busy() and not Mute_volume:
+                                pygame.mixer.music.unpause()
                             play_sound('option up')
                             pygame.mixer.music.set_volume(Music_volume)
                         elif not buttons[0] and button_trigger:
@@ -8618,12 +8678,16 @@ def main():
             else:
                 update_screen()
 
-        Music_loop = False
+        if music_thread.is_alive():
+            music_thread_event.set()
+            music_thread.join()
+
         fade_to_black(show_loading=True)  # Fade out current screen
         if Animations:
             loading_thread_event.clear()
             loading_thread = Thread(name='loading_thread', target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
             loading_thread.start()  # Begin loading animation
+
         game_quit = game()  # Begin game
         if Animations:
             loading_thread_event.set()  # Stop loading animation (still loading screen)
@@ -8643,7 +8707,7 @@ def main():
         if not pygame.mouse.get_visible():
             pygame.mouse.set_visible(True)
         menu_loop = True
-        Music_loop = True
+        music_thread_event.clear()
 
 
 if __name__ == '__main__':
@@ -8651,6 +8715,7 @@ if __name__ == '__main__':
         try:
             main()
         except KeyboardInterrupt:
+            print('KeyboardInterrupt raised, Goodbye!')
             pygame.quit()
             quit()
     else:
@@ -8664,6 +8729,7 @@ if __name__ == '__main__':
             if loading_thread.is_alive():
                 loading_thread_event.set()
                 loading_thread.join()
+            print('KeyboardInterrupt raised, Goodbye!')
             pygame.quit()
             quit()
 

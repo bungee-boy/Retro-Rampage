@@ -54,6 +54,7 @@ pygame.mixer.init()
 # -------- GLOBAL VARIABLES -------- #
 # Menu colour constants
 RED = 255, 0, 0
+GREEN = 0, 255, 0
 WHITE = 255, 255, 255
 V_LIGHT_GREY = 200, 200, 200
 LIGHT_GREY = 170, 170, 170
@@ -1132,23 +1133,35 @@ class NpcCar(pygame.sprite.Sprite):
         self.move_back = False
         self.move_left = False
         self.move_right = False
-        self.rect_radius = 90  # randint(132, 140)
-        self.rect_offset = 30  # randint(22, 30)
-        self.layer_offset = 30
+        self.move_rect_radius = 80  # randint(70, 80)
+        self.move_rect_offset = 28  # randint(18, 28)
+        self.move_layer_offset = 35
+        self.avoid_rect_radius = 80
+        self.avoid_rect_offset = 15
+        self.avoid_layer_offset = 32
         # 1 - 4 = Track collision
         self.movements_obj = []
-        for layer_num in range(0, 4):
+        for layer_num in range(0, 3):
             layer = []
             for index in range(0, 4):
                 surf = pygame.surface.Surface((10, 10))
                 rect = surf.get_rect()
                 mask = pygame.mask.from_surface(surf)
-                rect.center = self.rect.centerx, self.rect.centery - self.rect_radius
-                surf.fill((1, 1, 1))
-                surf.set_colorkey((1, 1, 1))
+                rect.center = self.rect.centerx, self.rect.centery - self.move_rect_radius
                 surf.fill(RED)
                 layer.append(Object(surf, rect, mask))
             self.movements_obj.append(layer)
+        self.avoidance_obj = []
+        for layer_num in range(0, 4):
+            layer = []
+            for index in range(0, 4):
+                surf = pygame.surface.Surface((8, 8))
+                rect = surf.get_rect()
+                mask = pygame.mask.from_surface(surf)
+                rect.center = self.rect.centerx, self.rect.centery - self.avoid_rect_radius
+                surf.fill(GREEN)
+                layer.append(Object(surf, rect, mask))
+            self.avoidance_obj.append(layer)
         self.penalty_time = 0
         # NAME variables
         self.name = name
@@ -1348,7 +1361,11 @@ class NpcCar(pygame.sprite.Sprite):
 
     def move(self, x, y):  # Move car to new position
         for layer in self.movements_obj:
-            for obj in layer:
+            for obj in [layer[0], layer[3]]:
+                obj.rect.centerx -= self.pos_x - x
+                obj.rect.centery -= self.pos_y - y
+        for layer in self.avoidance_obj:
+            for obj in [layer[0], layer[3]]:
                 obj.rect.centerx -= self.pos_x - x
                 obj.rect.centery -= self.pos_y - y
         self.pos_x = x
@@ -1357,15 +1374,15 @@ class NpcCar(pygame.sprite.Sprite):
 
     def rotate(self, degree):  # Rotate car to new angle
         self.rotation = degree  # Set current rotation as rotation
-        if global_car_rotation_speed + 1 >= self.rotation:  # Create snapping points to drive in straight lines
+        if self.rotation_speed - 1 >= self.rotation:  # Create snapping points to drive in straight lines
             self.rotation = 360
-        elif self.rotation >= 360 - global_car_rotation_speed + 1:
+        elif self.rotation >= 360 - self.rotation_speed:
             self.rotation = 0
-        elif 90 - global_car_rotation_speed + 1 <= self.rotation <= 90 + global_car_rotation_speed + 1:
+        elif 90 - self.rotation_speed <= self.rotation <= 90 + self.rotation_speed:
             self.rotation = 90
-        elif 180 - global_car_rotation_speed + 1 <= self.rotation <= 180 + global_car_rotation_speed + 1:
+        elif 180 - self.rotation_speed <= self.rotation <= 180 + self.rotation_speed:
             self.rotation = 180
-        elif 270 - global_car_rotation_speed + 1 <= self.rotation <= 270 + global_car_rotation_speed + 1:
+        elif 270 - self.rotation_speed <= self.rotation <= 270 + self.rotation_speed:
             self.rotation = 270
         self.image = pygame.transform.rotate(self.origin_img.copy(), self.rotation)  # Rotate image
         self.image.set_colorkey(BLACK)
@@ -1377,14 +1394,24 @@ class NpcCar(pygame.sprite.Sprite):
         # print('Rotate: {0}'.format(self.rotation))
         for layer in self.movements_obj:
             layer_num = self.movements_obj.index(layer)
-            self.rotate_rect(layer[0].rect, -self.rotation - self.rect_offset,
-                             self.rect_radius + self.layer_offset * layer_num)
-            self.rotate_rect(layer[1].rect, -self.rotation + self.rect_offset - 180,
-                             self.rect_radius + self.layer_offset * layer_num)
-            self.rotate_rect(layer[2].rect, -self.rotation - self.rect_offset - 180,
-                             self.rect_radius + self.layer_offset * layer_num)
-            self.rotate_rect(layer[3].rect, -self.rotation + self.rect_offset,
-                             self.rect_radius + self.layer_offset * layer_num)
+            self.rotate_rect(layer[0].rect, -self.rotation - self.move_rect_offset,
+                             self.move_rect_radius + self.move_layer_offset * layer_num)
+            # self.rotate_rect(layer[1].rect, -self.rotation + self.rect_offset - 180,
+            #                  self.rect_radius + self.layer_offset * layer_num)
+            # self.rotate_rect(layer[2].rect, -self.rotation - self.rect_offset - 180,
+            #                  self.rect_radius + self.layer_offset * layer_num)
+            self.rotate_rect(layer[3].rect, -self.rotation + self.move_rect_offset,
+                             self.move_rect_radius + self.move_layer_offset * layer_num)
+        for layer in self.avoidance_obj:
+            layer_num = self.avoidance_obj.index(layer)
+            self.rotate_rect(layer[0].rect, -self.rotation - self.avoid_rect_offset,
+                             self.avoid_rect_radius + self.avoid_layer_offset * layer_num)
+            # self.rotate_rect(layer[1].rect, -self.rotation + self.avoid_rect_offset - 180,
+            #                  self.avoid_rect_radius + self.avoid_layer_offset * layer_num)
+            # self.rotate_rect(layer[2].rect, -self.rotation - self.avoid_rect_offset - 180,
+            #                  self.avoid_rect_radius + self.avoid_layer_offset * layer_num)
+            self.rotate_rect(layer[3].rect, -self.rotation + self.avoid_rect_offset,
+                             self.avoid_rect_radius + self.avoid_layer_offset * layer_num)
 
     def rotate_rect(self, rect, angle, radius):
         # print('Center: {0}, {1} Angle: {2}'.format(self.pos_x, self.pos_y, angle))
@@ -1404,7 +1431,11 @@ class NpcCar(pygame.sprite.Sprite):
         self.rotate(self.prev_checkpoint_rotation)
 
     def decide_movement(self):
-        self.allow_forward = True
+        self.move_forward = False  # Use MOVE for car collisions BEFORE track avoidance
+        self.move_back = False
+        self.move_left = False
+        self.move_right = False
+        self.allow_forward = True  # Use ALLOW for track collisions AFTER deciding car avoidance
         self.allow_back = True
         self.allow_left = True
         self.allow_right = True
@@ -1413,10 +1444,10 @@ class NpcCar(pygame.sprite.Sprite):
         # self.move_left = False
         # self.move_right = False
 
-        front_left = 5
-        back_left = 5
-        back_right = 5
-        front_right = 5
+        front_left = 4
+        back_left = 4
+        back_right = 4
+        front_right = 4
 
         for layer in reversed(self.movements_obj):
             obj = layer[0]
@@ -1424,20 +1455,26 @@ class NpcCar(pygame.sprite.Sprite):
                 # print('Front left {0}'.format(self.movements_obj.index(layer) + 1))
                 front_left = self.movements_obj.index(layer) + 1
 
+            '''
             obj = layer[1]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
                 # print('Back left {0}'.format(self.movements_obj.index(layer) + 1))
                 back_left = self.movements_obj.index(layer) + 1
-
+        
             obj = layer[2]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
                 # print('Back right {0}'.format(self.movements_obj.index(layer) + 1))
                 back_right = self.movements_obj.index(layer) + 1
+            '''
 
             obj = layer[3]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
                 # print('Front right {0}'.format(self.movements_obj.index(layer) + 1))
                 front_right = self.movements_obj.index(layer) + 1
+
+        for layer in reversed(self.avoidance_obj):
+            obj = layer[0]
+            # if obj.mask.overlap()
 
         if front_left <= 3:
             self.move_right = True
@@ -1494,11 +1531,11 @@ class NpcCar(pygame.sprite.Sprite):
             # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
 
         if self.move_left and self.allow_left:  # LEFT
-            self.rotate(self.rotation + self.rotation_speed)  # Rotate car to new position
             # print('car rotate: ' + str(self.rotation))
+            self.rotate(self.rotation + self.rotation_speed + 1)
         elif self.move_right and self.allow_right:  # RIGHT
-            self.rotate(self.rotation - self.rotation_speed)  # Rotate car to new position
             # print('car rotate: ' + str(self.rotation))
+            self.rotate(self.rotation - self.rotation_speed - 1)
 
     def power_up(self, ver):
         if ver == 'repair':
@@ -1692,7 +1729,10 @@ class NpcCar(pygame.sprite.Sprite):
                                   width=14, height=14, border=GREY, border_width=2)  # grey down
 
             for layer in self.movements_obj:
-                for obj in layer:
+                for obj in [layer[0], layer[3]]:
+                    surf.blit(obj.surf, obj.rect.topleft)
+            for layer in self.avoidance_obj:
+                for obj in [layer[0], layer[3]]:
                     surf.blit(obj.surf, obj.rect.topleft)
 
     def update(self):  # Called each loop and checks if anything has changed
@@ -5576,8 +5616,9 @@ def main():
         # Debug = True
         Players[0].name = 'Debug'
         Players[0].veh_name = 'Race Car'
-        Npc_amount = 5
+        Npc_amount = 1
         Total_laps = 999
+        powerups = False
         Map = 'hairpin'
         current_window = 'race settings'
         game()

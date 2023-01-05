@@ -474,8 +474,9 @@ class Car(pygame.sprite.Sprite):
         super().__init__()
         self.type = 'Player'
         self.player = player
-        if self.player.id > 6 or self.player.id < 0:
-            raise ValueError('Car | self._id should only be between 0 and 5, not ' + str(self.player.id))
+        self.id = self.player.id
+        if self.id > 6 or self.id < 0:
+            raise ValueError('Car | self.id should only be between 0 and 5, not ' + str(self.player.id))
         # STARTING variables
         self.start_pos = self.player.start_pos
         if Map == 'racetrack':
@@ -1441,47 +1442,96 @@ class NpcCar(pygame.sprite.Sprite):
         self.allow_back = True
         self.allow_left = True
         self.allow_right = True
-        # self.move_forward = False
-        # self.move_back = False
-        # self.move_left = False
-        # self.move_right = False
 
         front_left = 4
-        back_left = 4
-        back_right = 4
+        # back_left = 4
+        # back_right = 4
         front_right = 4
 
+        # Track Avoidance
         for layer in reversed(self.movements_obj):
             obj = layer[0]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
-                # print('Front left {0}'.format(self.movements_obj.index(layer) + 1))
+                # Input randomness to change perceived distance from object to cause collision
                 front_left = self.movements_obj.index(layer) + 1
+                # print('Front left {0}'.format(front_left))
 
             '''
             obj = layer[1]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
-                # print('Back left {0}'.format(self.movements_obj.index(layer) + 1))
                 back_left = self.movements_obj.index(layer) + 1
+                # print('Back left {0}'.format(back_left))
         
             obj = layer[2]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
-                # print('Back right {0}'.format(self.movements_obj.index(layer) + 1))
                 back_right = self.movements_obj.index(layer) + 1
+                # print('Back right {0}'.format(back_right))
             '''
 
             obj = layer[3]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
-                # print('Front right {0}'.format(self.movements_obj.index(layer) + 1))
-                front_right = self.movements_obj.index(layer) + 1  # Input randomness to change percieved distance to collision to cause collision
+                front_right = self.movements_obj.index(layer) + 1
+                # print('Front right {0}'.format(front_right))
 
+        # print('Trk: fl={0} fr={1} bl={2} br={3}'.format(front_left, front_right, back_left, back_right))
+        # print('Trk: fl={0} fr={1}'.format(front_left, front_right))
+
+        if front_left <= 3:
+            self.allow_right = True
+        if front_right <= 3:
+            self.allow_left = True
+
+        if self.allow_left and self.allow_right:
+            if front_left > front_right:
+                self.allow_left = False
+                self.allow_right = True
+            elif front_left < front_right:
+                self.allow_left = True
+                self.allow_right = False
+            else:
+                self.allow_left = False
+                self.allow_right = False
+
+        front_left = 4
+        # back_left = 4
+        # back_right = 4
+        front_right = 4
+
+        # Vehicle Avoidance
         for layer in reversed(self.avoidance_obj):
             for index in range(len(All_vehicles)):
-                if index != self.id:  # Create ID relative to pos in list to avoid searching list every frame
-                    obj = layer[0]
+                if index != self.id:
                     veh = All_vehicles[index]
-                    if obj.mask.overlap(veh.mask, (obj.rect.x - veh.mask.get_rect().x,
-                                                   obj.rect.y - veh.mask.get_rect().y)):
-                        print('COLLISION')
+                    obj = layer[0]
+                    if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
+                        # Input randomness to change perceived distance from object to cause collision
+                        if self.avoidance_obj.index(layer) + 1 < front_left:
+                            front_left = self.avoidance_obj.index(layer) + 1
+                        # print('Front left {0}'.format(front_left))
+
+                    '''
+                    obj = layer[1]
+                    if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
+                        if self.avoidance_obj.index(layer) + 1 < back_left:
+                            back_left = self.avoidance_obj.index(layer) + 1
+                        # print('Back left {0}'.format(back_left))
+
+                    obj = layer[2]
+                    if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
+                        if self.avoidance_obj.index(layer) + 1 < back_right:
+                            back_right = self.avoidance_obj.index(layer) + 1
+                        # print('Back right {0}'.format(back_right))
+                    '''
+
+                    obj = layer[3]
+                    # print(obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)))
+                    if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
+                        if self.avoidance_obj.index(layer) + 1 < front_right:
+                            front_right = self.avoidance_obj.index(layer) + 1
+                        # print('Front right {0}'.format(front_right))
+
+        # print('Veh: fl={0} fr={1} bl={2} br={3}'.format(front_left, front_right, back_left, back_right))
+        # print('Veh: fl={0} fr={1}'.format(front_left, front_right))
 
         if front_left <= 3:
             self.move_right = True
@@ -1498,8 +1548,6 @@ class NpcCar(pygame.sprite.Sprite):
             else:
                 self.move_left = False
                 self.move_right = False
-
-        # print(front_left, front_right, back_left, back_right)
 
     def take_movement(self):  # Check allowed movements and desired action
         # '''  # MANUAL MOVEMENT
@@ -4607,7 +4655,7 @@ def get_mouse_pos():
 def game():  # All variables that are not constant
     global Track_mask, Player_positions, Race_time, Countdown, Window_screenshot, button_trigger, \
         Debug, Screen, Animations, Mute_volume, Music_volume, Sfx_volume, loaded_assets, loaded_sounds, \
-        Current_lap, Window_sleep, Game_end, music_thread, current_window, Game_paused, loading_thread,
+        Current_lap, Window_sleep, Game_end, music_thread, current_window, Game_paused, loading_thread, All_vehicles
     layers = []
     Game_paused = False
     current_window = ''
@@ -4764,25 +4812,34 @@ def game():  # All variables that are not constant
                 else:
                     colour = rand_color()
                 if npc_pos == 1:
-                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 1))
+                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 1)
                 elif npc_pos == 2:
-                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 2))
+                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 2)
                 elif npc_pos == 3:
-                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 3))
+                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 3)
                 elif npc_pos == 4:
-                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 4))
+                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 4)
                 elif npc_pos == 5:
-                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 5))
+                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 5)
                 elif npc_pos == 6:
-                    npc_list.append(NpcCar(vehicle, colour, (40, 70), name[0], Map, 6))
+                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 6)
                 else:
                     name[1] = False
                     break
+                npc.id = len(player_list) + len(npc_list)
+                npc_list.append(npc)
             elif Player_amount <= 0:
                 raise ValueError("There are no players!")
             npc_pos += 1
 
-    All_vehicles = player_list + npc_list
+    All_vehicles = []
+    for player in player_list:
+        All_vehicles.append(player)
+    for npc in npc_list:
+        All_vehicles.append(npc)
+
+    for vehicle in All_vehicles:
+        print(vehicle.id, All_vehicles.index(vehicle))
 
     if not player_list and not npc_list:
         raise ValueError("There are no players or NPCs!")
@@ -5625,8 +5682,9 @@ def main():
         # Debug = True
         Players[0].name = 'Debug'
         Players[0].veh_name = 'Race Car'
-        Npc_amount = 1
-        Total_laps = 999
+        Npc_amount = 2
+        Total_laps = 20
+        Debug = True
         powerups = False
         Map = 'hairpin'
         current_window = 'race settings'
@@ -8761,7 +8819,7 @@ def main():
 
 
 if __name__ == '__main__':
-    if Debug:  # If in debug mode then do not handle errors
+    if Debug or Race_debug:  # If in debug mode then do not handle errors
         try:
             main()
         except KeyboardInterrupt:

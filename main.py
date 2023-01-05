@@ -207,6 +207,7 @@ Total_laps = 3
 Current_lap = 0
 Race_time = 0
 Player_positions = []
+All_vehicles = []
 Npc_names = [['John', False], ['Mark', False], ['Lilly', False], ['Jessica', False], ['Matthew', False],
              ['James', False], ['Jack', False], ['Holly', False], ['Aimee', False], ['Harrison', False],
              ['Emily', False], ['Ben', False], ['Tom', False], ['Anthony', False], ['Michael', False],
@@ -1042,6 +1043,7 @@ class NpcCar(pygame.sprite.Sprite):
     def __init__(self, vehicle: str or int, colour: tuple[int, int, int], size: tuple[int, int],
                  name: str, track: str, start_position: int):
         super().__init__()
+        self.id = -1
         self.type = 'NPC'
         self.start_position = start_position
         if track == 'racetrack':
@@ -1470,11 +1472,16 @@ class NpcCar(pygame.sprite.Sprite):
             obj = layer[3]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
                 # print('Front right {0}'.format(self.movements_obj.index(layer) + 1))
-                front_right = self.movements_obj.index(layer) + 1
+                front_right = self.movements_obj.index(layer) + 1  # Input randomness to change percieved distance to collision to cause collision
 
         for layer in reversed(self.avoidance_obj):
-            obj = layer[0]
-            # if obj.mask.overlap()
+            for index in range(len(All_vehicles)):
+                if index != self.id:  # Create ID relative to pos in list to avoid searching list every frame
+                    obj = layer[0]
+                    veh = All_vehicles[index]
+                    if obj.mask.overlap(veh.mask, (obj.rect.x - veh.mask.get_rect().x,
+                                                   obj.rect.y - veh.mask.get_rect().y)):
+                        print('COLLISION')
 
         if front_left <= 3:
             self.move_right = True
@@ -4600,7 +4607,7 @@ def get_mouse_pos():
 def game():  # All variables that are not constant
     global Track_mask, Player_positions, Race_time, Countdown, Window_screenshot, button_trigger, \
         Debug, Screen, Animations, Mute_volume, Music_volume, Sfx_volume, loaded_assets, loaded_sounds, \
-        Current_lap, Window_sleep, Game_end, music_thread, current_window, Game_paused, loading_thread
+        Current_lap, Window_sleep, Game_end, music_thread, current_window, Game_paused, loading_thread,
     layers = []
     Game_paused = False
     current_window = ''
@@ -4774,6 +4781,8 @@ def game():  # All variables that are not constant
             elif Player_amount <= 0:
                 raise ValueError("There are no players!")
             npc_pos += 1
+
+    All_vehicles = player_list + npc_list
 
     if not player_list and not npc_list:
         raise ValueError("There are no players or NPCs!")

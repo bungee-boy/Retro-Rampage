@@ -1139,8 +1139,8 @@ class NpcCar(pygame.sprite.Sprite):
         self.move_rect_radius = 80  # randint(70, 80)
         self.move_rect_offset = 28  # randint(18, 28)
         self.move_layer_offset = 35
-        self.avoid_rect_radius = 80
-        self.avoid_rect_offset = 15
+        self.avoid_rect_radius = 82
+        self.avoid_rect_offset = 12
         self.avoid_layer_offset = 32
         # 1 - 4 = Track collision
         self.movements_obj = []
@@ -1434,7 +1434,7 @@ class NpcCar(pygame.sprite.Sprite):
         self.rotate(self.prev_checkpoint_rotation)
 
     def decide_movement(self):
-        self.move_forward = False  # Use MOVE for car collisions BEFORE track avoidance
+        self.move_forward = True  # Use MOVE for car collisions BEFORE track avoidance
         self.move_back = False
         self.move_left = False
         self.move_right = False
@@ -1443,61 +1443,78 @@ class NpcCar(pygame.sprite.Sprite):
         self.allow_left = True
         self.allow_right = True
 
-        front_left = 4
-        # back_left = 4
-        # back_right = 4
-        front_right = 4
+        trk_fl = 4
+        # trk_bl = 4
+        # trk_br = 4
+        trk_fr = 4
 
-        # Track Avoidance
+        # TRACK AVOIDANCE
         for layer in reversed(self.movements_obj):
             obj = layer[0]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
                 # Input randomness to change perceived distance from object to cause collision
-                front_left = self.movements_obj.index(layer) + 1
-                # print('Front left {0}'.format(front_left))
+                trk_fl = self.movements_obj.index(layer) + 1
+                # print('Trk_fl: {0}'.format(trk_fl))
 
             '''
             obj = layer[1]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
-                back_left = self.movements_obj.index(layer) + 1
-                # print('Back left {0}'.format(back_left))
+                trk_bl = self.movements_obj.index(layer) + 1
+                # print('Trk_bl: {0}'.format(trk_bl))
         
             obj = layer[2]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
-                back_right = self.movements_obj.index(layer) + 1
-                # print('Back right {0}'.format(back_right))
+                trk_br = self.movements_obj.index(layer) + 1
+                # print('Trk_br: {0}'.format(trk_br))
             '''
 
             obj = layer[3]
             if obj.mask.overlap(Track_mask, (-obj.rect.left, -obj.rect.top)):
-                front_right = self.movements_obj.index(layer) + 1
-                # print('Front right {0}'.format(front_right))
+                trk_fr = self.movements_obj.index(layer) + 1
+                # print('Trk_fr: {0}'.format(trk_fr))
 
         # print('Trk: fl={0} fr={1} bl={2} br={3}'.format(front_left, front_right, back_left, back_right))
-        # print('Trk: fl={0} fr={1}'.format(front_left, front_right))
+        print('Trk: fl={0} fr={1}'.format(trk_fl, trk_fr))
 
-        if front_left <= 3:
-            self.allow_right = True
-        if front_right <= 3:
-            self.allow_left = True
+        if trk_fl <= 1:
+            self.allow_left = False
+        if trk_fr <= 1:
+            self.allow_right = False
 
-        if self.allow_left and self.allow_right:
-            if front_left > front_right:
-                self.allow_left = False
-                self.allow_right = True
-            elif front_left < front_right:
+        if not self.allow_left and not self.allow_right:
+            if trk_fl > trk_fr:
                 self.allow_left = True
                 self.allow_right = False
-            else:
+            elif trk_fl < trk_fr:
                 self.allow_left = False
-                self.allow_right = False
+                self.allow_right = True
+            # else:
+            #     self.allow_forward = False
+            #     self.allow_left = False
+            #     self.allow_right = False
 
-        front_left = 4
-        # back_left = 4
-        # back_right = 4
-        front_right = 4
+        if trk_fl == 2:
+            self.move_right = True
+        if trk_fr == 2:
+            self.move_left = True
 
-        # Vehicle Avoidance
+        if self.move_left and self.move_right:
+            if trk_fl > trk_fr:
+                self.move_left = False
+                self.move_right = True
+            elif trk_fl < trk_fr:
+                self.move_left = True
+                self.move_right = False
+            else:
+                self.move_left = False
+                self.move_right = False
+
+        veh_fl = 4
+        # veh_bl = 4
+        # veh_br = 4
+        veh_fr = 4
+
+        # VEHICLE AVOIDANCE
         for layer in reversed(self.avoidance_obj):
             for index in range(len(All_vehicles)):
                 if index != self.id:
@@ -1505,76 +1522,78 @@ class NpcCar(pygame.sprite.Sprite):
                     obj = layer[0]
                     if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
                         # Input randomness to change perceived distance from object to cause collision
-                        if self.avoidance_obj.index(layer) + 1 < front_left:
-                            front_left = self.avoidance_obj.index(layer) + 1
-                        # print('Front left {0}'.format(front_left))
+                        if self.avoidance_obj.index(layer) + 1 < veh_fl:
+                            veh_fl = self.avoidance_obj.index(layer) + 1
+                        # print('Veh_fl: {0}'.format(veh_fl))
 
                     '''
                     obj = layer[1]
                     if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
                         if self.avoidance_obj.index(layer) + 1 < back_left:
-                            back_left = self.avoidance_obj.index(layer) + 1
-                        # print('Back left {0}'.format(back_left))
+                            veh_bl = self.avoidance_obj.index(layer) + 1
+                        # print('Veh_bl: {0}'.format(veh_bl))
 
                     obj = layer[2]
                     if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
-                        if self.avoidance_obj.index(layer) + 1 < back_right:
-                            back_right = self.avoidance_obj.index(layer) + 1
-                        # print('Back right {0}'.format(back_right))
+                        if self.avoidance_obj.index(layer) + 1 < veh_br:
+                            veh_br = self.avoidance_obj.index(layer) + 1
+                        # print('Veh_br: {0}'.format(veh_br))
                     '''
 
                     obj = layer[3]
-                    # print(obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)))
                     if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
-                        if self.avoidance_obj.index(layer) + 1 < front_right:
-                            front_right = self.avoidance_obj.index(layer) + 1
-                        # print('Front right {0}'.format(front_right))
+                        if self.avoidance_obj.index(layer) + 1 < veh_fr:
+                            veh_fr = self.avoidance_obj.index(layer) + 1
+                        # print('Veh_fr: {0}'.format(veh_fr))
 
         # print('Veh: fl={0} fr={1} bl={2} br={3}'.format(front_left, front_right, back_left, back_right))
         # print('Veh: fl={0} fr={1}'.format(front_left, front_right))
 
-        if front_left <= 3:
+        if veh_fl <= 3:
             self.move_right = True
-        if front_right <= 3:
+        if veh_fr <= 3:
             self.move_left = True
 
         if self.move_left and self.move_right:
-            if front_left > front_right:
+            if veh_fl > veh_fr:
                 self.move_left = False
                 self.move_right = True
-            elif front_left < front_right:
+            elif veh_fl < veh_fr:
                 self.move_left = True
                 self.move_right = False
             else:
+                # self.move_forward = False
                 self.move_left = False
                 self.move_right = False
 
-    def take_movement(self):  # Check allowed movements and desired action
-        # '''  # MANUAL MOVEMENT
-        pressed_keys = pygame.key.get_pressed()
-        if pressed_keys[pygame.K_t]:
-            self.move_forward = True
-            self.move_back = False
-        elif pressed_keys[pygame.K_g]:
-            self.move_back = True
-            self.move_forward = False
-        else:
-            self.move_forward = False
-            self.move_back = False
+        # print('Allow: f={0} l={1} r={2} Move: f={0} l={1} r={2}'.format(
+        #     self.allow_forward, self.allow_left, self.allow_right,
+        #     self.move_forward, self.move_left, self.move_right))
 
-        if pressed_keys[pygame.K_f]:
-            self.move_left = True
-            self.move_right = False
-        elif pressed_keys[pygame.K_h]:
-            self.move_left = False
-            self.move_right = True
-        else:
-            self.move_left = False
-            self.move_right = False
-        # '''  # MANUAL MOVEMENT
+    def take_movement(self):  # Check allowed movements and desired action
+        # MANUAL MOVEMENT
+        # pressed_keys = pygame.key.get_pressed()
+        # if pressed_keys[pygame.K_t]:
+        #     self.move_forward = True
+        #     self.move_back = False
+        # elif pressed_keys[pygame.K_g]:
+        #     self.move_back = True
+        #     self.move_forward = False
+        # else:
+        #     self.move_forward = False
+        #     self.move_back = False
+        #
+        # if pressed_keys[pygame.K_f]:
+        #     self.move_left = True
+        #     self.move_right = False
+        # elif pressed_keys[pygame.K_h]:
+        #     self.move_left = False
+        #     self.move_right = True
+        # else:
+        #     self.move_left = False
+        #     self.move_right = False
 
         self.decide_movement()  # AUTOMATED MOVEMENT
-        self.move_forward = True
 
         if self.move_forward and self.allow_forward:  # FORWARD
             self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
@@ -1832,16 +1851,19 @@ class NpcCar(pygame.sprite.Sprite):
 
 
 # -------- CAR FUNCTIONS -------- #
-def get_car_positions(player_list, npc_list):
+def get_car_positions():
     positions = []
-    vehicles = player_list + npc_list
-    for vehicle in vehicles:
+    for vehicle in All_vehicles:
         vehicle = vehicle.laps, vehicle.checkpoint_count, vehicle.checkpoint_time, vehicle
-        positions.append(vehicle)  # Cut down vehicle data
+        positions.append(vehicle)  # Extract vehicle data
 
     positions = sorted(positions, key=lambda tup: tup[2])  # Sort based on checkpoint times
     positions = sorted(positions, key=lambda tup: tup[1], reverse=True)  # Sort based on checkpoint number
-    return sorted(positions, key=lambda tup: tup[0], reverse=True)  # Sort positions based on their lap number
+    sorted(positions, key=lambda tup: tup[0], reverse=True)  # Sort positions based on their lap number
+    vehicles = []
+    for vehicle in positions:
+        vehicles.append(vehicle[3])
+    return vehicles
 
 
 # -------- MAP PREVIEW -------- #
@@ -3560,9 +3582,9 @@ def leaderboard_window(curr_bg, pad_x=0, pad_y=0):
     draw_text(x + 160, y + 20, 'Finish', WHITE, 70)
 
     for car_no in range(0, len(Player_positions)):
-        rect = draw_text(CENTRE[0], 85 * car_no + 250, str(car_no + 1) + '. ' + Player_positions[car_no][3].name,
+        rect = draw_text(CENTRE[0], 85 * car_no + 250, str(car_no + 1) + '. ' + Player_positions[car_no].name,
                          WHITE, 75, return_rect=True)  # Car position
-        Window.blit(pygame.transform.scale(pygame.image.load(Player_positions[car_no][3].image_dir),
+        Window.blit(pygame.transform.scale(pygame.image.load(Player_positions[car_no].image_dir),
                                            (45, 68)), (CENTRE[0] + rect.width // 2 + 15, 85 * car_no + 250))
 
     # Draw race info at bottom of screen
@@ -3588,21 +3610,21 @@ def gameplay_gui(player_list, game_countdown_timer, lap_timer):
     draw_text(10, 10, 'Positions', WHITE, 50, center_x=False)  # Leaderboard positions
     for car_no in range(0, len(Player_positions)):
         draw_text(10, 40 * car_no + 60, str(car_no + 1) + '.', WHITE, 40, center_x=False)  # Car position
-        Window.blit(pygame.transform.scale(pygame.image.load(Player_positions[car_no][3].image_dir),
+        Window.blit(pygame.transform.scale(pygame.image.load(Player_positions[car_no].image_dir),
                                            (30, 40)), (50, 40 * car_no + 60))  # Small car image
-        draw_text(85, 40 * car_no + 60, ' ' + str(Player_positions[car_no][3].laps) + '/' + str(Total_laps) + ' ' +
-                  Player_positions[car_no][3].name, WHITE, 40, center_x=False)  # Car name and current lap
+        draw_text(85, 40 * car_no + 60, ' ' + str(Player_positions[car_no].laps) + '/' + str(Total_laps) + ' ' +
+                  Player_positions[car_no].name, WHITE, 40, center_x=False)  # Car name and current lap
 
     draw_text(1800, 10, 'Total Laps', WHITE, 40)
     if Player_positions:
-        draw_text(1850, 50, Player_positions[0][3].laps, WHITE, 40)
+        draw_text(1850, 50, Player_positions[0].laps, WHITE, 40)
         if lap_timer > pygame.time.get_ticks():
-            draw_text(CENTRE[0], CENTRE[1], 'Lap ' + str(Player_positions[0][3].laps), WHITE, 70, bar=True)
+            draw_text(CENTRE[0], CENTRE[1], 'Lap ' + str(Player_positions[0].laps), WHITE, 70, bar=True)
     else:
         draw_text(1850, 50, 0, WHITE, 40)
 
     if game_countdown_timer:
-        draw_text(CENTRE[0], CENTRE[1] - 50, Player_positions[0][3].name + ' has finished!', WHITE, 50)
+        draw_text(CENTRE[0], CENTRE[1] - 50, Player_positions[0].name + ' has finished!', WHITE, 50)
         draw_text(CENTRE[0], CENTRE[1], 'Game ends in ' + str(game_countdown_timer // 1000), WHITE, 50)
 
 
@@ -4924,8 +4946,8 @@ def game():  # All variables that are not constant
     pygame.mixer.music.unpause()
     while not Game_end and not game_quit:  # Main game loop
         if Player_positions:
-            if Current_lap != Player_positions[0][3].laps:
-                Current_lap = Player_positions[0][3].laps
+            if Current_lap != Player_positions[0].laps:
+                Current_lap = Player_positions[0].laps
                 if Current_lap > Total_laps:
                     play_sound('lap finish')
                 else:
@@ -5505,21 +5527,21 @@ def game():  # All variables that are not constant
             lightning_target = None
             if powerups:
                 for vehicle in Player_positions:
-                    if vehicle[3].type == 'NPC':
-                        if not vehicle[3].penalty_time:
-                            vehicle[3].lightning_target = True
-                            lightning_target = vehicle[3]
+                    if vehicle.type == 'NPC':
+                        if not vehicle.penalty_time:
+                            vehicle.lightning_target = True
+                            lightning_target = vehicle
                             break
 
-                    elif vehicle[3].type == 'Player':
-                        if not vehicle[3].bullet_penalty:
-                            vehicle[3].lightning_target = True
-                            lightning_target = vehicle[3]
+                    elif vehicle.type == 'Player':
+                        if not vehicle.bullet_penalty:
+                            vehicle.lightning_target = True
+                            lightning_target = vehicle
                             break
 
                 for vehicle in Player_positions:
-                    if vehicle[3].lightning_target and vehicle[3] != lightning_target:
-                        vehicle[3].lightning_target = False
+                    if vehicle.lightning_target and vehicle != lightning_target:
+                        vehicle.lightning_target = False
 
             for player in player_list:
                 player.update()
@@ -5528,7 +5550,7 @@ def game():  # All variables that are not constant
                 player_list[player].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
                 if player_list[player].laps > Total_laps and not game_countdown:  # If player has finished
                     game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
-                for player2 in range(0, len(player_list)):  # For every player,
+                for player2 in range(0, len(player_list)):  # For every other player,
                     if player != player2:  # If not same player
                         player_list[player].check_car_collision(player_list[player2])  # Check collision
                 for power_up in power_ups:  # Check powerup collisions for each player
@@ -5569,13 +5591,13 @@ def game():  # All variables that are not constant
                     if npc.mask.overlap(power_up[3], (power_up[1][0] - npc.rect.left, power_up[1][1] - npc.rect.top)):
                         if power_up[4] == 'lightning':  # Lightning targets first to last vehicle
                             for vehicle in Player_positions:
-                                if vehicle[3].type == 'NPC':
-                                    if not vehicle[3].penalty_time:
-                                        vehicle[3].power_up('lightning')  # Trigger animation and penalty
+                                if vehicle.type == 'NPC':
+                                    if not vehicle.penalty_time:
+                                        vehicle.power_up('lightning')  # Trigger animation and penalty
                                         break
-                                elif vehicle[3].type == 'Player':
-                                    if not vehicle[3].bullet_penalty:
-                                        vehicle[3].power_up('lightning')  # Trigger animation and penalty
+                                elif vehicle.type == 'Player':
+                                    if not vehicle.bullet_penalty:
+                                        vehicle.power_up('lightning')  # Trigger animation and penalty
                                         break
                         else:
                             npc.power_up(power_up[4])
@@ -5616,7 +5638,7 @@ def game():  # All variables that are not constant
                 if game_countdown_timer // 1000 <= 0:
                     Game_end = True
 
-            Player_positions = get_car_positions(player_list, npc_list)  # Update player positions
+            Player_positions = get_car_positions()  # Update player positions
             gameplay_gui(player_list, game_countdown_timer, lap_timer)  # Draw GUI
             update_screen(full_screen=True)  # Update entire screen
 
@@ -5682,7 +5704,7 @@ def main():
         # Debug = True
         Players[0].name = 'Debug'
         Players[0].veh_name = 'Race Car'
-        Npc_amount = 2
+        Npc_amount = 5
         Total_laps = 20
         Debug = True
         powerups = False

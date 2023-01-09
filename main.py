@@ -1139,8 +1139,8 @@ class NpcCar(pygame.sprite.Sprite):
         self.move_rect_radius = 80  # randint(70, 80)
         self.move_rect_offset = 28  # randint(18, 28)
         self.move_layer_offset = 35
-        self.avoid_rect_radius = 82
-        self.avoid_rect_offset = 12
+        self.avoid_rect_radius = 60
+        self.avoid_rect_offset = 16
         self.avoid_layer_offset = 32
         # 1 - 4 = Track collision
         self.movements_obj = []
@@ -1474,7 +1474,7 @@ class NpcCar(pygame.sprite.Sprite):
                 # print('Trk_fr: {0}'.format(trk_fr))
 
         # print('Trk: fl={0} fr={1} bl={2} br={3}'.format(front_left, front_right, back_left, back_right))
-        print('Trk: fl={0} fr={1}'.format(trk_fl, trk_fr))
+        # print('Trk: fl={0} fr={1}'.format(trk_fl, trk_fr))
 
         if trk_fl <= 1:
             self.allow_left = False
@@ -1493,9 +1493,9 @@ class NpcCar(pygame.sprite.Sprite):
             #     self.allow_left = False
             #     self.allow_right = False
 
-        if trk_fl == 2:
+        if trk_fl <= 3:
             self.move_right = True
-        if trk_fr == 2:
+        if trk_fr <= 3:
             self.move_left = True
 
         if self.move_left and self.move_right:
@@ -1522,8 +1522,8 @@ class NpcCar(pygame.sprite.Sprite):
                     obj = layer[0]
                     if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
                         # Input randomness to change perceived distance from object to cause collision
-                        if self.avoidance_obj.index(layer) + 1 < veh_fl:
-                            veh_fl = self.avoidance_obj.index(layer) + 1
+                        if self.avoidance_obj.index(layer) < veh_fl:
+                            veh_fl = self.avoidance_obj.index(layer)
                         # print('Veh_fl: {0}'.format(veh_fl))
 
                     '''
@@ -1542,12 +1542,12 @@ class NpcCar(pygame.sprite.Sprite):
 
                     obj = layer[3]
                     if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
-                        if self.avoidance_obj.index(layer) + 1 < veh_fr:
-                            veh_fr = self.avoidance_obj.index(layer) + 1
+                        if self.avoidance_obj.index(layer) < veh_fr:
+                            veh_fr = self.avoidance_obj.index(layer)
                         # print('Veh_fr: {0}'.format(veh_fr))
 
-        # print('Veh: fl={0} fr={1} bl={2} br={3}'.format(front_left, front_right, back_left, back_right))
-        # print('Veh: fl={0} fr={1}'.format(front_left, front_right))
+        # print('Veh: fl={0} fr={1} bl={2} br={3}'.format(veh_fl, veh_fr, veh_bl, veh_br))
+        # print('Veh: fl={0} fr={1}'.format(veh_fl, veh_fr))
 
         if veh_fl <= 3:
             self.move_right = True
@@ -1566,7 +1566,7 @@ class NpcCar(pygame.sprite.Sprite):
                 self.move_left = False
                 self.move_right = False
 
-        # print('Allow: f={0} l={1} r={2} Move: f={0} l={1} r={2}'.format(
+        # print('Trk: f={0} l={1} r={2} Veh: f={0} l={1} r={2}'.format(
         #     self.allow_forward, self.allow_left, self.allow_right,
         #     self.move_forward, self.move_left, self.move_right))
 
@@ -5559,13 +5559,13 @@ def game():  # All variables that are not constant
                         if power_up[4] == 'lightning':  # Lightning targets first to last vehicle
                             player_list[player].power_up('lightning rumble')  # Controller rumble for player
                             for vehicle in Player_positions:
-                                if vehicle[3].type == 'NPC':
-                                    if not vehicle[3].penalty_time:
-                                        vehicle[3].power_up('lightning')  # Trigger animation and penalty
+                                if vehicle.type == 'NPC':
+                                    if not vehicle.penalty_time:
+                                        vehicle.power_up('lightning')  # Trigger animation and penalty
                                         break
-                                elif vehicle[3].type == 'Player':
-                                    if not vehicle[3].bullet_penalty:
-                                        vehicle[3].power_up('lightning')  # Trigger animation and penalty
+                                elif vehicle.type == 'Player':
+                                    if not vehicle.bullet_penalty:
+                                        vehicle.power_up('lightning')  # Trigger animation and penalty
                                         break
                         else:
                             player_list[player].power_up(power_up[4])

@@ -264,23 +264,31 @@ class Object:
         self.surf = surf
         self.rect = rect
         self.mask = mask
+        self.ver = None
+        self.timeout = None
+        self.active = None
 
 
 class Player:
-    def __init__(self, player: int):
-        self.id = player
+    def __init__(self, position: int, is_player=True):
+        self.id = position
+        self.is_player = is_player
         if 0 > self.id or 5 < self.id:
-            raise ValueError('Player | self._id can only be between 0 and 5 not ' + str(self.id))
+            raise ValueError('Player | self.id can only be between 0 and 5 not ' + str(self.id))
         self.name = None
         self.veh_name = None
         self.veh_image = None
         self.veh_colour = None
-        self.start_pos = None
+        self.start_pos = self.id + 1
         self.controls = None
         self.default_controls = None
-        self.load_defaults()
+        if self.is_player:
+            self.load_player()
+        else:
+            self.load_npc()
+        self.update_image()
 
-    def load_defaults(self):
+    def load_player(self):
         if self.id == 0:
             self.veh_name = 'Family Car'
             self.veh_colour = RED_CAR
@@ -330,10 +338,36 @@ class Player:
         else:
             self.controls = 'controller'
         self.name = ''
-        self.veh_image = pygame.transform.scale(pygame.image.load(assets.car(self.veh_colour, self.veh_name)),
-                                                (175, 300))
-        self.start_pos = self.id + 1
         self.default_controls = self.controls
+
+    def load_npc(self):
+        self.name = Npc_names[randint(0, len(Npc_names) - 1)]  # Only use one name per NPC
+        while self.name[1] or self.name[0].lower() == Players[0].name.lower() or Player_amount >= 2 and \
+                self.name[0].lower() == Players[1].name.lower() or Player_amount >= 3 and \
+                self.name[0].lower() == Players[2].name.lower() or Player_amount >= 4 and \
+                self.name[0].lower() == Players[3].name.lower() or Player_amount >= 5 and \
+                self.name[0].lower() == Players[4].name.lower() or Player_amount == 6 and \
+                self.name[0].lower() and Players[5].name.lower():
+            self.name = Npc_names[randint(0, len(Npc_names) - 1)]
+        self.name[1] = True
+
+        if Npc_force_veh == 1:
+            self.veh_name = 'Family Car'
+        elif Npc_force_veh == 2:
+            self.veh_name = 'Sports Car'
+        elif Npc_force_veh == 3:
+            self.veh_name = 'Luxury Car'
+        elif Npc_force_veh == 4:
+            self.veh_name = 'Truck'
+        elif Npc_force_veh == 5:
+            self.veh_name = 'Race Car'
+        else:
+            self.veh_name = rand_vehicle()
+
+        if Npc_force_colour:
+            self.veh_colour = Npc_force_colour
+        else:
+            self.veh_colour = rand_color()
 
     def update_image(self):
         self.veh_image = pygame.transform.scale(pygame.image.load(assets.car(self.veh_colour, self.veh_name)),
@@ -472,8 +506,8 @@ class MenuCar:  # Create car sprite
 class Car(pygame.sprite.Sprite):
     def __init__(self, player: Player):
         super().__init__()
-        self.type = 'Player'
         self.player = player
+        self.is_player = self.player.is_player
         self.id = self.player.id
         if self.id > 6 or self.id < 0:
             raise ValueError('Car | self.id should only be between 0 and 5, not ' + str(self.player.id))
@@ -519,7 +553,7 @@ class Car(pygame.sprite.Sprite):
         self.image_dir = assets.car(self.colour, self.vehicle)
         self.image = pygame.transform.scale(pygame.image.load(self.image_dir).convert(), (40, 70))
         self.image.set_colorkey(BLACK)
-        self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
+        self._origin_img = self.image
         self._dmg_img = None
         self.damage = 0
         self.size = self.image.get_size()
@@ -530,14 +564,12 @@ class Car(pygame.sprite.Sprite):
         self.pos_y = self.rect.y
         self.rotation = self._origin_rotation
         # COLLISION variables
+        self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
         self.mask_overlap = None  # Used for checking collision position
         self.mask_area = None  # Used to ensure the player cannot get outside the map
         self.mask_size = None
         self.collision = False
         # MOVEMENT variables
-        self._record = False
-        if self._record:
-            self.keystrokes = []
         self._up = None
         self._down = None
         self._left = None
@@ -871,92 +903,54 @@ class Car(pygame.sprite.Sprite):
                 return  # Do not move the car
 
             if self._pressed_keys[self._up] and self._allow_forwards:  # If up key is pressed
-                if self._record:
-                    self.keystrokes.append(0)
                 self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self._move_speed),
                           self.pos_y + round(sin(radians(self.rotation - 90)) * self._move_speed))
                 # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
 
                 if self._pressed_keys[self._left]:  # If left key is pressed
-                    if self._record:
-                        self.keystrokes.append(2)
                     self.rotate(self.rotation + self._rotation_speed)  # Rotate car to new position
                     # print(self.rotation)
 
                 elif self._pressed_keys[self._right]:  # If right key is pressed
-                    if self._record:
-                        self.keystrokes.append(3)
                     self.rotate(self.rotation - self._rotation_speed)
                     # print(self.rotation)
-                if self._record:
-                    recorded_keys.append(self.keystrokes)
-                    self.keystrokes = []
 
             elif self._pressed_keys[self._down] and self._allow_reverse:  # If down key is pressed
-                if self._record:
-                    self.keystrokes.append(1)
                 self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self._move_speed),  # Always move back
                           self.pos_y - round(sin(radians(self.rotation - 90)) * self._move_speed))  # Despite rotation
                 # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
 
                 if self._pressed_keys[self._left]:  # If left key is pressed
-                    if self._record:
-                        self.keystrokes.append(2)
                     self.rotate(self.rotation - self._rotation_speed)  # Rotate car to new position
                     # print(self.rotation)
 
                 elif self._pressed_keys[self._right]:  # If right key is pressed
-                    if self._record:
-                        self.keystrokes.append(3)
                     self.rotate(self.rotation + self._rotation_speed)
                     # print(self.rotation)
-                if self._record:
-                    recorded_keys.append(self.keystrokes)
-                    self.keystrokes = []
 
         elif self.input_type == 'controller':
             if self.controller.get_axis(5) > 0.6 and self.controller.get_axis(4) > 0.6:
                 return  # Do not move the car
 
             if self.controller.get_axis(5) > 0.6 and self._allow_forwards:
-                if self._record:
-                    self.keystrokes.append(0)
                 self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self._move_speed),
                           self.pos_y + round(sin(radians(self.rotation - 90)) * self._move_speed))
 
                 if self.controller.get_axis(0) < -0.6:  # If left key is pressed
-                    if self._record:
-                        self.keystrokes.append(2)
                     self.rotate(self.rotation + self._rotation_speed)  # Rotate car to new position
 
                 elif self.controller.get_axis(0) > 0.6:  # If right key is pressed
-                    if self._record:
-                        self.keystrokes.append(3)
                     self.rotate(self.rotation - self._rotation_speed)
 
-                if self._record:
-                    recorded_keys.append(self.keystrokes)
-                    self.keystrokes = []
-
             elif self.controller.get_axis(4) > 0.6 and self._allow_reverse:  # If down key is pressed
-                if self._record:
-                    self.keystrokes.append(1)
                 self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self._move_speed),  # Always move back
                           self.pos_y - round(sin(radians(self.rotation - 90)) * self._move_speed))  # Despite rotation
 
                 if self.controller.get_axis(0) < -0.6:  # If left key is pressed
-                    if self._record:
-                        self.keystrokes.append(2)
                     self.rotate(self.rotation - self._rotation_speed)  # Rotate car to new position
 
                 elif self.controller.get_axis(0) > 0.6:  # If right key is pressed
-                    if self._record:
-                        self.keystrokes.append(3)
                     self.rotate(self.rotation + self._rotation_speed)
-
-                if self._record:
-                    recorded_keys.append(self.keystrokes)
-                    self.keystrokes = []
 
     def draw(self, surf=Window):
         surf.blit(self.image, (self.rect.left, self.rect.top))  # Car image
@@ -1041,74 +1035,70 @@ class Car(pygame.sprite.Sprite):
 
 
 class NpcCar(pygame.sprite.Sprite):
-    def __init__(self, vehicle: str or int, colour: tuple[int, int, int], size: tuple[int, int],
-                 name: str, track: str, start_position: int):
+    def __init__(self, player: Player):
         super().__init__()
-        self.id = -1
-        self.type = 'NPC'
-        self.start_position = start_position
-        if track == 'racetrack':
-            self.paths = paths.Racetrack()
-        elif track == 'snake':
-            self.paths = paths.Snake()
-        elif track == 'dog bone':
-            self.paths = paths.DogBone()
-        elif track == 'hairpin':
-            self.paths = paths.Hairpin()
-        self.vehicle = vehicle.lower() if type(vehicle) == str else vehicle
-        self.move_speed = global_car_move_speed
-        self.rotation_speed = global_car_rotation_speed
-        if type(self.vehicle) == str:
-            self.vehicle = self.vehicle.lower()
-        if self.vehicle == 'family car' or self.vehicle == 1:
+        self.player = player
+        self.is_player = self.player.is_player
+        self.id = self.player.id
+        self.start_pos = self.player.start_pos
+        if Map == 'racetrack':
+            self._origin_pos = paths.Racetrack.start_pos(self.start_pos)
+        elif Map == 'snake':
+            self._origin_pos = paths.Snake.start_pos(self.start_pos)
+        elif Map == 'dog bone':
+            self._origin_pos = paths.DogBone.start_pos(self.start_pos)
+        elif Map == 'hairpin':
+            self._origin_pos = paths.Hairpin.start_pos(self.start_pos)
+        self._origin_rotation = self._origin_pos[2]  # Original rotation
+        self._origin_pos = self._origin_pos[:2]
+        self._move_speed = global_car_move_speed
+        self._rotation_speed = global_car_rotation_speed
+        self.vehicle = self.player.veh_name
+        if self.vehicle == 'Family Car':
             self.max_speed = 3
             self.max_rotation_speed = 2
             self.durability = 4
-        elif self.vehicle == 'sports car' or self.vehicle == 2:
+        elif self.vehicle == 'Sports Car':
             self.max_speed = 4
             self.max_rotation_speed = 3
             self.durability = 2
-        elif self.vehicle == 'luxury car' or self.vehicle == 2:
+        elif self.vehicle == 'Luxury Car':
             self.max_speed = 3
             self.max_rotation_speed = 3
             self.durability = 3
-        elif self.vehicle == 'truck' or self.vehicle == 3:
+        elif self.vehicle == 'Truck':
             self.max_speed = 2
             self.max_rotation_speed = 2
             self.durability = 5
-        elif self.vehicle == 'race car' or self.vehicle == 4:
+        elif self.vehicle == 'Race Car':
             self.max_speed = 5
             self.max_rotation_speed = 3
             self.durability = 1
-        else:
-            raise ValueError('NpcCar | __init__ | self.vehicle incorrect value -> ' + str(self.vehicle))
-
         self.set_move_speed(self.max_speed)
         self.set_rotation_speed(self.max_rotation_speed)
-        # STARTING variables
-        self.origin_pos = self.paths.start_pos(start_position)[0:2]  # Original position
-        self.origin_rotation = self.paths.start_pos(start_position)[2]
         # SURFACE variables
-        self.colour = colour
+        self.colour = self.player.veh_colour
         self.image_dir = assets.car(self.colour, self.vehicle)
-        self.origin_img = pygame.transform.scale(pygame.image.load(self.image_dir).convert(), size)
-        self.image = self.origin_img.copy()
+        self.image = pygame.transform.scale(pygame.image.load(self.image_dir).convert(), (40, 70))
         self.image.set_colorkey(BLACK)
-        self.dmg_img = None
+        self._origin_img = self.image
+        self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
+        self._dmg_img = None
         self.damage = 0
         self.size = self.image.get_size()
         # RECT variables
         self.rect = self.image.get_rect()
-        self.rect.center = self.origin_pos
+        self.rect.center = self._origin_pos
         self.pos_x = self.rect.x
         self.pos_y = self.rect.y
-        self.rotation = self.origin_rotation
+        self.rotation = self._origin_rotation
         # COLLISION variables
         self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
         self.mask_overlap = None  # Used for checking collision position
         self.mask_area = None  # Used to ensure the player cannot get outside the map
         self.mask_size = None
         self.collision = False
+
         self.collision_time = 0
         self._boost_timeout = 0
         self.bullet_penalty = 0
@@ -1136,70 +1126,73 @@ class NpcCar(pygame.sprite.Sprite):
         self.move_back = False
         self.move_left = False
         self.move_right = False
-        self.move_rect_radius = 80  # randint(70, 80)
-        self.move_rect_offset = 28  # randint(18, 28)
-        self.move_layer_offset = 35
-        self.avoid_rect_radius = 60
-        self.avoid_rect_offset = 16
-        self.avoid_layer_offset = 32
+        self._move_rect_radius = 80  # randint(70, 80)
+        self._move_rect_offset = 28  # randint(18, 28)
+        self._move_layer_offset = 35
+        self._avoid_rect_radius = 60
+        self._avoid_rect_offset = 16
+        self._avoid_layer_offset = 32
         # 1 - 4 = Track collision
         self.movements_obj = []
-        for layer_num in range(0, 3):
+        for layer_num in range(0, 4):
             layer = []
             for index in range(0, 4):
                 surf = pygame.surface.Surface((10, 10))
                 rect = surf.get_rect()
                 mask = pygame.mask.from_surface(surf)
-                rect.center = self.rect.centerx, self.rect.centery - self.move_rect_radius
+                rect.center = self.rect.centerx, self.rect.centery - self._move_rect_radius
                 surf.fill(RED)
                 layer.append(Object(surf, rect, mask))
             self.movements_obj.append(layer)
         self.avoidance_obj = []
-        for layer_num in range(0, 4):
+        for layer_num in range(0, 5):
             layer = []
             for index in range(0, 4):
                 surf = pygame.surface.Surface((8, 8))
                 rect = surf.get_rect()
                 mask = pygame.mask.from_surface(surf)
-                rect.center = self.rect.centerx, self.rect.centery - self.avoid_rect_radius
+                rect.center = self.rect.centerx, self.rect.centery - self._avoid_rect_radius
                 surf.fill(GREEN)
                 layer.append(Object(surf, rect, mask))
             self.avoidance_obj.append(layer)
-        self.penalty_time = 0
         # NAME variables
-        self.name = name
+        self.name = self.player.name[0]
         self._name_rect = None
         # LAP variables
-        self.lap_halfway = True
+        self._lap_halfway = True
         self.laps = 0
         # CHECKPOINT variables
         self.checkpoint_count = -1
         self.checkpoint_time = 0
-        self.prev_checkpoint_position = self.origin_pos
-        self.prev_checkpoint_rotation = self.origin_rotation
+        self.prev_checkpoint_position = self._origin_pos
+        self.prev_checkpoint_rotation = self._origin_rotation
         self.prev_checkpoint_path_position = 0
         # SOUND variables
         self.collision_sound = False
 
-        self.move(self.origin_pos[0], self.origin_pos[1])
-        if self.origin_rotation != 0:  # If start rotation is not 0 then rotate
+        self.move(self._origin_pos[0], self._origin_pos[1])
+        if self._origin_rotation != 0:  # If start rotation is not 0 then rotate
             self.rotate(self.rotation)
 
     def set_move_speed(self, speed):
-        self.move_speed = global_car_move_speed + speed
+        if speed < 1:
+            speed = 1
+        if speed != 10:  # Save current speed for boost powerup
+            self._current_speed = speed
+        self._move_speed = global_car_move_speed + speed
 
     def set_rotation_speed(self, speed):
-        self.rotation_speed = global_car_rotation_speed + speed
+        self._rotation_speed = global_car_rotation_speed + speed
 
     def check_checkpoints(self, checkpoint_rectangles):
         for checkpoint in checkpoint_rectangles:
             if checkpoint.colliderect(self.rect) and self.checkpoint_count != checkpoint_rectangles.index(checkpoint):
                 self.checkpoint_count = checkpoint_rectangles.index(checkpoint)
                 self.checkpoint_time = pygame.time.get_ticks()
-                if not self.lap_halfway and self.checkpoint_count == floor(len(checkpoint_rectangles) / 2):
-                    self.lap_halfway = True
-                if self.lap_halfway and self.checkpoint_count == 0:
-                    self.lap_halfway = False
+                if not self._lap_halfway and self.checkpoint_count == floor(len(checkpoint_rectangles) / 2):
+                    self._lap_halfway = True
+                if self._lap_halfway and self.checkpoint_count == 0:
+                    self._lap_halfway = False
                     self.laps += 1
 
     def check_track_collisions(self):  # Check if there are collisions and take action
@@ -1211,13 +1204,16 @@ class NpcCar(pygame.sprite.Sprite):
             self.mask_overlap = self.mask.overlap(Track_mask, (-self.rect.left, -self.rect.top))
             if self.mask_overlap:
                 self.collision = 'track'
-                if not self.collision_sound:
+                if not self.collision_time:
                     play_sound('collision')
-                    self.penalty_time = pygame.time.get_ticks() + 3000 + \
-                        ((self.move_speed - global_car_move_speed) * 1000)
-                    self.collision_sound = True
-                if self.collision_time == 0:
                     self.collision_time = pygame.time.get_ticks()
+                    if self.damage < self.durability:
+                        self.damage += 1
+                    if self.damage:
+                        self._dmg_img = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
+                            assets.car_damage(self.vehicle, self.damage)), self.size), self.rotation)
+                        self._dmg_img.set_colorkey(WHITE)
+                        self.image.blit(self._dmg_img, (0, 0))  # Overlay damage on top of image
 
                 # If there is a collision between masks...
                 self.mask_area = self.mask.overlap_area(Track_mask, (-self.rect.left, -self.rect.top))
@@ -1272,8 +1268,8 @@ class NpcCar(pygame.sprite.Sprite):
                         # print('do not allow reverse')
 
                 if self.mask_area > self.mask_size // 1.5:  # If over half of the car is colliding with the mask...
-                    self.move(self.origin_pos[0], self.origin_pos[1])  # Reset the car to starting position and rotation
-                    self.rotate(self.origin_rotation)
+                    self.move(self._origin_pos[0], self._origin_pos[1])  # Reset the car to starting pos and rot
+                    self.rotate(self._origin_rotation)
                     # print('reset to origin')
 
             else:  # If there are no collisions with the track
@@ -1290,14 +1286,17 @@ class NpcCar(pygame.sprite.Sprite):
             self.mask_overlap = pygame.sprite.collide_mask(self, sprite)
             if self.mask_overlap:
                 self.collision = sprite
-                if not self.collision_sound:
+                if not self.collision_time:
                     play_sound('collision')
-                    self.penalty_time = pygame.time.get_ticks() + 3000 + \
-                        ((self.move_speed - global_car_move_speed) * 1000)
-                    self.collision_sound = True
-                if self.collision_time == 0:
                     self.collision_time = pygame.time.get_ticks()
-                    # print('set timer')
+                    if self.damage < self.durability:
+                        self.damage += 1
+                    if self.damage:
+                        self._dmg_img = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
+                            assets.car_damage(self.vehicle, self.damage)), self.size), self.rotation)
+                        self._dmg_img.set_colorkey(WHITE)
+                        self.image.blit(self._dmg_img, (0, 0))  # Overlay damage on top of image
+
                 # If there is a collision between masks...
                 self.mask_area = self.mask.overlap_area(sprite.mask, (-self.rect.left, -self.rect.top))
                 self.mask_size = self.mask.count()
@@ -1351,8 +1350,8 @@ class NpcCar(pygame.sprite.Sprite):
                         # print('do not allow reverse')
 
                 if self.mask_area > self.mask_size // 1.5:  # If over half of the car is colliding with the mask...
-                    self.move(self.origin_pos[0], self.origin_pos[1])  # Reset the car to starting position and rotation
-                    self.rotate(self.origin_rotation)
+                    self.move(self._origin_pos[0], self._origin_pos[1])  # Reset the car to starting pos and rot
+                    self.rotate(self._origin_rotation)
                     # print('reset to origin')
 
             else:  # If there are no collisions with the track
@@ -1377,19 +1376,24 @@ class NpcCar(pygame.sprite.Sprite):
 
     def rotate(self, degree):  # Rotate car to new angle
         self.rotation = degree  # Set current rotation as rotation
-        if self.rotation_speed - 1 >= self.rotation:  # Create snapping points to drive in straight lines
+        if self._rotation_speed - 1 >= self.rotation:  # Create snapping points to drive in straight lines
             self.rotation = 360
-        elif self.rotation >= 360 - self.rotation_speed:
+        elif self.rotation >= 360 - self._rotation_speed:
             self.rotation = 0
-        elif 90 - self.rotation_speed <= self.rotation <= 90 + self.rotation_speed:
+        elif 90 - self._rotation_speed <= self.rotation <= 90 + self._rotation_speed:
             self.rotation = 90
-        elif 180 - self.rotation_speed <= self.rotation <= 180 + self.rotation_speed:
+        elif 180 - self._rotation_speed <= self.rotation <= 180 + self._rotation_speed:
             self.rotation = 180
-        elif 270 - self.rotation_speed <= self.rotation <= 270 + self.rotation_speed:
+        elif 270 - self._rotation_speed <= self.rotation <= 270 + self._rotation_speed:
             self.rotation = 270
-        self.image = pygame.transform.rotate(self.origin_img.copy(), self.rotation)  # Rotate image
+        self.image = pygame.transform.rotate(self._origin_img.copy(), self.rotation)  # Rotate image
         self.image.set_colorkey(BLACK)
         self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
+        if 0 < self.damage <= self.durability:
+            self._dmg_img = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
+                assets.car_damage(self.vehicle, self.damage)), self.size), self.rotation)  # Load and rotate damage
+            self._dmg_img.set_colorkey(WHITE)
+            self.image.blit(self._dmg_img, (0, 0))  # Overlay damage on top of image
         self.rect = self.image.get_rect()  # Set surface size to image size
         if Debug:
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)
@@ -1397,24 +1401,24 @@ class NpcCar(pygame.sprite.Sprite):
         # print('Rotate: {0}'.format(self.rotation))
         for layer in self.movements_obj:
             layer_num = self.movements_obj.index(layer)
-            self.rotate_rect(layer[0].rect, -self.rotation - self.move_rect_offset,
-                             self.move_rect_radius + self.move_layer_offset * layer_num)
+            self.rotate_rect(layer[0].rect, -self.rotation - self._move_rect_offset,
+                             self._move_rect_radius + self._move_layer_offset * layer_num)
             # self.rotate_rect(layer[1].rect, -self.rotation + self.rect_offset - 180,
             #                  self.rect_radius + self.layer_offset * layer_num)
             # self.rotate_rect(layer[2].rect, -self.rotation - self.rect_offset - 180,
             #                  self.rect_radius + self.layer_offset * layer_num)
-            self.rotate_rect(layer[3].rect, -self.rotation + self.move_rect_offset,
-                             self.move_rect_radius + self.move_layer_offset * layer_num)
+            self.rotate_rect(layer[3].rect, -self.rotation + self._move_rect_offset,
+                             self._move_rect_radius + self._move_layer_offset * layer_num)
         for layer in self.avoidance_obj:
             layer_num = self.avoidance_obj.index(layer)
-            self.rotate_rect(layer[0].rect, -self.rotation - self.avoid_rect_offset,
-                             self.avoid_rect_radius + self.avoid_layer_offset * layer_num)
+            self.rotate_rect(layer[0].rect, -self.rotation - self._avoid_rect_offset,
+                             self._avoid_rect_radius + self._avoid_layer_offset * layer_num)
             # self.rotate_rect(layer[1].rect, -self.rotation + self.avoid_rect_offset - 180,
             #                  self.avoid_rect_radius + self.avoid_layer_offset * layer_num)
             # self.rotate_rect(layer[2].rect, -self.rotation - self.avoid_rect_offset - 180,
             #                  self.avoid_rect_radius + self.avoid_layer_offset * layer_num)
-            self.rotate_rect(layer[3].rect, -self.rotation + self.avoid_rect_offset,
-                             self.avoid_rect_radius + self.avoid_layer_offset * layer_num)
+            self.rotate_rect(layer[3].rect, -self.rotation + self._avoid_rect_offset,
+                             self._avoid_rect_radius + self._avoid_layer_offset * layer_num)
 
     def rotate_rect(self, rect, angle, radius):
         # print('Center: {0}, {1} Angle: {2}'.format(self.pos_x, self.pos_y, angle))
@@ -1438,10 +1442,11 @@ class NpcCar(pygame.sprite.Sprite):
         self.move_back = False
         self.move_left = False
         self.move_right = False
-        self.allow_forward = True  # Use ALLOW for track collisions AFTER deciding car avoidance
-        self.allow_back = True
-        self.allow_left = True
-        self.allow_right = True
+        if not self.collision:
+            self.allow_forward = True  # Use ALLOW for track collisions AFTER deciding car avoidance
+            self.allow_back = True
+            self.allow_left = True
+            self.allow_right = True
 
         trk_fl = 4
         # trk_bl = 4
@@ -1476,43 +1481,10 @@ class NpcCar(pygame.sprite.Sprite):
         # print('Trk: fl={0} fr={1} bl={2} br={3}'.format(front_left, front_right, back_left, back_right))
         # print('Trk: fl={0} fr={1}'.format(trk_fl, trk_fr))
 
-        if trk_fl <= 1:
-            self.allow_left = False
-        if trk_fr <= 1:
-            self.allow_right = False
-
-        if not self.allow_left and not self.allow_right:
-            if trk_fl > trk_fr:
-                self.allow_left = True
-                self.allow_right = False
-            elif trk_fl < trk_fr:
-                self.allow_left = False
-                self.allow_right = True
-            # else:
-            #     self.allow_forward = False
-            #     self.allow_left = False
-            #     self.allow_right = False
-
-        if trk_fl <= 3:
-            self.move_right = True
-        if trk_fr <= 3:
-            self.move_left = True
-
-        if self.move_left and self.move_right:
-            if trk_fl > trk_fr:
-                self.move_left = False
-                self.move_right = True
-            elif trk_fl < trk_fr:
-                self.move_left = True
-                self.move_right = False
-            else:
-                self.move_left = False
-                self.move_right = False
-
-        veh_fl = 4
+        veh_fl = 5
         # veh_bl = 4
         # veh_br = 4
-        veh_fr = 4
+        veh_fr = 5
 
         # VEHICLE AVOIDANCE
         for layer in reversed(self.avoidance_obj):
@@ -1548,27 +1520,78 @@ class NpcCar(pygame.sprite.Sprite):
 
         # print('Veh: fl={0} fr={1} bl={2} br={3}'.format(veh_fl, veh_fr, veh_bl, veh_br))
         # print('Veh: fl={0} fr={1}'.format(veh_fl, veh_fr))
-
-        if veh_fl <= 3:
-            self.move_right = True
-        if veh_fr <= 3:
-            self.move_left = True
-
-        if self.move_left and self.move_right:
-            if veh_fl > veh_fr:
-                self.move_left = False
+        if (trk_fl < 4 or trk_fr < 4) and (veh_fl < 5 or veh_fr < 5):  # Panic squeeze mode
+            if trk_fl == 2:
                 self.move_right = True
-            elif veh_fl < veh_fr:
+            if trk_fr == 2:
                 self.move_left = True
-                self.move_right = False
-            else:
-                # self.move_forward = False
-                self.move_left = False
-                self.move_right = False
+
+            if veh_fl == 1:
+                self.move_right = True
+            if veh_fr == 1:
+                self.move_left = True
+            
+        else:  # Normal driving mode
+            if trk_fl <= 1:
+                self.allow_left = False
+            if trk_fr <= 1:
+                self.allow_right = False
+
+            if not self.allow_left and not self.allow_right:
+                if trk_fl > trk_fr:
+                    self.allow_left = True
+                elif trk_fl < trk_fr:
+                    self.allow_right = True
+
+            if trk_fl == 1:
+                self.allow_left = False
+            if trk_fl <= 3:
+                self.move_right = True
+            if trk_fr == 1:
+                self.allow_right = False
+            if trk_fr <= 3:
+                self.move_left = True
+
+            if self.move_left and self.move_right:
+                if trk_fl > trk_fr:
+                    self.move_left = False
+                    self.move_right = True
+                elif trk_fl < trk_fr:
+                    self.move_left = True
+                    self.move_right = False
+                else:
+                    self.move_left = False
+                    self.move_right = False
+
+            if veh_fl <= 3:
+                self.move_right = True
+
+            if veh_fr <= 3:
+                self.move_left = True
+
+            if self.move_left and self.move_right:
+                if veh_fl > veh_fr:
+                    self.move_left = False
+                elif veh_fl < veh_fr:
+                    self.move_right = False
+                else:
+                    self.move_left = False
+                    self.move_right = False
+                    # if trk_fl < 4 or trk_fr < 4:
+                    #     if trk_fl > trk_fr:  # Overrule avoiding track for hitting car if car in front
+                    #         self.move_left = False
+                    #         self.move_right = True
+                    #     elif trk_fl < trk_fr:
+                    #         self.move_left = True
+                    #         self.move_right = False
+                    #     else:
+                    #         self.move_left = False
+                    #         self.move_right = False
+                    #         self.move_forward = False
 
         # print('Trk: f={0} l={1} r={2} Veh: f={0} l={1} r={2}'.format(
-        #     self.allow_forward, self.allow_left, self.allow_right,
-        #     self.move_forward, self.move_left, self.move_right))
+        #       self.allow_forward, self.allow_left, self.allow_right,
+        #       self.move_forward, self.move_left, self.move_right))
 
     def take_movement(self):  # Check allowed movements and desired action
         # MANUAL MOVEMENT
@@ -1596,20 +1619,20 @@ class NpcCar(pygame.sprite.Sprite):
         self.decide_movement()  # AUTOMATED MOVEMENT
 
         if self.move_forward and self.allow_forward:  # FORWARD
-            self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self.move_speed),
-                      self.pos_y + round(sin(radians(self.rotation - 90)) * self.move_speed))
+            self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self._move_speed),
+                      self.pos_y + round(sin(radians(self.rotation - 90)) * self._move_speed))
             # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
         elif self.move_back and self.allow_back:  # BACK
-            self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self.move_speed),
-                      self.pos_y - round(sin(radians(self.rotation - 90)) * self.move_speed))
+            self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self._move_speed),
+                      self.pos_y - round(sin(radians(self.rotation - 90)) * self._move_speed))
             # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
 
         if self.move_left and self.allow_left:  # LEFT
             # print('car rotate: ' + str(self.rotation))
-            self.rotate(self.rotation + self.rotation_speed + 1)
+            self.rotate(self.rotation + self._rotation_speed + 1)
         elif self.move_right and self.allow_right:  # RIGHT
             # print('car rotate: ' + str(self.rotation))
-            self.rotate(self.rotation - self.rotation_speed - 1)
+            self.rotate(self.rotation - self._rotation_speed - 1)
 
     def power_up(self, ver):
         if ver == 'repair':
@@ -1690,8 +1713,16 @@ class NpcCar(pygame.sprite.Sprite):
                 if self._lightning_frame == 2:
                     play_sound('lightning')
                 elif self._lightning_frame == 3:
-                    self.penalty_time = pygame.time.get_ticks() + 3000 + \
-                                        (self.move_speed - global_car_move_speed) * 1000
+                    if self._boost_timeout:
+                        self._boost_timeout = 0
+                        self._boost_ani_frame = -1
+
+                    self._bullet_damage = self.damage
+                    self.bullet_penalty = pygame.time.get_ticks() + 3000 + \
+                        (self._move_speed - global_car_move_speed) * 1000
+                    self.damage = self.durability
+                    self.rotate(self.rotation + 1)  # Reloads image for damage
+                    self.rotate(self.rotation - 1)
 
         if Debug:
             if not self.allow_forward:
@@ -1823,29 +1854,16 @@ class NpcCar(pygame.sprite.Sprite):
             if self.damage:  # Change player speed based on damage and durability
                 self.set_move_speed(round(self.max_speed - (self.max_speed / (self.durability / self.damage))))
                 self.set_rotation_speed(self.max_rotation_speed)
-            elif self.move_speed != self.max_speed or self.rotation_speed != self.max_rotation_speed:
+            elif self._move_speed != self.max_speed or self._rotation_speed != self.max_rotation_speed:
                 self.set_move_speed(self.max_speed)
                 self.set_rotation_speed(self.max_rotation_speed)
         if not self.bullet_penalty:
-            if self.penalty_time and self.penalty_time > pygame.time.get_ticks():
-                self.dmg_img = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
-                    assets.car_damage(self.vehicle, 5)), self.size), self.rotation)
-                self.dmg_img.set_colorkey(WHITE)
-                self.image.blit(self.dmg_img, (0, 0))  # Overlay damage on top of image
-                return
-            elif self.penalty_time and self.penalty_time < pygame.time.get_ticks():
-                self.penalty_time = 0
-                self.image = pygame.transform.rotate(self.origin_img.copy(), self.rotation)  # Load new image to reset
-                self.image.set_colorkey(BLACK)
-                self.mask = pygame.mask.from_surface(self.image)  # Update mask to new rotation
-                self.rect = self.image.get_rect()  # Set surface size to image size
-                self.rect.center = self.pos_x, self.pos_y
+            if self.collision_time != 0 and pygame.time.get_ticks() >= self.collision_time + 5000:
+                self.reset_to_checkpoint()
+                # print('reset')
             else:
-                if self.collision_time != 0 and self.allow_back:
-                    if pygame.time.get_ticks() >= self.collision_time + 5000:
-                        self.reset_to_checkpoint()
-                        # print('reset')
-
+                if not self.collision and self.collision_time:
+                    self.collision_time = 0
                 self.take_movement()
                 # print('auto move')
 
@@ -1859,7 +1877,7 @@ def get_car_positions():
 
     positions = sorted(positions, key=lambda tup: tup[2])  # Sort based on checkpoint times
     positions = sorted(positions, key=lambda tup: tup[1], reverse=True)  # Sort based on checkpoint number
-    sorted(positions, key=lambda tup: tup[0], reverse=True)  # Sort positions based on their lap number
+    positions = sorted(positions, key=lambda tup: tup[0], reverse=True)  # Sort positions based on their lap number
     vehicles = []
     for vehicle in positions:
         vehicles.append(vehicle[3])
@@ -4816,40 +4834,8 @@ def game():  # All variables that are not constant
                     Player_amount == 5 and npc_pos != Players[0].start_pos and npc_pos != Players[1].start_pos and \
                     npc_pos != Players[2].start_pos and npc_pos != Players[3] and npc_pos != Players[4].start_pos and \
                     npc_pos != Players[5].start_pos:
-                name = Npc_names[randint(0, len(Npc_names) - 1)]  # Only use one name per NPC
-                while name[1] or name[0].lower() == Players[0].name.lower() or Player_amount >= 2 and \
-                        name[0].lower() == Players[1].name.lower() or Player_amount >= 3 and \
-                        name[0].lower() == Players[2].name.lower() or Player_amount >= 4 and \
-                        name[0].lower() == Players[3].name.lower() or Player_amount >= 5 and \
-                        name[0].lower() == Players[4].name.lower() or Player_amount == 6 and \
-                        name[0].lower() and Players[5].name.lower():
-                    name = Npc_names[randint(0, len(Npc_names) - 1)]
-                name[1] = True
-                if Npc_force_veh:
-                    vehicle = Npc_force_veh
-                else:
-                    vehicle = rand_vehicle()
-                if Npc_force_colour:
-                    colour = Npc_force_colour
-                else:
-                    colour = rand_color()
-                if npc_pos == 1:
-                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 1)
-                elif npc_pos == 2:
-                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 2)
-                elif npc_pos == 3:
-                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 3)
-                elif npc_pos == 4:
-                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 4)
-                elif npc_pos == 5:
-                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 5)
-                elif npc_pos == 6:
-                    npc = NpcCar(vehicle, colour, (40, 70), name[0], Map, 6)
-                else:
-                    name[1] = False
-                    break
-                npc.id = len(player_list) + len(npc_list)
-                npc_list.append(npc)
+                npc_list.append(NpcCar(Player(npc_pos - 1, is_player=False)))
+
             elif Player_amount <= 0:
                 raise ValueError("There are no players!")
             npc_pos += 1
@@ -5509,125 +5495,79 @@ def game():  # All variables that are not constant
                         pygame.draw.rect(border, WHITE, (0, 0, 30, 30), 1)
                         surf.blit(border, (0, 0))
                     mask = pygame.mask.from_surface(surf)
-                    overlapping = False
-                    while not overlapping:
+                    while True:
                         pos_x = randint(0, WIDTH)
                         pos_y = randint(0, HEIGHT)
                         if not Track_mask.overlap(mask, (pos_x, pos_y)):
-                            overlapping = True
-                            power_ups.append((surf, (pos_x, pos_y, 30, 30), (pos_x, pos_y),
-                                              mask, ver, pygame.time.get_ticks() + 15000))  # 15s timeout trigger
+                            power_up = Object(surf, pygame.rect.Rect(pos_x, pos_y, 30, 30), mask)
+                            power_up.active = False
+                            power_up.ver = ver
+                            power_up.timeout = pygame.time.get_ticks() + 15000
+                            power_ups.append(power_up)
+                            # 0=surf, 1=rect, 2=rect.topleft, 3=mask, 4=ver, 5=timeout
+                            break
 
             for power_up in power_ups:
-                if power_up[5] <= pygame.time.get_ticks():
+                if power_up.timeout <= pygame.time.get_ticks():
                     power_ups.remove(power_up)
                 else:
-                    Window.blit(power_up[0], power_up[1])
+                    Window.blit(power_up.surf, power_up.rect.topleft)
 
             lightning_target = None
             if powerups:
                 for vehicle in Player_positions:
-                    if vehicle.type == 'NPC':
-                        if not vehicle.penalty_time:
-                            vehicle.lightning_target = True
-                            lightning_target = vehicle
-                            break
-
-                    elif vehicle.type == 'Player':
-                        if not vehicle.bullet_penalty:
-                            vehicle.lightning_target = True
-                            lightning_target = vehicle
-                            break
+                    if not vehicle.bullet_penalty:
+                        vehicle.lightning_target = True
+                        lightning_target = vehicle
+                        break
 
                 for vehicle in Player_positions:
                     if vehicle.lightning_target and vehicle != lightning_target:
                         vehicle.lightning_target = False
 
-            for player in player_list:
-                player.update()
-            for player in range(0, len(player_list)):  # For every player,
-                player_list[player].check_track_collisions()  # Track collisions
-                player_list[player].check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
-                if player_list[player].laps > Total_laps and not game_countdown:  # If player has finished
+            for veh in All_vehicles:  # For every vehicle
+                veh.update()  # Update
+                veh.check_track_collisions()  # Track collisions
+                veh.check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
+                if veh.laps > Total_laps and not game_countdown:  # If vehicle has finished
                     game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
-                for player2 in range(0, len(player_list)):  # For every other player,
-                    if player != player2:  # If not same player
-                        player_list[player].check_car_collision(player_list[player2])  # Check collision
-                for power_up in power_ups:  # Check powerup collisions for each player
-                    if player_list[player].mask.overlap(power_up[3], (power_up[1][0] - player_list[player].rect.left,
-                                                                      power_up[1][1] - player_list[player].rect.top)):
-                        if power_up[4] == 'lightning':  # Lightning targets first to last vehicle
-                            player_list[player].power_up('lightning rumble')  # Controller rumble for player
-                            for vehicle in Player_positions:
-                                if vehicle.type == 'NPC':
-                                    if not vehicle.penalty_time:
-                                        vehicle.power_up('lightning')  # Trigger animation and penalty
-                                        break
-                                elif vehicle.type == 'Player':
-                                    if not vehicle.bullet_penalty:
-                                        vehicle.power_up('lightning')  # Trigger animation and penalty
-                                        break
-                        else:
-                            player_list[player].power_up(power_up[4])
-                        play_sound('power up')
-                        triggered_power_ups.append((power_up[4], power_up[2]))
-                        power_ups.remove(power_up)
+                for other_veh in All_vehicles:  # For every other vehicle
+                    if other_veh != veh:  # If other vehicle not current
+                        veh.check_car_collision(other_veh)  # Check collision
 
-            for npc_pos in range(0, len(npc_list)):
-                npc = npc_list[npc_pos]
-                npc.update()  # Update position
-                npc.check_track_collisions()  # Track collisions
-                npc.check_checkpoints(checkpoint_rectangles)  # Checkpoint collisions
-                if npc.laps > Total_laps and not game_countdown:
-                    game_countdown = pygame.time.get_ticks() + 6000  # Start 5s countdown (start at 6 before shown)
-                if not Race_debug:
-                    for other_npc in range(len(npc_list)):
-                        if npc_pos != other_npc:
-                            npc.check_car_collision(npc_list[other_npc])  # Collisions between NPCs
-                    for player in range(len(player_list)):
-                        npc.check_car_collision(player_list[player])  # Collisions between player and NPC
-                        player_list[player].check_car_collision(npc)
-                for power_up in power_ups:
-                    if npc.mask.overlap(power_up[3], (power_up[1][0] - npc.rect.left, power_up[1][1] - npc.rect.top)):
-                        if power_up[4] == 'lightning':  # Lightning targets first to last vehicle
-                            for vehicle in Player_positions:
-                                if vehicle.type == 'NPC':
-                                    if not vehicle.penalty_time:
-                                        vehicle.power_up('lightning')  # Trigger animation and penalty
-                                        break
-                                elif vehicle.type == 'Player':
-                                    if not vehicle.bullet_penalty:
-                                        vehicle.power_up('lightning')  # Trigger animation and penalty
-                                        break
+                for power_up in power_ups:  # For every power up and every player
+                    if veh.mask.overlap(power_up.mask, (power_up.rect.left - veh.rect.left,
+                                                        power_up.rect.top - veh.rect.top)):  # Check collision
+                        if power_up.ver == 'lightning':  # If power up is lightning
+                            for vehicle in Player_positions:  # For every vehicle (sorted 1st to last)
+                                if not vehicle.bullet_penalty:  # If not hit
+                                    vehicle.power_up('lightning')  # Trigger animation and penalty
+                                    break
                         else:
-                            npc.power_up(power_up[4])
-                        play_sound('power up')
-                        triggered_power_ups.append((power_up[4], power_up[2]))
-                        power_ups.remove(power_up)
+                            veh.power_up(power_up.ver)  # Claim powerup
+                        play_sound('power up')  # Play corresponding sound
+                        triggered_power_ups.append(power_up)  # Trigger power up
+                        power_ups.remove(power_up)  # Remove power up from claimable list
+
+                veh.draw()
 
             for power_up in triggered_power_ups:
-                if len(power_up) < 3:  # Load black outline of power up
-                    surf = pygame.Surface((30, 30))
+                if power_up.active:  # Load black outline of power up
+                    surf = pygame.surface.Surface((30, 30))
                     surf.fill(WHITE)
                     img = pygame.transform.scale(pygame.image.load(assets.power_up(
-                        power_up[0], active=False)), (30, 30))
+                        power_up.ver, active=False)), (30, 30))
                     surf.blit(img, (0, 0))
                     surf.set_colorkey(WHITE)
                     surf.set_alpha(255)
-                    triggered_power_ups[triggered_power_ups.index(power_up)] = power_up[0], power_up[1], surf
-                else:
-                    surf = power_up[2]
-                alpha = surf.get_alpha()
-                if not surf.get_alpha() - 20:
+                    power_up.surf = surf
+                    power_up.active = False
+                alpha = power_up.surf.get_alpha()
+                if not power_up.surf.get_alpha() - 20:
                     triggered_power_ups.remove(power_up)
                 else:
-                    surf.set_alpha(alpha - 20)
-                    Window.blit(surf, power_up[1])
-
-            for player in player_list:
-                player.draw()
-            for npc_pos in npc_list:
-                npc_pos.draw()
+                    power_up.surf.set_alpha(alpha - 20)
+                    Window.blit(power_up.surf, power_up.rect.topleft)
 
             if Debug:
                 for point in checkpoint_surfaces:
@@ -5707,7 +5647,7 @@ def main():
         Npc_amount = 5
         Total_laps = 20
         Debug = True
-        powerups = False
+        powerups = True
         Map = 'hairpin'
         current_window = 'race settings'
         game()

@@ -1965,7 +1965,7 @@ def choose_map_window(curr_bg, pad_x=0, pad_y=0):
 
     x = pad_x + CENTRE[0]
     y = pad_y + (map_preview_pos[1] - 70)
-    text = str(maps.map_index.index(Map) + 1) + '. ' + Map.name
+    text = str(maps.map_index.index(Map.name) + 1) + '. ' + Map.name
     draw_text(x, y, text, WHITE, 60)  # Title
 
     draw_triangle((pad_x + (map_preview_pos[0] - 50),  # Map arrows
@@ -5298,7 +5298,7 @@ def game():  # All variables that are not constant
                         button_trigger = True
                         saved_timer = None
                         current_window = None
-                        Music_volume = round(Music_volume / 2, 3)
+                        Music_volume -= 0.05 if Music_volume >= 0.06 else 0
                         pygame.mixer.music.set_volume(Music_volume)
                         play_sound('menu button')  # Play button click sound
                         paused_window()
@@ -5530,7 +5530,6 @@ def game():  # All variables that are not constant
         loading_thread_event.clear()
         loading_thread = Thread(name='loading_thread', target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
         loading_thread.start()  # Begin loading animation
-    pygame.time.wait(1000)
     return game_quit
 
 
@@ -5811,7 +5810,7 @@ def main():
 
                 # Map left
                 if 403 <= mouse_pos[0] <= 443 and 500 <= mouse_pos[1] <= 580:
-                    if maps.map_index.index(Map) <= 0:
+                    if maps.map_index.index(Map.name) <= 0:
                         draw_triangle((map_preview_pos[0] - 50,  # Map arrows
                                        map_preview_pos[1] + map_preview_size[1] // 2),
                                       'left', width=40, height=80, border=RED)
@@ -5824,7 +5823,15 @@ def main():
                         if buttons[0] and not button_trigger:
                             button_trigger = True
                             play_sound('option down')
-                            Map = maps.map_index[maps.map_index.index(Map) - 1]
+                            Map = maps.map_index[maps.map_index.index(Map.name) - 1]
+                            if Map == 'racetrack':
+                                Map = maps.Racetrack()
+                            elif Map == 'snake':
+                                Map = maps.Snake()
+                            elif Map == 'dog bone':
+                                Map = maps.DogBone()
+                            elif Map == 'hairpin':
+                                Map = maps.Hairpin()
                             get_map_preview()
                             update_screen(full_screen=True)
                         elif not buttons[0] and button_trigger:
@@ -5832,7 +5839,7 @@ def main():
 
                 # Map right
                 if 1477 <= mouse_pos[0] <= 1517 and 500 <= mouse_pos[1] <= 580:
-                    if maps.map_index.index(Map) >= len(maps.map_index) - 1:
+                    if maps.map_index.index(Map.name) >= len(maps.map_index) - 1:
                         draw_triangle((map_preview_pos[0] + map_preview_size[0] + 50,
                                        map_preview_pos[1] + map_preview_size[1] // 2), 'right', width=40, height=80,
                                       border=RED)
@@ -5845,7 +5852,15 @@ def main():
                         if buttons[0] and not button_trigger:
                             button_trigger = True
                             play_sound('option up')
-                            Map = maps.map_index[maps.map_index.index(Map) + 1]
+                            Map = maps.map_index[maps.map_index.index(Map.name) + 1]
+                            if Map == 'racetrack':
+                                Map = maps.Racetrack()
+                            elif Map == 'snake':
+                                Map = maps.Snake()
+                            elif Map == 'dog bone':
+                                Map = maps.DogBone()
+                            elif Map == 'hairpin':
+                                Map = maps.Hairpin()
                             get_map_preview()
                             update_screen(full_screen=True)
                         elif not buttons[0] and button_trigger:
@@ -8674,6 +8689,7 @@ def main():
             loading_thread.start()  # Begin loading animation
 
         game_quit = game()  # Begin game
+        pygame.time.wait(1000)
         if Animations:
             loading_thread_event.set()  # Stop loading animation (still loading screen)
             if loading_thread.is_alive():

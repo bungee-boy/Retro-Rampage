@@ -216,4 +216,4 @@ class Hairpin:
             raise ValueError("Hairpin.start_pos(pos) | 'pos' must be between 1 and 6 not " + str(pos))
 
 
-map_index = [Racetrack(), Snake(), DogBone(), Hairpin()]
+map_index = ['racetrack', 'snake', 'dog bone', 'hairpin']

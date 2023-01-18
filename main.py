@@ -1126,7 +1126,9 @@ class NpcCar(pygame.sprite.Sprite):
         self.move_back = False
         self.move_left = False
         self.move_right = False
-        self._move_rect_radius = 80  # randint(70, 80)
+        self.reverse = False
+        self.reverse_time = 0
+        self._move_rect_radius = 90  # randint(70, 80)
         self._move_rect_offset = 28  # randint(18, 28)
         self._move_layer_offset = 35
         self._avoid_rect_radius = 60
@@ -1376,15 +1378,15 @@ class NpcCar(pygame.sprite.Sprite):
 
     def rotate(self, degree):  # Rotate car to new angle
         self.rotation = degree  # Set current rotation as rotation
-        if self._rotation_speed - 1 >= self.rotation:  # Create snapping points to drive in straight lines
+        if global_car_rotation_speed + 1 >= self.rotation:  # Create snapping points to drive in straight lines
             self.rotation = 360
-        elif self.rotation >= 360 - self._rotation_speed:
+        elif self.rotation >= 360 - (global_car_rotation_speed + 1):
             self.rotation = 0
-        elif 90 - self._rotation_speed <= self.rotation <= 90 + self._rotation_speed:
+        elif 90 - (global_car_rotation_speed + 1) <= self.rotation <= 90 + (global_car_rotation_speed + 1):
             self.rotation = 90
-        elif 180 - self._rotation_speed <= self.rotation <= 180 + self._rotation_speed:
+        elif 180 - (global_car_rotation_speed + 1) <= self.rotation <= 180 + (global_car_rotation_speed + 1):
             self.rotation = 180
-        elif 270 - self._rotation_speed <= self.rotation <= 270 + self._rotation_speed:
+        elif 270 - (global_car_rotation_speed + 1) <= self.rotation <= 270 + (global_car_rotation_speed + 1):
             self.rotation = 270
         self.image = pygame.transform.rotate(self._origin_img.copy(), self.rotation)  # Rotate image
         self.image.set_colorkey(BLACK)
@@ -1438,11 +1440,11 @@ class NpcCar(pygame.sprite.Sprite):
         self.rotate(self.prev_checkpoint_rotation)
 
     def decide_movement(self):
-        self.move_forward = True  # Use MOVE for car collisions BEFORE track avoidance
-        self.move_back = False
+        self.move_forward = False if self.reverse else True  # Use MOVE for car collisions BEFORE track avoidance
+        self.move_back = self.reverse
         self.move_left = False
         self.move_right = False
-        if not self.collision:
+        if not self.collision and not self.reverse:
             self.allow_forward = True  # Use ALLOW for track collisions AFTER deciding car avoidance
             self.allow_back = True
             self.allow_left = True
@@ -1622,17 +1624,22 @@ class NpcCar(pygame.sprite.Sprite):
             self.move(self.pos_x - round(cos(radians(self.rotation - 90)) * self._move_speed),
                       self.pos_y + round(sin(radians(self.rotation - 90)) * self._move_speed))
             # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
+            if self.move_left and self.allow_left:  # LEFT
+                # print('car rotate: ' + str(self.rotation))
+                self.rotate(self.rotation + self._rotation_speed + 1)
+            elif self.move_right and self.allow_right:  # RIGHT
+                # print('car rotate: ' + str(self.rotation))
+                self.rotate(self.rotation - self._rotation_speed - 1)
         elif self.move_back and self.allow_back:  # BACK
             self.move(self.pos_x + round(cos(radians(self.rotation - 90)) * self._move_speed),
                       self.pos_y - round(sin(radians(self.rotation - 90)) * self._move_speed))
             # print('car move: ' + str(self.pos_x) + ', ' + str(self.pos_y))
-
-        if self.move_left and self.allow_left:  # LEFT
-            # print('car rotate: ' + str(self.rotation))
-            self.rotate(self.rotation + self._rotation_speed + 1)
-        elif self.move_right and self.allow_right:  # RIGHT
-            # print('car rotate: ' + str(self.rotation))
-            self.rotate(self.rotation - self._rotation_speed - 1)
+            if self.move_left and self.allow_left:  # LEFT
+                # print('car rotate: ' + str(self.rotation))
+                self.rotate(self.rotation + self._rotation_speed - 1)
+            elif self.move_right and self.allow_right:  # RIGHT
+                # print('car rotate: ' + str(self.rotation))
+                self.rotate(self.rotation - self._rotation_speed + 1)
 
     def power_up(self, ver):
         if ver == 'repair':
@@ -1858,10 +1865,20 @@ class NpcCar(pygame.sprite.Sprite):
                 self.set_move_speed(self.max_speed)
                 self.set_rotation_speed(self.max_rotation_speed)
         if not self.bullet_penalty:
-            if self.collision_time != 0 and pygame.time.get_ticks() >= self.collision_time + 5000:
+            if self.collision_time != 0 and not self.reverse and \
+                    pygame.time.get_ticks() >= self.collision_time + randint(600, 2000):  # Set reversing
+                self.reverse = True
+                self.reverse_time = pygame.time.get_ticks()
+                # print('Set reverse')
+            elif self.reverse_time != 0 and self.reverse and \
+                    pygame.time.get_ticks() >= self.reverse_time + randint(1000, 1500):  # Reset reversing
+                self.reverse_time = 0
+                self.reverse = False
+                # print('Reset reverse')
+            elif self.collision_time != 0 and pygame.time.get_ticks() >= self.collision_time + 5000:  # Reset position
                 self.reset_to_checkpoint()
                 # print('reset')
-            else:
+            else:  # Normal Movement
                 if not self.collision and self.collision_time:
                     self.collision_time = 0
                 self.take_movement()

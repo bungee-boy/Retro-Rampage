@@ -7,7 +7,6 @@ import assets.audio_loader as sounds
 import assets.font_loader as fonts
 import assets.image_loader as assets
 import assets.map_loader as maps
-import assets.path_loader as paths
 
 try:
     import pygame
@@ -201,7 +200,7 @@ Players = []
 Selected_player = []
 Player_amount = 0
 Npc_amount = 3
-Map = 'snake'
+Map = maps.Snake()
 Track_mask = pygame.mask.Mask((WIDTH, HEIGHT))
 Total_laps = 3
 Current_lap = 0
@@ -513,14 +512,7 @@ class Car(pygame.sprite.Sprite):
             raise ValueError('Car | self.id should only be between 0 and 5, not ' + str(self.player.id))
         # STARTING variables
         self.start_pos = self.player.start_pos
-        if Map == 'racetrack':
-            self._origin_pos = paths.Racetrack.start_pos(self.start_pos)
-        elif Map == 'snake':
-            self._origin_pos = paths.Snake.start_pos(self.start_pos)
-        elif Map == 'dog bone':
-            self._origin_pos = paths.DogBone.start_pos(self.start_pos)
-        elif Map == 'hairpin':
-            self._origin_pos = paths.Hairpin.start_pos(self.start_pos)
+        self._origin_pos = Map.start_pos(self.start_pos)
         self._origin_rotation = self._origin_pos[2]  # Original rotation
         self._origin_pos = self._origin_pos[:2]
         self.vehicle = self.player.veh_name
@@ -1041,14 +1033,7 @@ class NpcCar(pygame.sprite.Sprite):
         self.is_player = self.player.is_player
         self.id = self.player.id
         self.start_pos = self.player.start_pos
-        if Map == 'racetrack':
-            self._origin_pos = paths.Racetrack.start_pos(self.start_pos)
-        elif Map == 'snake':
-            self._origin_pos = paths.Snake.start_pos(self.start_pos)
-        elif Map == 'dog bone':
-            self._origin_pos = paths.DogBone.start_pos(self.start_pos)
-        elif Map == 'hairpin':
-            self._origin_pos = paths.Hairpin.start_pos(self.start_pos)
+        self._origin_pos = Map.start_pos(self.start_pos)
         self._origin_rotation = self._origin_pos[2]  # Original rotation
         self._origin_pos = self._origin_pos[:2]
         self._move_speed = global_car_move_speed
@@ -1132,7 +1117,7 @@ class NpcCar(pygame.sprite.Sprite):
         self._move_rect_offset = 28  # randint(18, 28)
         self._move_layer_offset = 35
         self._avoid_rect_radius = 60
-        self._avoid_rect_offset = 16
+        self._avoid_rect_offset = 15
         self._avoid_layer_offset = 32
         # 1 - 4 = Track collision
         self.movements_obj = []
@@ -1904,36 +1889,11 @@ def get_car_positions():
 # -------- MAP PREVIEW -------- #
 def get_map_preview():
     global map_preview
-    if Map == 'racetrack':
-        if map_preview[0] != 'racetrack':
-            surf = pygame.surface.Surface(map_preview_size)
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.racetrack('bg')), map_preview_size), (0, 0))
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.racetrack('obj')), map_preview_size), (0, 0))
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.racetrack('trk')), map_preview_size), (0, 0))
-            map_preview = Map, surf
-    elif Map == 'snake':
-        if map_preview[0] != 'snake':
-            surf = pygame.surface.Surface(map_preview_size)
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.snake('bg')), map_preview_size), (0, 0))
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.snake('obj')), map_preview_size), (0, 0))
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.snake('trk')), map_preview_size), (0, 0))
-            map_preview = Map, surf
-    elif Map == 'dog bone':
-        if map_preview[0] != 'dog bone':
-            surf = pygame.surface.Surface(map_preview_size)
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.dog_bone('bg')), map_preview_size), (0, 0))
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.dog_bone('obj')), map_preview_size), (0, 0))
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.dog_bone('trk')), map_preview_size), (0, 0))
-            map_preview = Map, surf
-    elif Map == 'hairpin':
-        if map_preview[0] != 'hairpin':
-            surf = pygame.surface.Surface(map_preview_size)
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.hairpin('bg')), map_preview_size), (0, 0))
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.hairpin('obj')), map_preview_size), (0, 0))
-            surf.blit(pygame.transform.scale(pygame.image.load(maps.hairpin('trk')), map_preview_size), (0, 0))
-            map_preview = Map, surf
-    else:
-        raise ValueError('get_map_preview -> unknown map: ' + str(Map))
+    if Map.name != map_preview[0]:
+        surf = pygame.surface.Surface(map_preview_size)
+        for layer in range(0, 3):
+            surf.blit(pygame.transform.scale(pygame.image.load(Map.layer(layer)), map_preview_size), (0, 0))
+        map_preview = Map.name, surf
 
 
 # -------- WINDOW FUNCTIONS -------- #
@@ -2005,7 +1965,7 @@ def choose_map_window(curr_bg, pad_x=0, pad_y=0):
 
     x = pad_x + CENTRE[0]
     y = pad_y + (map_preview_pos[1] - 70)
-    text = str(maps.map_index.index(Map) + 1) + '. ' + Map
+    text = str(maps.map_index.index(Map) + 1) + '. ' + Map.name
     draw_text(x, y, text, WHITE, 60)  # Title
 
     draw_triangle((pad_x + (map_preview_pos[0] - 50),  # Map arrows
@@ -3623,7 +3583,7 @@ def leaderboard_window(curr_bg, pad_x=0, pad_y=0):
                                            (45, 68)), (CENTRE[0] + rect.width // 2 + 15, 85 * car_no + 250))
 
     # Draw race info at bottom of screen
-    text = 'Map: ' + str(Map) + '  |  Laps: ' + str(Total_laps) + '  |  NPCs: ' + str(Npc_amount) + \
+    text = 'Map: ' + str(Map.name) + '  |  Laps: ' + str(Total_laps) + '  |  NPCs: ' + str(Npc_amount) + \
            '  |  Players: ' + str(Player_amount) + '  |  Time: ' + str(Race_time)
     draw_text(CENTRE[0], 926, text, WHITE, 50)
 
@@ -4728,84 +4688,22 @@ def game():  # All variables that are not constant
     lap_timer = 0
     music_thread = Thread(name='music_thread', target=game_music_loop)
 
-    if Map == 'racetrack':
-        layers.append(pygame.transform.scale(pygame.image.load(maps.racetrack('bg')), (WIDTH, HEIGHT)))
-        layers.append(pygame.transform.scale(pygame.image.load(maps.racetrack('obj')), (WIDTH, HEIGHT)))
-        layers.append(pygame.transform.scale(pygame.image.load(maps.racetrack('trk')), (WIDTH, HEIGHT)))
+    for layer in range(0, 3):
+        layers.append(pygame.transform.scale(pygame.image.load(Map.layer(layer)), (WIDTH, HEIGHT)))
 
-        full_map = pygame.Surface((WIDTH, HEIGHT))
-        for layer in layers:
-            full_map.blit(layer, (0, 0))
+    full_map = pygame.Surface((WIDTH, HEIGHT))
+    for layer in layers:
+        full_map.blit(layer, (0, 0))
 
-        checkpoint_positions = maps.racetrack('checkpoints')  # Checkpoint position loading and rect generation
-        checkpoint_rectangles = []
-        for point in checkpoint_positions:
-            checkpoint_rectangles.append(pygame.rect.Rect(*point))
+    checkpoint_positions = Map.layer(3)  # Checkpoint position loading and rect generation
+    checkpoint_rectangles = []
+    for point in checkpoint_positions:
+        checkpoint_rectangles.append(pygame.rect.Rect(*point))
 
-        for pos in range(1, 7):
-            full_map.blit(pygame.transform.rotate(pygame.transform.scale(pygame.image.load(assets.tile(
-                'road', 84)), (50, 80)), paths.Racetrack.start_pos(pos)[2]),
-                (paths.Racetrack.start_pos(pos)[0] - 40, paths.Racetrack.start_pos(pos)[1] - 25))
-
-    elif Map == 'snake':
-        layers.append(pygame.transform.scale(pygame.image.load(maps.snake('bg')), (WIDTH, HEIGHT)))
-        layers.append(pygame.transform.scale(pygame.image.load(maps.snake('obj')), (WIDTH, HEIGHT)))
-        layers.append(pygame.transform.scale(pygame.image.load(maps.snake('trk')), (WIDTH, HEIGHT)))
-
-        full_map = pygame.Surface((WIDTH, HEIGHT))
-        for layer in layers:
-            full_map.blit(layer, (0, 0))
-
-        checkpoint_positions = maps.snake('checkpoints')  # Checkpoint position loading and rect generation
-        checkpoint_rectangles = []
-        for point in checkpoint_positions:
-            checkpoint_rectangles.append(pygame.rect.Rect(*point))
-
-        for pos in range(1, 7):
-            full_map.blit(pygame.transform.rotate(pygame.transform.scale(pygame.image.load(assets.tile(
-                'road', 84)), (50, 80)), paths.Snake.start_pos(pos)[2]),
-                (paths.Snake.start_pos(pos)[0] - 40, paths.Snake.start_pos(pos)[1] - 25))
-
-    elif Map == 'dog bone':
-        layers.append(pygame.transform.scale(pygame.image.load(maps.dog_bone('bg')), (WIDTH, HEIGHT)))
-        layers.append(pygame.transform.scale(pygame.image.load(maps.dog_bone('obj')), (WIDTH, HEIGHT)))
-        layers.append(pygame.transform.scale(pygame.image.load(maps.dog_bone('trk')), (WIDTH, HEIGHT)))
-
-        full_map = pygame.Surface((WIDTH, HEIGHT))
-        for layer in layers:
-            full_map.blit(layer, (0, 0))
-
-        checkpoint_positions = maps.dog_bone('checkpoints')  # Checkpoint position loading and rect generation
-        checkpoint_rectangles = []
-        for point in checkpoint_positions:
-            checkpoint_rectangles.append(pygame.rect.Rect(*point))
-
-        for pos in range(1, 7):
-            full_map.blit(pygame.transform.rotate(pygame.transform.scale(pygame.image.load(assets.tile(
-                'road', 84)), (50, 80)), paths.DogBone.start_pos(pos)[2]),
-                (paths.DogBone.start_pos(pos)[0] - 40, paths.DogBone.start_pos(pos)[1] - 25))
-
-    elif Map == 'hairpin':
-        layers.append(pygame.transform.scale(pygame.image.load(maps.hairpin('bg')), (WIDTH, HEIGHT)))
-        layers.append(pygame.transform.scale(pygame.image.load(maps.hairpin('obj')), (WIDTH, HEIGHT)))
-        layers.append(pygame.transform.scale(pygame.image.load(maps.hairpin('trk')), (WIDTH, HEIGHT)))
-
-        full_map = pygame.Surface((WIDTH, HEIGHT))
-        for layer in layers:
-            full_map.blit(layer, (0, 0))
-
-        checkpoint_positions = maps.hairpin('checkpoints')  # Checkpoint position loading and rect generation
-        checkpoint_rectangles = []
-        for point in checkpoint_positions:
-            checkpoint_rectangles.append(pygame.rect.Rect(*point))
-
-        for pos in range(1, 7):
-            full_map.blit(pygame.transform.rotate(pygame.transform.scale(pygame.image.load(assets.tile(
-                'road', 84)), (50, 80)), paths.Hairpin.start_pos(pos)[2]),
-                (paths.Hairpin.start_pos(pos)[0] - 40, paths.Hairpin.start_pos(pos)[1] - 25))
-
-    else:
-        raise ValueError('Map is not any track | Map = ' + str(Map))
+    for pos in range(1, 7):
+        full_map.blit(pygame.transform.rotate(pygame.transform.scale(pygame.image.load(assets.tile(
+            'road', 84)), (50, 80)), Map.start_pos(pos)[2]),
+            (Map.start_pos(pos)[0] - 40, Map.start_pos(pos)[1] - 25))
 
     Track_mask = pygame.mask.from_surface(layers[2])
 
@@ -5665,7 +5563,7 @@ def main():
         Total_laps = 20
         Debug = True
         powerups = True
-        Map = 'hairpin'
+        Map = maps.Hairpin()
         current_window = 'race settings'
         game()
         current_window = 'leaderboard'

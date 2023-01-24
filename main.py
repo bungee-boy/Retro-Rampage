@@ -67,7 +67,7 @@ BLUE_CAR = 47, 149, 208
 BLACK_CAR = 93, 91, 91
 # Other variables
 Debug = False  # Enables Debug mode for detecting issues. (Changes various things other than visual changes)
-Race_debug = True  # Enables Debug mode and starts game on race settings menu
+Race_debug = False  # Enables Debug mode and starts game on race settings menu
 Force_resolution = []  # Manual window size ([] = Automatic, [width, height] = Forced)
 Screen = 0  # If the user has multiple monitors, sets which monitor to use (starts at 0)
 Animations = False  # Enables animations on the main menu
@@ -1067,7 +1067,6 @@ class NpcCar(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(pygame.image.load(self.image_dir).convert(), (40, 70))
         self.image.set_colorkey(BLACK)
         self._origin_img = self.image
-        self.mask = pygame.mask.from_surface(self.image)  # Get mask from image
         self._dmg_img = None
         self.damage = 0
         self.size = self.image.get_size()

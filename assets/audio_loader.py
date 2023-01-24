@@ -123,15 +123,15 @@ def positive(ver: int):
     return positive_sounds + 'sfx_sounds_powerup' + str(ver) + '.wav'
 
 
-def vehicle(veh: str, ver=1):
-    if veh == 'brakes':
-        return vehicles + 'sfx_vehicle_breaks.wav'
-    elif veh == 'car':
-        return vehicles + 'sfx_vehicle_carloop' + str(ver) + '.wav'
-    elif veh == 'engine':
-        return vehicles + 'sfx_vehicle_engineloop.wav'
-    else:
-        raise ValueError('audio_loader | incorrect vehicle argument - ' + str(veh))
+# def vehicle(veh: str, ver=1):
+#     if veh == 'brakes':
+#         return vehicles + 'sfx_vehicle_breaks.wav'
+#     elif veh == 'car':
+#         return vehicles + 'sfx_vehicle_carloop' + str(ver) + '.wav'
+#     elif veh == 'engine':
+#         return vehicles + 'sfx_vehicle_engineloop.wav'
+#     else:
+#         raise ValueError('audio_loader | incorrect vehicle argument - ' + str(veh))
 
 
 def machine_gun(ver: int):

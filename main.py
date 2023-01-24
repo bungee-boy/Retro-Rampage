@@ -57,7 +57,8 @@ GREEN = 0, 255, 0
 WHITE = 255, 255, 255
 V_LIGHT_GREY = 200, 200, 200
 LIGHT_GREY = 170, 170, 170
-GREY = 100, 100, 100
+GREY = 150, 150, 150
+DARK_GREY = 100, 100, 100
 BLACK = 0, 0, 0
 # Car colour constants
 RED_CAR = 232, 106, 23
@@ -67,7 +68,7 @@ BLUE_CAR = 47, 149, 208
 BLACK_CAR = 93, 91, 91
 # Other variables
 Debug = False  # Enables Debug mode for detecting issues. (Changes various things other than visual changes)
-Race_debug = True  # Enables Debug mode and starts game on race settings menu
+Race_debug = False  # Enables Debug mode and starts game on race settings menu
 Force_resolution = []  # Manual window size ([] = Automatic, [width, height] = Forced)
 Screen = 0  # If the user has multiple monitors, sets which monitor to use (starts at 0)
 Animations = False  # Enables animations on the main menu
@@ -200,7 +201,7 @@ Players = []
 Selected_player = []
 Player_amount = 0
 Npc_amount = 3
-Map = maps.Snake()
+Map = maps.objs[len(maps.index)//2]()
 Track_mask = pygame.mask.Mask((WIDTH, HEIGHT))
 Total_laps = 3
 Current_lap = 0
@@ -1130,7 +1131,8 @@ class NpcCar(pygame.sprite.Sprite):
                 rect.center = self.rect.centerx, self.rect.centery - self._move_rect_radius
                 surf.fill(RED)
                 layer.append(Object(surf, rect, mask))
-            self.movements_obj.append(layer)
+            self.movements_obj.append(tuple(layer))
+        self.movements_obj = tuple(self.movements_obj)
         self.avoidance_obj = []
         for layer_num in range(0, 5):
             layer = []
@@ -1141,7 +1143,8 @@ class NpcCar(pygame.sprite.Sprite):
                 rect.center = self.rect.centerx, self.rect.centery - self._avoid_rect_radius
                 surf.fill(GREEN)
                 layer.append(Object(surf, rect, mask))
-            self.avoidance_obj.append(layer)
+            self.avoidance_obj.append(tuple(layer))
+        self.avoidance_obj = tuple(self.avoidance_obj)
         # NAME variables
         self.name = self.player.name[0]
         self._name_rect = None
@@ -1153,7 +1156,6 @@ class NpcCar(pygame.sprite.Sprite):
         self.checkpoint_time = 0
         self.prev_checkpoint_position = self._origin_pos
         self.prev_checkpoint_rotation = self._origin_rotation
-        self.prev_checkpoint_path_position = 0
         # SOUND variables
         self.collision_sound = False
 
@@ -1965,7 +1967,7 @@ def choose_map_window(curr_bg, pad_x=0, pad_y=0):
 
     x = pad_x + CENTRE[0]
     y = pad_y + (map_preview_pos[1] - 70)
-    text = str(maps.map_index.index(Map.name) + 1) + '. ' + Map.name
+    text = str(maps.index.index(Map.name) + 1) + '. ' + Map.name
     draw_text(x, y, text, WHITE, 60)  # Title
 
     draw_triangle((pad_x + (map_preview_pos[0] - 50),  # Map arrows
@@ -2014,7 +2016,7 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
         # P1 name
         rect = draw_text(x, y + 115, player.name, WHITE, 50, return_rect=True)
         # P1 name cursor
-        if (pygame.time.get_ticks() // 1060) % 2 and selected_text_entry == 1:
+        if (pygame.time.get_ticks() // 530) % 2 and selected_text_entry == 1:
             pygame.draw.line(Window, WHITE, (x + 5 + rect.width // 2, y + 124), (x + 5 + rect.width // 2, y + 152), 3)
         # Enter name prompt
         if selected_text_entry != 1 and not player.name:
@@ -2050,7 +2052,7 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
         # P1 name
         rect = draw_text(x, y + 115, player.name, WHITE, 50, return_rect=True)
         # P1 name cursor
-        if (pygame.time.get_ticks() // 1060) % 2 and selected_text_entry == 1:
+        if (pygame.time.get_ticks() // 530) % 2 and selected_text_entry == 1:
             pygame.draw.line(Window, WHITE, (x + 5 + rect.width // 2, y + 124), (x + 5 + rect.width // 2, y + 152), 3)
         # Enter name prompt
         if selected_text_entry != 1 and not player.name:
@@ -2085,7 +2087,7 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
         # P2 name
         rect = draw_text(x, y + 115, player.name, WHITE, 50, return_rect=True)
         # P2 name cursor
-        if (pygame.time.get_ticks() // 1060) % 2 and selected_text_entry == 2:
+        if (pygame.time.get_ticks() // 530) % 2 and selected_text_entry == 2:
             pygame.draw.line(Window, WHITE, (x + 5 + rect.width // 2, y + 124), (x + 5 + rect.width // 2, y + 152), 3)
         # Enter name prompt
         if selected_text_entry != 2 and not player.name:
@@ -2242,7 +2244,7 @@ def choose_players_window_2(curr_bg, pad_x=0, pad_y=0):
         # P1 name
         rect = draw_text(x, y + 115, player.name, WHITE, 50, return_rect=True)
         # P1 name cursor
-        if (pygame.time.get_ticks() // 1060) % 2 and selected_text_entry == 3:
+        if (pygame.time.get_ticks() // 530) % 2 and selected_text_entry == 3:
             pygame.draw.line(Window, WHITE, (x + 5 + rect.width // 2, y + 124), (x + 5 + rect.width // 2, y + 152), 3)
         # Enter name prompt
         if selected_text_entry != 3 and not player.name:
@@ -2278,7 +2280,7 @@ def choose_players_window_2(curr_bg, pad_x=0, pad_y=0):
         # P1 name
         rect = draw_text(x, y + 115, player.name, WHITE, 50, return_rect=True)
         # P1 name cursor
-        if (pygame.time.get_ticks() // 1060) % 2 and selected_text_entry == 3:
+        if (pygame.time.get_ticks() // 530) % 2 and selected_text_entry == 3:
             pygame.draw.line(Window, WHITE, (x + 5 + rect.width // 2, y + 124), (x + 5 + rect.width // 2, y + 152), 3)
         # Enter name prompt
         if selected_text_entry != 3 and not player.name:
@@ -2413,7 +2415,7 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
         # P1 name
         rect = draw_text(x, y + 115, player.name, WHITE, 50, return_rect=True)
         # P1 name cursor
-        if (pygame.time.get_ticks() // 1060) % 2 and selected_text_entry == 5:
+        if (pygame.time.get_ticks() // 530) % 2 and selected_text_entry == 5:
             pygame.draw.line(Window, WHITE, (x + 5 + rect.width // 2, y + 124), (x + 5 + rect.width // 2, y + 152), 3)
         # Enter name prompt
         if selected_text_entry != 5 and not player.name:
@@ -2456,7 +2458,7 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
         # P1 name
         rect = draw_text(x, y + 115, player.name, WHITE, 50, return_rect=True)
         # P1 name cursor
-        if (pygame.time.get_ticks() // 1060) % 2 and selected_text_entry == 5:
+        if (pygame.time.get_ticks() // 530) % 2 and selected_text_entry == 5:
             pygame.draw.line(Window, WHITE, (x + 5 + rect.width // 2, y + 124), (x + 5 + rect.width // 2, y + 152), 3)
         # Enter name prompt
         if selected_text_entry != 5 and not player.name:
@@ -3378,7 +3380,7 @@ def credits_window(curr_bg, pad_x=0, pad_y=0):
     draw_text(x, y, 'Credits', WHITE, 100)  # Title
 
     y = pad_y + 215
-    text = 'Developer - Anthony Guy'
+    text = 'Developer & Designer - Anthony Guy'
     draw_text(x, y, text, WHITE, 50)  # Credits #1
 
     y += 70
@@ -3453,8 +3455,8 @@ def tutorial_window(curr_bg, pad_x=0, pad_y=0):
     surf.set_colorkey(BLACK)
     Window.blit(surf, (x, y))
     draw_text(x + 40, y + 80, 'Lightning', WHITE, 60)
-    draw_text(x + 40, y + 140, "Strikes the car in 1st place,", WHITE, 40)
-    draw_text(x + 40, y + 180, "if not then 2nd and so on...", WHITE, 40)
+    draw_text(x + 40, y + 140, "Strikes the car with the", WHITE, 40)
+    draw_text(x + 40, y + 180, "symbol next to their name", WHITE, 40)
 
     x = pad_x + 1435
     y = pad_y + 649
@@ -3462,11 +3464,11 @@ def tutorial_window(curr_bg, pad_x=0, pad_y=0):
     surf.set_colorkey(BLACK)
     Window.blit(surf, (x, y))
     draw_text(x + 40, y + 80, 'Bullet', WHITE, 60)
-    draw_text(x + 40, y + 140, "Penalises the player", WHITE, 40)
-    draw_text(x + 40, y + 180, "by a few seconds", WHITE, 40)
+    draw_text(x + 40, y + 140, "Stops the car moving", WHITE, 40)
+    draw_text(x + 40, y + 180, "for a few seconds", WHITE, 40)
 
-    draw_text(CENTRE[0], 923, 'All penalties are based on car speeds to be fair,', WHITE, 40)
-    draw_text(CENTRE[0], 963, 'Powerups can only be picked up by players!', WHITE, 40)
+    draw_text(CENTRE[0], 923, 'All penalties are based on car speeds to be fair', WHITE, 40)
+    draw_text(CENTRE[0], 963, 'Powerups can be picked up by all vehicles!', WHITE, 40)
 
 
 def settings_window(curr_bg, pad_x=0, pad_y=0, surf=Window):
@@ -3882,7 +3884,7 @@ def tile(x, y, material, ver, grid=True, scale=tile_scale, surf=Window, update=T
 
 
 def draw_triangle(pos: tuple[int, int], direction: str,
-                  width=18, height=18, colour=WHITE, border=None, border_width=4, surface=Window):
+                  width=18, height=18, colour=WHITE, border=DARK_GREY, border_width=4, surface=Window):
     points = []
     if direction == 'up':
         points.append((pos[0], pos[1] - height / 2))
@@ -3960,11 +3962,11 @@ def draw_text(x, y, text, colour, size, bold=False, bar=False, three_d=False,
         return render.get_rect()
 
 
-def render_key(value: str, size=50):
+def render_key(value: str, color=WHITE, size=50):
     surf = pygame.surface.Surface((size, size))
     surf.set_colorkey(BLACK)
 
-    pygame.draw.rect(surf, WHITE, (0, 0, size, size), 4, 12)
+    pygame.draw.rect(surf, color, (0, 0, size, size), 4, 12)
 
     if len(value) == 1:
         font = pygame.font.Font(fonts.load(), 40)
@@ -3972,7 +3974,7 @@ def render_key(value: str, size=50):
         surf.blit(render, (((size - render.get_width()) // 2) + 1,
                            ((size - render.get_height()) // 2)))
     else:
-        draw_triangle((size // 2, size // 2), value, width=size // 2, height=size // 2, surface=surf)
+        draw_triangle((size // 2, size // 2), value, width=size // 2, height=size // 2, border=None, surface=surf)
 
     return surf
 
@@ -3986,16 +3988,16 @@ def draw_controls(x, y, ver: str or pygame.joystick.Joystick, surface=Window, re
         key_size = 50
 
         if ver == 'wasd':
-            surf.blit(render_key('W', key_size), (centre - key_size // 2, 0))
-            surf.blit(render_key('A', key_size), (centre - key_size // 2 - key_size - 10, key_size + 10))
-            surf.blit(render_key('S', key_size), (centre - key_size // 2, key_size + 10))
-            surf.blit(render_key('D', key_size), (centre - key_size // 2 + key_size + 10, key_size + 10))
+            surf.blit(render_key('W', YELLOW_CAR, key_size), (centre - key_size // 2, 0))
+            surf.blit(render_key('A', BLUE_CAR, key_size), (centre - key_size // 2 - key_size - 10, key_size + 10))
+            surf.blit(render_key('S', GREEN_CAR, key_size), (centre - key_size // 2, key_size + 10))
+            surf.blit(render_key('D', RED_CAR, key_size), (centre - key_size // 2 + key_size + 10, key_size + 10))
 
         elif ver == 'arrows':
-            surf.blit(render_key('up', key_size), (centre - key_size // 2, 0))
-            surf.blit(render_key('left', key_size), (centre - key_size // 2 - key_size - 10, key_size + 10))
-            surf.blit(render_key('down', key_size), (centre - key_size // 2, key_size + 10))
-            surf.blit(render_key('right', key_size), (centre - key_size // 2 + key_size + 10, key_size + 10))
+            surf.blit(render_key('up', YELLOW_CAR, key_size), (centre - key_size // 2, 0))
+            surf.blit(render_key('left', BLUE_CAR, key_size), (centre - key_size // 2 - key_size - 10, key_size + 10))
+            surf.blit(render_key('down', GREEN_CAR, key_size), (centre - key_size // 2, key_size + 10))
+            surf.blit(render_key('right', RED_CAR, key_size), (centre - key_size // 2 + key_size + 10, key_size + 10))
 
         else:
             raise ValueError('draw_controls | ver can only be wasd, arrows or a controller, not ' + str(ver))
@@ -4700,7 +4702,7 @@ def game():  # All variables that are not constant
     for point in checkpoint_positions:
         checkpoint_rectangles.append(pygame.rect.Rect(*point))
 
-    for pos in range(1, 7):
+    for pos in range(1, 7):  # Start positions on map
         full_map.blit(pygame.transform.rotate(pygame.transform.scale(pygame.image.load(assets.tile(
             'road', 84)), (50, 80)), Map.start_pos(pos)[2]),
             (Map.start_pos(pos)[0] - 40, Map.start_pos(pos)[1] - 25))
@@ -5810,7 +5812,7 @@ def main():
 
                 # Map left
                 if 403 <= mouse_pos[0] <= 443 and 500 <= mouse_pos[1] <= 580:
-                    if maps.map_index.index(Map.name) <= 0:
+                    if maps.index.index(Map.name) <= 0:
                         draw_triangle((map_preview_pos[0] - 50,  # Map arrows
                                        map_preview_pos[1] + map_preview_size[1] // 2),
                                       'left', width=40, height=80, border=RED)
@@ -5823,15 +5825,7 @@ def main():
                         if buttons[0] and not button_trigger:
                             button_trigger = True
                             play_sound('option down')
-                            Map = maps.map_index[maps.map_index.index(Map.name) - 1]
-                            if Map == 'racetrack':
-                                Map = maps.Racetrack()
-                            elif Map == 'snake':
-                                Map = maps.Snake()
-                            elif Map == 'dog bone':
-                                Map = maps.DogBone()
-                            elif Map == 'hairpin':
-                                Map = maps.Hairpin()
+                            Map = maps.objs[maps.index.index(Map.name) - 1]()
                             get_map_preview()
                             update_screen(full_screen=True)
                         elif not buttons[0] and button_trigger:
@@ -5839,7 +5833,7 @@ def main():
 
                 # Map right
                 if 1477 <= mouse_pos[0] <= 1517 and 500 <= mouse_pos[1] <= 580:
-                    if maps.map_index.index(Map.name) >= len(maps.map_index) - 1:
+                    if maps.index.index(Map.name) >= len(maps.index) - 1:
                         draw_triangle((map_preview_pos[0] + map_preview_size[0] + 50,
                                        map_preview_pos[1] + map_preview_size[1] // 2), 'right', width=40, height=80,
                                       border=RED)
@@ -5852,15 +5846,7 @@ def main():
                         if buttons[0] and not button_trigger:
                             button_trigger = True
                             play_sound('option up')
-                            Map = maps.map_index[maps.map_index.index(Map.name) + 1]
-                            if Map == 'racetrack':
-                                Map = maps.Racetrack()
-                            elif Map == 'snake':
-                                Map = maps.Snake()
-                            elif Map == 'dog bone':
-                                Map = maps.DogBone()
-                            elif Map == 'hairpin':
-                                Map = maps.Hairpin()
+                            Map = maps.objs[maps.index.index(Map.name) + 1]()
                             get_map_preview()
                             update_screen(full_screen=True)
                         elif not buttons[0] and button_trigger:

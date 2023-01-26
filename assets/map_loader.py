@@ -270,5 +270,5 @@ class Pinch:
             raise ValueError("Pinch.start_pos(pos) | 'pos' must be between 1 and 6 not " + str(pos))
 
 
-index = ['racetrack', 'snake', 'dog bone', 'hairpin', 'pinch']
+index = ['racetrack', 'snake', 'dog bone', 'hairpin']
 objs = [Racetrack, Snake, DogBone, Hairpin, Pinch]

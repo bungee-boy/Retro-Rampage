@@ -1934,7 +1934,7 @@ def main_window(curr_bg, pad_x=0, pad_y=0):
     tile(x, y, 'dirt road', 76, grid=False)  # Start button
     tile(x + 65, y, 'dirt road', 1, grid=False)
     tile(x + 190, y, 'dirt road', 60, grid=False)
-    draw_text(x + 160, y + 20, 'Start', WHITE, 70)
+    draw_text(x + 160, y + 20, 'Race', WHITE, 70)
 
     x = pad_x + 1220
     y = pad_y + 324
@@ -2120,16 +2120,16 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
             Window.blit(pygame.transform.scale(pygame.image.load(assets.controller_button('b')), (34, 34)),
                         (100 + rect.width, HEIGHT - 109))
 
-    # START BUTTON
+    # NEXT BUTTON
     if Player_amount == 1 and Players[0].name.strip() and Players[0].controls != 'controller' or \
             Player_amount >= 2 and Players[0].name.strip() and Players[0].controls != 'controller' and \
             Players[1].name.strip() and Players[1].controls != 'controller':
         x = pad_x + 800
         y = pad_y + 940
-        tile(x, y, 'dirt road', 76, grid=False)  # Start button
+        tile(x, y, 'dirt road', 76, grid=False)  # Next button
         tile(x + 65, y, 'dirt road', 1, grid=False)
         tile(x + 190, y, 'dirt road', 60, grid=False)
-        draw_text(x + 160, y + 20, 'Start', WHITE, 70)
+        draw_text(x + 160, y + 20, 'Next', WHITE, 70)
 
     # Option for more players
     if len(controllers) >= 1:
@@ -2348,7 +2348,7 @@ def choose_players_window_2(curr_bg, pad_x=0, pad_y=0):
             Window.blit(pygame.transform.scale(pygame.image.load(assets.controller_button('b')), (34, 34)),
                         (100 + rect.width, HEIGHT - 111))
 
-    # START BUTTON
+    # NEXT BUTTON
     if Player_amount == 3 and Players[0].name.strip() and Players[0].controls != 'controller' and \
             Players[1].name.strip() and Players[1].controls != 'controller' and Players[2].name.strip() and \
             Players[2].name.strip() or Player_amount >= 4 and Players[0].name.strip() and \
@@ -2360,7 +2360,7 @@ def choose_players_window_2(curr_bg, pad_x=0, pad_y=0):
         tile(x, y, 'dirt road', 76, grid=False)  # Start button
         tile(x + 65, y, 'dirt road', 1, grid=False)
         tile(x + 190, y, 'dirt road', 60, grid=False)
-        draw_text(x + 160, y + 20, 'Start', WHITE, 70)
+        draw_text(x + 160, y + 20, 'Next', WHITE, 70)
 
     if Player_amount == 3:
         x = pad_x + 93
@@ -2533,7 +2533,7 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
             Window.blit(pygame.transform.scale(pygame.image.load(assets.controller_button('b')), (34, 34)),
                         (100 + rect.width, HEIGHT - 111))
 
-    # START BUTTON
+    # NEXT BUTTON
     if Player_amount == 5 and Players[4].name.strip() and Players[4].controls != 'controller' or \
             Player_amount == 6 and Players[4].name.strip() and Players[4].controls != 'controller' and \
             Players[5].name.strip() and Players[5].controls != 'controller':
@@ -2542,7 +2542,7 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
         tile(x, y, 'dirt road', 76, grid=False)  # Start button
         tile(x + 65, y, 'dirt road', 1, grid=False)
         tile(x + 190, y, 'dirt road', 60, grid=False)
-        draw_text(x + 160, y + 20, 'Start', WHITE, 70)
+        draw_text(x + 160, y + 20, 'Next', WHITE, 70)
 
 
 def choose_vehicle_window(curr_bg, pad_x=0, pad_y=0):
@@ -2563,7 +2563,7 @@ def choose_vehicle_window(curr_bg, pad_x=0, pad_y=0):
     tile(x, y, 'dirt road', 76, grid=False)  # Start button
     tile(x + 65, y, 'dirt road', 1, grid=False)
     tile(x + 190, y, 'dirt road', 60, grid=False)
-    draw_text(x + 160, y + 20, 'Start', WHITE, 70)
+    draw_text(x + 160, y + 20, 'Next', WHITE, 70)
 
     if Player_amount == 1:
         player = Players[0]
@@ -2779,7 +2779,7 @@ def choose_vehicle_window_2(curr_bg, pad_x=0, pad_y=0):
     tile(x, y, 'dirt road', 76, grid=False)  # Start button
     tile(x + 65, y, 'dirt road', 1, grid=False)
     tile(x + 190, y, 'dirt road', 60, grid=False)
-    draw_text(x + 160, y + 20, 'Start', WHITE, 70)
+    draw_text(x + 160, y + 20, 'Next', WHITE, 70)
 
     if Player_amount == 3:
         player = Players[2]
@@ -2995,7 +2995,7 @@ def choose_vehicle_window_3(curr_bg, pad_x=0, pad_y=0):
     tile(x, y, 'dirt road', 76, grid=False)  # Start button
     tile(x + 65, y, 'dirt road', 1, grid=False)
     tile(x + 190, y, 'dirt road', 60, grid=False)
-    draw_text(x + 160, y + 20, 'Start', WHITE, 70)
+    draw_text(x + 160, y + 20, 'Next', WHITE, 70)
 
     if Player_amount == 5:
         player = Players[4]
@@ -5736,14 +5736,14 @@ def main():
                     elif not buttons[0] and button_trigger:
                         button_trigger = False
 
-                # START BUTTON
+                # RACE BUTTON
                 elif 340 <= mouse_pos[0] <= 657 and 324 <= mouse_pos[1] <= 431:  # If mouse is over start button...
                     pos_x = 340
                     pos_y = 324
                     tile(pos_x, pos_y, 'sand road', 73, grid=False)  # Draw active start button
                     tile(pos_x + 65, pos_y, 'sand road', 88, grid=False)
                     tile(pos_x + 190, pos_y, 'sand road', 57, grid=False)
-                    draw_text(pos_x + 160, pos_y + 20, 'Start', BLACK, 70)
+                    draw_text(pos_x + 160, pos_y + 20, 'Race', BLACK, 70)
 
                     buttons = pygame.mouse.get_pressed()  # Get current mouse button state(s)
                     if buttons[0] and not button_trigger:
@@ -6220,7 +6220,7 @@ def main():
                         elif button_trigger and not buttons[0]:
                             button_trigger = False
 
-                    # START BUTTON
+                    # NEXT BUTTON
                     elif 800 <= mouse_pos[0] <= 1117 and 940 <= mouse_pos[1] <= 1047 and Players[0].name.strip() and \
                             Players[0].controls != 'controller':
                         # Ensure player(s) can only start the game if all have chosen names
@@ -6229,7 +6229,7 @@ def main():
                         tile(pos_x, pos_y, 'sand road', 73, grid=False)  # Draw active start button
                         tile(pos_x + 65, pos_y, 'sand road', 88, grid=False)
                         tile(pos_x + 190, pos_y, 'sand road', 57, grid=False)
-                        draw_text(pos_x + 160, pos_y + 20, 'Start', BLACK, 70)
+                        draw_text(pos_x + 160, pos_y + 20, 'Next', BLACK, 70)
 
                         buttons = pygame.mouse.get_pressed()  # Get current mouse button state(s)
                         if buttons[0] and not button_trigger:
@@ -6374,7 +6374,7 @@ def main():
                         elif button_trigger and not buttons[0]:
                             button_trigger = False
 
-                    # START BUTTON
+                    # NEXT BUTTON
                     elif 800 <= mouse_pos[0] <= 1117 and 940 <= mouse_pos[1] <= 1047 and \
                             Players[0].name.strip() and Players[0].controls != 'controller' and \
                             Players[1].name.strip() and Players[1].controls != 'controller':
@@ -6384,7 +6384,7 @@ def main():
                         tile(pos_x, pos_y, 'sand road', 73, grid=False)  # Draw active start button
                         tile(pos_x + 65, pos_y, 'sand road', 88, grid=False)
                         tile(pos_x + 190, pos_y, 'sand road', 57, grid=False)
-                        draw_text(pos_x + 160, pos_y + 20, 'Start', BLACK, 70)
+                        draw_text(pos_x + 160, pos_y + 20, 'Next', BLACK, 70)
 
                         buttons = pygame.mouse.get_pressed()  # Get current mouse button state(s)
                         if buttons[0] and not button_trigger:
@@ -6531,7 +6531,7 @@ def main():
                         elif button_trigger and not buttons[0]:
                             button_trigger = False
 
-                    # START BUTTON
+                    # NEXT BUTTON
                     elif 800 <= mouse_pos[0] <= 1117 and 940 <= mouse_pos[1] <= 1047 and \
                             Players[2].name.strip() and Players[2].controls != 'controller':
                         # Ensure player(s) can only start the game if all have chosen names
@@ -6540,7 +6540,7 @@ def main():
                         tile(pos_x, pos_y, 'sand road', 73, grid=False)  # Draw active start button
                         tile(pos_x + 65, pos_y, 'sand road', 88, grid=False)
                         tile(pos_x + 190, pos_y, 'sand road', 57, grid=False)
-                        draw_text(pos_x + 160, pos_y + 20, 'Start', BLACK, 70)
+                        draw_text(pos_x + 160, pos_y + 20, 'Next', BLACK, 70)
 
                         buttons = pygame.mouse.get_pressed()  # Get current mouse button state(s)
                         if buttons[0] and not button_trigger:
@@ -6696,7 +6696,7 @@ def main():
                         elif button_trigger and not buttons[0]:
                             button_trigger = False
 
-                    # START BUTTON
+                    # NEXT BUTTON
                     elif 800 <= mouse_pos[0] <= 1117 and 940 <= mouse_pos[1] <= 1047 and \
                             Players[2].name.strip() and Players[2].controls != 'controller' and \
                             Players[3].name.strip() and Players[3].controls != 'controller':
@@ -6706,7 +6706,7 @@ def main():
                         tile(pos_x, pos_y, 'sand road', 73, grid=False)  # Draw active start button
                         tile(pos_x + 65, pos_y, 'sand road', 88, grid=False)
                         tile(pos_x + 190, pos_y, 'sand road', 57, grid=False)
-                        draw_text(pos_x + 160, pos_y + 20, 'Start', BLACK, 70)
+                        draw_text(pos_x + 160, pos_y + 20, 'Next', BLACK, 70)
 
                         buttons = pygame.mouse.get_pressed()  # Get current mouse button state(s)
                         if buttons[0] and not button_trigger:
@@ -6857,7 +6857,7 @@ def main():
                         elif button_trigger and not buttons[0]:
                             button_trigger = False
 
-                    # START BUTTON
+                    # NEXT BUTTON
                     elif 800 <= mouse_pos[0] <= 1117 and 940 <= mouse_pos[1] <= 1047 and Players[4].name.strip() and \
                             Players[4].controls != 'controller':
                         # Ensure player(s) can only start the game if all have chosen names
@@ -6866,7 +6866,7 @@ def main():
                         tile(pos_x, pos_y, 'sand road', 73, grid=False)  # Draw active start button
                         tile(pos_x + 65, pos_y, 'sand road', 88, grid=False)
                         tile(pos_x + 190, pos_y, 'sand road', 57, grid=False)
-                        draw_text(pos_x + 160, pos_y + 20, 'Start', BLACK, 70)
+                        draw_text(pos_x + 160, pos_y + 20, 'Next', BLACK, 70)
 
                         buttons = pygame.mouse.get_pressed()  # Get current mouse button state(s)
                         if buttons[0] and not button_trigger:
@@ -7012,7 +7012,7 @@ def main():
                         elif button_trigger and not buttons[0]:
                             button_trigger = False
 
-                    # START BUTTON
+                    # NEXT BUTTON
                     elif 800 <= mouse_pos[0] <= 1117 and 940 <= mouse_pos[1] <= 1047 and \
                             Players[4].name.strip() and Players[4].controls != 'controller' and \
                             Players[5].name.strip() and Players[5].controls != 'controller':
@@ -7022,7 +7022,7 @@ def main():
                         tile(pos_x, pos_y, 'sand road', 73, grid=False)  # Draw active start button
                         tile(pos_x + 65, pos_y, 'sand road', 88, grid=False)
                         tile(pos_x + 190, pos_y, 'sand road', 57, grid=False)
-                        draw_text(pos_x + 160, pos_y + 20, 'Start', BLACK, 70)
+                        draw_text(pos_x + 160, pos_y + 20, 'Next', BLACK, 70)
 
                         buttons = pygame.mouse.get_pressed()  # Get current mouse button state(s)
                         if buttons[0] and not button_trigger:
@@ -7131,14 +7131,14 @@ def main():
                     elif button_trigger and not buttons[0]:
                         button_trigger = False
 
-                # START BUTTON
+                # NEXT BUTTON
                 elif 1100 <= mouse_pos[0] <= 1417 and 890 <= mouse_pos[1] <= 997:
                     x = 1100
                     y = 890
                     tile(x, y, 'sand road', 73, grid=False)  # Select button
                     tile(x + 65, y, 'sand road', 88, grid=False)
                     tile(x + 190, y, 'sand road', 57, grid=False)
-                    draw_text(x + 160, y + 20, 'Start', BLACK, 70)
+                    draw_text(x + 160, y + 20, 'Next', BLACK, 70)
 
                     buttons = pygame.mouse.get_pressed()  # Get current mouse button state(s)
                     if buttons[0] and not button_trigger:
@@ -7359,14 +7359,14 @@ def main():
                     elif button_trigger and not buttons[0]:
                         button_trigger = False
 
-                # START BUTTON
+                # NEXT BUTTON
                 elif 1100 <= mouse_pos[0] <= 1417 and 890 <= mouse_pos[1] <= 997:
                     x = 1100
                     y = 890
                     tile(x, y, 'sand road', 73, grid=False)  # Select button
                     tile(x + 65, y, 'sand road', 88, grid=False)
                     tile(x + 190, y, 'sand road', 57, grid=False)
-                    draw_text(x + 160, y + 20, 'Start', BLACK, 70)
+                    draw_text(x + 160, y + 20, 'Next', BLACK, 70)
 
                     buttons = pygame.mouse.get_pressed()  # Get current mouse button state(s)
                     if buttons[0] and not button_trigger:
@@ -7587,14 +7587,14 @@ def main():
                     elif button_trigger and not buttons[0]:
                         button_trigger = False
 
-                # START BUTTON
+                # NEXT BUTTON
                 elif 1100 <= mouse_pos[0] <= 1417 and 890 <= mouse_pos[1] <= 997:
                     x = 1100
                     y = 890
                     tile(x, y, 'sand road', 73, grid=False)  # Select button
                     tile(x + 65, y, 'sand road', 88, grid=False)
                     tile(x + 190, y, 'sand road', 57, grid=False)
-                    draw_text(x + 160, y + 20, 'Start', BLACK, 70)
+                    draw_text(x + 160, y + 20, 'Next', BLACK, 70)
 
                     buttons = pygame.mouse.get_pressed()  # Get current mouse button state(s)
                     if buttons[0] and not button_trigger:

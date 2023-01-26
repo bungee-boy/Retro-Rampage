@@ -271,7 +271,7 @@ class Pinch:
 
 class TBone:
     def __init__(self):
-        self.name = 'pinch'
+        self.name = 'tbone'
         self._file_dir = 'assets/maps/t_bone/'
         self._bg = 'bg.png'
         self._obj = 'obj.png'
@@ -322,5 +322,5 @@ class TBone:
             raise ValueError("Pinch.start_pos(pos) | 'pos' must be between 1 and 6 not " + str(pos))
 
 
-index = ['racetrack', 'snake', 'dog bone', 'hairpin', 'pinch', 'tbone']
-objs = [Racetrack, Snake, DogBone, Hairpin, Pinch, TBone]
+index = ('racetrack', 'snake', 'dog bone', 'hairpin', 'pinch', 'tbone')
+objs = (Racetrack, Snake, DogBone, Hairpin, Pinch, TBone)

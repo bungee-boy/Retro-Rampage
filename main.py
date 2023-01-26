@@ -562,6 +562,7 @@ class Car(pygame.sprite.Sprite):
         self.mask_area = None  # Used to ensure the player cannot get outside the map
         self.mask_size = None
         self.collision = False
+        self.finished = False
         # MOVEMENT variables
         self._up = None
         self._down = None
@@ -637,17 +638,19 @@ class Car(pygame.sprite.Sprite):
                              " or controller : {0} as {1}".format(control, type(control)))
 
     def check_checkpoints(self, checkpoint_rectangles):
-        for checkpoint in checkpoint_rectangles:  # For each checkpoint
-            if checkpoint.colliderect(self.rect) and self.checkpoint_count != checkpoint_rectangles.index(checkpoint):
-                self.checkpoint_count = checkpoint_rectangles.index(checkpoint)  # Set current checkpoint
-                self.checkpoint_time = pygame.time.get_ticks()  # Set checkpoint time
-                if not self._lap_halfway and self.checkpoint_count == \
-                        ceil(len(checkpoint_rectangles) / 2):  # If hit halfway
-                    self._lap_halfway = True  # Set halfway
-                if self._lap_halfway and checkpoint_rectangles.index(checkpoint) == 0 and \
-                        self.checkpoint_count <= checkpoint_rectangles.index(checkpoint):  # If checkpoint 0 and halfway
-                    self._lap_halfway = False  # Halfway reset
-                    self.laps += 1
+        if not self.finished:
+            for checkpoint in checkpoint_rectangles:  # For each checkpoint
+                if checkpoint.colliderect(self.rect) and \
+                        self.checkpoint_count != checkpoint_rectangles.index(checkpoint):
+                    self.checkpoint_count = checkpoint_rectangles.index(checkpoint)  # Set current checkpoint
+                    self.checkpoint_time = pygame.time.get_ticks()  # Set checkpoint time
+                    if not self._lap_halfway and self.checkpoint_count == \
+                            ceil(len(checkpoint_rectangles) / 2):  # If hit halfway
+                        self._lap_halfway = True  # Set halfway
+                    if self._lap_halfway and checkpoint_rectangles.index(checkpoint) == 0 and \
+                            self.checkpoint_count <= checkpoint_rectangles.index(checkpoint):  # If point 0 and halfway
+                        self._lap_halfway = False  # Halfway reset
+                        self.laps += 1
 
     def check_track_collisions(self):  # Check if there are collisions and take action
         if not self.collision or self.collision == 'track':
@@ -737,7 +740,7 @@ class Car(pygame.sprite.Sprite):
                     self._allow_reverse = True
 
     def check_car_collision(self, sprite):
-        if not self.collision or self.collision == sprite:
+        if not self.finished and not sprite.finished and (not self.collision or self.collision == sprite):
             self.mask_overlap = pygame.sprite.collide_mask(self, sprite)
             if self.mask_overlap:
                 self.collision = sprite
@@ -845,6 +848,8 @@ class Car(pygame.sprite.Sprite):
             self._dmg_img.set_colorkey(WHITE)
             self.image.blit(self._dmg_img, (0, 0))  # Overlay damage on top of image
         self.rect = self.image.get_rect()  # Set surface size to image size
+        if self.finished:
+            self.image.set_alpha(150)
         if Debug:
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)
         self.rect.center = self.pos_x, self.pos_y
@@ -1007,6 +1012,10 @@ class Car(pygame.sprite.Sprite):
                     self.rotate(self.rotation - 1)
 
     def update(self):  # Called each loop and checks if anything has changed
+        if self.laps > Total_laps and not self.finished:
+            self.finished = True
+            if not self.image.get_alpha():
+                self.image.set_alpha(150)
         if self._boost_timeout and self._boost_timeout < pygame.time.get_ticks():  # If boost timeout has expired
             self._boost_timeout = 0  # Reset current speed to previous state
             self.set_move_speed(self._current_speed)
@@ -1083,7 +1092,7 @@ class NpcCar(pygame.sprite.Sprite):
         self.mask_area = None  # Used to ensure the player cannot get outside the map
         self.mask_size = None
         self.collision = False
-
+        self.finished = False
         self.collision_time = 0
         self._boost_timeout = 0
         self.bullet_penalty = 0
@@ -1173,15 +1182,17 @@ class NpcCar(pygame.sprite.Sprite):
         self._rotation_speed = global_car_rotation_speed + speed
 
     def check_checkpoints(self, checkpoint_rectangles):
-        for checkpoint in checkpoint_rectangles:
-            if checkpoint.colliderect(self.rect) and self.checkpoint_count != checkpoint_rectangles.index(checkpoint):
-                self.checkpoint_count = checkpoint_rectangles.index(checkpoint)
-                self.checkpoint_time = pygame.time.get_ticks()
-                if not self._lap_halfway and self.checkpoint_count == floor(len(checkpoint_rectangles) / 2):
-                    self._lap_halfway = True
-                if self._lap_halfway and self.checkpoint_count == 0:
-                    self._lap_halfway = False
-                    self.laps += 1
+        if not self.finished:
+            for checkpoint in checkpoint_rectangles:
+                if checkpoint.colliderect(self.rect) and \
+                        self.checkpoint_count != checkpoint_rectangles.index(checkpoint):
+                    self.checkpoint_count = checkpoint_rectangles.index(checkpoint)
+                    self.checkpoint_time = pygame.time.get_ticks()
+                    if not self._lap_halfway and self.checkpoint_count == floor(len(checkpoint_rectangles) / 2):
+                        self._lap_halfway = True
+                    if self._lap_halfway and self.checkpoint_count == 0:
+                        self._lap_halfway = False
+                        self.laps += 1
 
     def check_track_collisions(self):  # Check if there are collisions and take action
         if not self.collision or self.collision == 'track':  # Do not allow driving off track
@@ -1270,7 +1281,7 @@ class NpcCar(pygame.sprite.Sprite):
                 #    self.allow_back = True
 
     def check_car_collision(self, sprite):
-        if not self.collision or self.collision == sprite:
+        if not self.finished and not sprite.finished and (not self.collision or self.collision == sprite):
             self.mask_overlap = pygame.sprite.collide_mask(self, sprite)
             if self.mask_overlap:
                 self.collision = sprite
@@ -1385,6 +1396,8 @@ class NpcCar(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()  # Set surface size to image size
         if Debug:
             pygame.draw.rect(self.image, WHITE, self.rect, 1)  # Draw outline of sprite (debugging)
+        if self.finished:
+            self.image.set_alpha(150)
         self.rect.center = self.pos_x, self.pos_y
         # print('Rotate: {0}'.format(self.rotation))
         for layer in self.movements_obj:
@@ -1475,36 +1488,37 @@ class NpcCar(pygame.sprite.Sprite):
         veh_fr = 5
 
         # VEHICLE AVOIDANCE
-        for layer in reversed(self.avoidance_obj):
-            for index in range(len(All_vehicles)):
-                if index != self.id:
-                    veh = All_vehicles[index]
-                    obj = layer[0]
-                    if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
-                        # Input randomness to change perceived distance from object to cause collision
-                        if self.avoidance_obj.index(layer) < veh_fl:
-                            veh_fl = self.avoidance_obj.index(layer)
-                        # print('Veh_fl: {0}'.format(veh_fl))
+        if not self.finished:
+            for layer in reversed(self.avoidance_obj):
+                for index in range(len(All_vehicles)):
+                    if index != self.id:
+                        veh = All_vehicles[index]
+                        obj = layer[0]
+                        if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
+                            # Input randomness to change perceived distance from object to cause collision
+                            if self.avoidance_obj.index(layer) < veh_fl:
+                                veh_fl = self.avoidance_obj.index(layer)
+                            # print('Veh_fl: {0}'.format(veh_fl))
 
-                    '''
-                    obj = layer[1]
-                    if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
-                        if self.avoidance_obj.index(layer) + 1 < back_left:
-                            veh_bl = self.avoidance_obj.index(layer) + 1
-                        # print('Veh_bl: {0}'.format(veh_bl))
+                        '''
+                        obj = layer[1]
+                        if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
+                            if self.avoidance_obj.index(layer) + 1 < back_left:
+                                veh_bl = self.avoidance_obj.index(layer) + 1
+                            # print('Veh_bl: {0}'.format(veh_bl))
+    
+                        obj = layer[2]
+                        if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
+                            if self.avoidance_obj.index(layer) + 1 < veh_br:
+                                veh_br = self.avoidance_obj.index(layer) + 1
+                            # print('Veh_br: {0}'.format(veh_br))
+                        '''
 
-                    obj = layer[2]
-                    if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
-                        if self.avoidance_obj.index(layer) + 1 < veh_br:
-                            veh_br = self.avoidance_obj.index(layer) + 1
-                        # print('Veh_br: {0}'.format(veh_br))
-                    '''
-
-                    obj = layer[3]
-                    if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
-                        if self.avoidance_obj.index(layer) < veh_fr:
-                            veh_fr = self.avoidance_obj.index(layer)
-                        # print('Veh_fr: {0}'.format(veh_fr))
+                        obj = layer[3]
+                        if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):
+                            if self.avoidance_obj.index(layer) < veh_fr:
+                                veh_fr = self.avoidance_obj.index(layer)
+                            # print('Veh_fr: {0}'.format(veh_fr))
 
         # print('Veh: fl={0} fr={1} bl={2} br={3}'.format(veh_fl, veh_fr, veh_bl, veh_br))
         # print('Veh: fl={0} fr={1}'.format(veh_fl, veh_fr))
@@ -1518,7 +1532,7 @@ class NpcCar(pygame.sprite.Sprite):
                 self.move_right = True
             if veh_fr == 1:
                 self.move_left = True
-            
+
         else:  # Normal driving mode
             if trk_fl <= 1:
                 self.allow_left = False
@@ -1577,9 +1591,9 @@ class NpcCar(pygame.sprite.Sprite):
                     #         self.move_right = False
                     #         self.move_forward = False
 
-        # print('Trk: f={0} l={1} r={2} Veh: f={0} l={1} r={2}'.format(
-        #       self.allow_forward, self.allow_left, self.allow_right,
-        #       self.move_forward, self.move_left, self.move_right))
+            # print('Trk: f={0} l={1} r={2} Veh: f={0} l={1} r={2}'.format(
+            #       self.allow_forward, self.allow_left, self.allow_right,
+            #       self.move_forward, self.move_left, self.move_right))
 
     def take_movement(self):  # Check allowed movements and desired action
         # MANUAL MOVEMENT
@@ -1834,6 +1848,10 @@ class NpcCar(pygame.sprite.Sprite):
                     surf.blit(obj.surf, obj.rect.topleft)
 
     def update(self):  # Called each loop and checks if anything has changed
+        if self.laps > Total_laps and not self.finished:
+            self.finished = True
+            if not self.image.get_alpha():
+                self.image.set_alpha(150)
         if self._boost_timeout and self._boost_timeout < pygame.time.get_ticks():  # If boost timeout has expired
             self._boost_timeout = 0  # Reset current speed to previous state
             self.set_move_speed(self._current_speed)
@@ -4134,41 +4152,45 @@ def loading_animation(x: int, y: int):
     else:
         debug_surf = None
 
-    while not loading_thread_event.is_set():  # While loading...
-        Clock.tick(FPS)
+    try:
+        while not loading_thread_event.is_set():  # While loading...
+            Clock.tick(FPS)
 
-        for event in pygame.event.get():  # Must call event.get() to keep game running
-            if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                raise KeyboardInterrupt
+            for event in pygame.event.get():  # Must call event.get() to keep game running
+                if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    raise KeyboardInterrupt
 
-        if prev_frame_timestamp != pygame.time.get_ticks():  # Loop alpha for each dot
-            for dot in dots:
-                alpha = dot[0].get_alpha()
-                if alpha - speed < 0 and alpha != 0:
-                    alpha = 0
-                elif alpha - speed <= 0:
-                    alpha = 255
-                else:
-                    alpha -= speed
-                dot[0].set_alpha(alpha)
-            prev_frame_timestamp = pygame.time.get_ticks()
+            if prev_frame_timestamp != pygame.time.get_ticks():  # Loop alpha for each dot
+                for dot in dots:
+                    alpha = dot[0].get_alpha()
+                    if alpha - speed < 0 and alpha != 0:
+                        alpha = 0
+                    elif alpha - speed <= 0:
+                        alpha = 255
+                    else:
+                        alpha -= speed
+                    dot[0].set_alpha(alpha)
+                prev_frame_timestamp = pygame.time.get_ticks()
 
-        Secondary_window.fill(BLACK)  # Draw frame on screen and display
-        draw_text(CENTRE[0], CENTRE[1] - 50, 'Retro Rampage', WHITE, 100,
-                  bar=True, three_d=True, surf=Secondary_window)
-        draw_text(CENTRE[0], CENTRE[1] + 150, 'Loading...', WHITE, 50, surf=Secondary_window)
-        Secondary_window.blit(dots[0][0], dots[0][1].topleft)
-        Secondary_window.blit(dots[1][0], dots[1][1].topleft)
-        Secondary_window.blit(dots[2][0], dots[2][1].topleft)
-        Secondary_window.blit(dots[3][0], dots[3][1].topleft)
-        Secondary_window.blit(dots[4][0], dots[4][1].topleft)
-        Secondary_window.blit(dots[5][0], dots[5][1].topleft)
-        Secondary_window.blit(dots[6][0], dots[6][1].topleft)
-        Secondary_window.blit(dots[7][0], dots[7][1].topleft)
-        if Debug:
-            Secondary_window.blit(debug_surf, (x - dot_size / 2 - size[0] / 2, y - dot_size / 2 - size[1] / 2))
-        Display.blit(pygame.transform.scale(Secondary_window, Display_resolution), (0, 0))
-        pygame.display.update()
+            Secondary_window.fill(BLACK)  # Draw frame on screen and display
+            draw_text(CENTRE[0], CENTRE[1] - 50, 'Retro Rampage', WHITE, 100,
+                      bar=True, three_d=True, surf=Secondary_window)
+            draw_text(CENTRE[0], CENTRE[1] + 150, 'Loading...', WHITE, 50, surf=Secondary_window)
+            Secondary_window.blit(dots[0][0], dots[0][1].topleft)
+            Secondary_window.blit(dots[1][0], dots[1][1].topleft)
+            Secondary_window.blit(dots[2][0], dots[2][1].topleft)
+            Secondary_window.blit(dots[3][0], dots[3][1].topleft)
+            Secondary_window.blit(dots[4][0], dots[4][1].topleft)
+            Secondary_window.blit(dots[5][0], dots[5][1].topleft)
+            Secondary_window.blit(dots[6][0], dots[6][1].topleft)
+            Secondary_window.blit(dots[7][0], dots[7][1].topleft)
+            if Debug:
+                Secondary_window.blit(debug_surf, (x - dot_size / 2 - size[0] / 2, y - dot_size / 2 - size[1] / 2))
+            Display.blit(pygame.transform.scale(Secondary_window, Display_resolution), (0, 0))
+            pygame.display.update()
+    except pygame.error:
+        print('loading_animation() | pygame.error, stopping ani to avoid crash.')
+        return
 
     Secondary_window.fill(BLACK)  # Remove loading animation as loading completed
     draw_text(CENTRE[0], CENTRE[1] - 50, 'Retro Rampage', WHITE, 100,
@@ -4761,9 +4783,6 @@ def game():  # All variables that are not constant
         All_vehicles.append(player)
     for npc in npc_list:
         All_vehicles.append(npc)
-
-    for vehicle in All_vehicles:
-        print(vehicle.id, All_vehicles.index(vehicle))
 
     if not player_list and not npc_list:
         raise ValueError("There are no players or NPCs!")
@@ -5411,21 +5430,24 @@ def game():  # All variables that are not constant
                         pygame.draw.rect(border, WHITE, (0, 0, 30, 30), 1)
                         surf.blit(border, (0, 0))
                     mask = pygame.mask.from_surface(surf)
-                    while True:
+                    timestamp = pygame.time.get_ticks() + 1000  # 1s Timeout
+                    while timestamp > pygame.time.get_ticks():
                         pos_x = randint(0, WIDTH)
                         pos_y = randint(0, HEIGHT)
                         if not Track_mask.overlap(mask, (pos_x, pos_y)):
                             power_up = Object(surf, pygame.rect.Rect(pos_x, pos_y, 30, 30), mask)
-                            power_up.active = False
+                            power_up.active = True
                             power_up.ver = ver
                             power_up.timeout = pygame.time.get_ticks() + 15000
                             power_ups.append(power_up)
-                            # 0=surf, 1=rect, 2=rect.topleft, 3=mask, 4=ver, 5=timeout
                             break
+                    else:
+                        print('ERR: Powerup generation timed out!')
 
             for power_up in power_ups:
                 if power_up.timeout <= pygame.time.get_ticks():
                     power_ups.remove(power_up)
+                    triggered_power_ups.append(power_up)
                 else:
                     Window.blit(power_up.surf, power_up.rect.topleft)
 
@@ -5559,14 +5581,33 @@ def main():
         # Debug = True
         Players[0].name = 'Debug'
         Players[0].veh_name = 'Race Car'
-        Npc_amount = 5
-        Total_laps = 20
+        Npc_amount = 0
+        Total_laps = 1
         Debug = True
         powerups = True
-        Map = maps.Hairpin()
+        Map = maps.TBone()
         current_window = 'race settings'
-        game()
-        current_window = 'leaderboard'
+        game_quit = game()
+        pygame.time.wait(1000)
+        if Animations:
+            loading_thread_event.set()  # Stop loading animation (still loading screen)
+            if loading_thread.is_alive():
+                loading_thread.join()  # !! Must stop animation first as can only blit from one thread at a time !!
+        if game_quit:
+            new_bg = menu_background(top=True, right=True, bottom=True, left=True)
+            main_window(new_bg)
+            current_window = 'main menu'
+        else:
+            new_bg = menu_background()
+            leaderboard_window(new_bg)
+            current_window = 'leaderboard'
+        car.rotate(0)
+        car.move(*CENTRE)
+        fade_from_black(show_loading=True)
+        if not pygame.mouse.get_visible():
+            pygame.mouse.set_visible(True)
+        menu_loop = True
+        music_thread_event.clear()
 
     if Intro_screen and not Debug:
         intro_bg = menu_background()

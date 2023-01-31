@@ -68,7 +68,7 @@ BLUE_CAR = 47, 149, 208
 BLACK_CAR = 93, 91, 91
 # Other variables
 Debug = False  # Enables Debug mode for detecting issues. (Changes various things other than visual changes)
-Race_debug = False  # Enables Debug mode and starts game on race settings menu
+Race_debug = True  # Enables Debug mode and starts game on race settings menu
 Force_resolution = []  # Manual window size ([] = Automatic, [width, height] = Forced)
 Screen = 0  # If the user has multiple monitors, sets which monitor to use (starts at 0)
 Animations = False  # Enables animations on the main menu
@@ -926,7 +926,7 @@ class Car(pygame.sprite.Sprite):
                     self.rotate(self.rotation + self._rotation_speed)
                     # print(self.rotation)
 
-        elif self.input_type == 'controller':
+        elif self.input_type == 'controller' and self.controller.get_init():
             if self.controller.get_axis(5) > 0.6 and self.controller.get_axis(4) > 0.6:
                 return  # Do not move the car
 
@@ -2115,10 +2115,11 @@ def choose_players_window(curr_bg, pad_x=0, pad_y=0):
 
     for player in Players:
         if player.controls in controllers:
-            rect = draw_text(100, HEIGHT - 108, 'To unbind a controller, press ',
+            rect = draw_text(pad_x + 100, pad_y + HEIGHT - 108, 'To unbind a controller, press ',
                              WHITE, 32, center_x=False, return_rect=True)
             Window.blit(pygame.transform.scale(pygame.image.load(assets.controller_button('b')), (34, 34)),
-                        (100 + rect.width, HEIGHT - 109))
+                        (pad_x + 100 + rect.width, pad_y + HEIGHT - 109))
+            break
 
     # NEXT BUTTON
     if Player_amount == 1 and Players[0].name.strip() and Players[0].controls != 'controller' or \
@@ -2343,10 +2344,10 @@ def choose_players_window_2(curr_bg, pad_x=0, pad_y=0):
 
     for player in Players:
         if player.controls in controllers:
-            rect = draw_text(100, HEIGHT - 110, 'To unbind a controller, press ',
+            rect = draw_text(pad_x + 100, pad_y + HEIGHT - 110, 'To unbind a controller, press ',
                              WHITE, 32, center_x=False, return_rect=True)
             Window.blit(pygame.transform.scale(pygame.image.load(assets.controller_button('b')), (34, 34)),
-                        (100 + rect.width, HEIGHT - 111))
+                        (pad_x + 100 + rect.width, pad_y + HEIGHT - 111))
 
     # NEXT BUTTON
     if Player_amount == 3 and Players[0].name.strip() and Players[0].controls != 'controller' and \
@@ -2528,10 +2529,11 @@ def choose_players_window_3(curr_bg, pad_x=0, pad_y=0):
 
     for player in Players:
         if player.controls in controllers:
-            rect = draw_text(100, HEIGHT - 110, 'To unbind a controller, press ',
+            rect = draw_text(pad_x + 100, pad_y + HEIGHT - 110, 'To unbind a controller, press ',
                              WHITE, 32, center_x=False, return_rect=True)
             Window.blit(pygame.transform.scale(pygame.image.load(assets.controller_button('b')), (34, 34)),
-                        (100 + rect.width, HEIGHT - 111))
+                        (pad_x + 100 + rect.width, pad_y + HEIGHT - 111))
+            break
 
     # NEXT BUTTON
     if Player_amount == 5 and Players[4].name.strip() and Players[4].controls != 'controller' or \
@@ -3669,6 +3671,13 @@ def paused_window():
     draw_text(x + 130, y + 20, 'Quit', WHITE, 70, surf=Secondary_window)
 
 
+def controls_window():
+    Secondary_window.fill(BLACK)
+    Secondary_window.blit(Window_screenshot, (0, 0))
+
+    draw_text(CENTRE[0], 115, 'Controls', WHITE, 100, bar=True, surf=Secondary_window)  # Title
+
+
 def menu_background(top=False, right=False, bottom=False, left=False):
     # Function to generate background as single surface
     surf = pygame.surface.Surface((WIDTH, HEIGHT))
@@ -3979,11 +3988,11 @@ def draw_text(x, y, text, colour, size, bold=False, bar=False, three_d=False,
         return render.get_rect()
 
 
-def render_key(value: str, color=WHITE, size=50):
+def render_key(value: str, size=50):
     surf = pygame.surface.Surface((size, size))
     surf.set_colorkey(BLACK)
 
-    pygame.draw.rect(surf, color, (0, 0, size, size), 4, 12)
+    pygame.draw.rect(surf, WHITE, (0, 0, size, size), 4, 12)
 
     if len(value) == 1:
         font = pygame.font.Font(fonts.load(), 40)
@@ -3991,7 +4000,8 @@ def render_key(value: str, color=WHITE, size=50):
         surf.blit(render, (((size - render.get_width()) // 2) + 1,
                            ((size - render.get_height()) // 2)))
     else:
-        draw_triangle((size // 2, size // 2), value, width=size // 2, height=size // 2, border=None, surface=surf)
+        draw_triangle((size // 2, size // 2), value, width=size // 2,
+                      height=size // 2, border=None, surface=surf)
 
     return surf
 
@@ -4005,16 +4015,16 @@ def draw_controls(x, y, ver: str or pygame.joystick.Joystick, surface=Window, re
         key_size = 50
 
         if ver == 'wasd':
-            surf.blit(render_key('W', YELLOW_CAR, key_size), (centre - key_size // 2, 0))
-            surf.blit(render_key('A', BLUE_CAR, key_size), (centre - key_size // 2 - key_size - 10, key_size + 10))
-            surf.blit(render_key('S', GREEN_CAR, key_size), (centre - key_size // 2, key_size + 10))
-            surf.blit(render_key('D', RED_CAR, key_size), (centre - key_size // 2 + key_size + 10, key_size + 10))
+            surf.blit(render_key('W', key_size), (centre - key_size // 2, 0))
+            surf.blit(render_key('A', key_size), (centre - key_size // 2 - key_size - 10, key_size + 10))
+            surf.blit(render_key('S', key_size), (centre - key_size // 2, key_size + 10))
+            surf.blit(render_key('D', key_size), (centre - key_size // 2 + key_size + 10, key_size + 10))
 
         elif ver == 'arrows':
-            surf.blit(render_key('up', YELLOW_CAR, key_size), (centre - key_size // 2, 0))
-            surf.blit(render_key('left', BLUE_CAR, key_size), (centre - key_size // 2 - key_size - 10, key_size + 10))
-            surf.blit(render_key('down', GREEN_CAR, key_size), (centre - key_size // 2, key_size + 10))
-            surf.blit(render_key('right', RED_CAR, key_size), (centre - key_size // 2 + key_size + 10, key_size + 10))
+            surf.blit(render_key('up', key_size), (centre - key_size // 2, 0))
+            surf.blit(render_key('left', key_size), (centre - key_size // 2 - key_size - 10, key_size + 10))
+            surf.blit(render_key('down', key_size), (centre - key_size // 2, key_size + 10))
+            surf.blit(render_key('right', key_size), (centre - key_size // 2 + key_size + 10, key_size + 10))
 
         else:
             raise ValueError('draw_controls | ver can only be wasd, arrows or a controller, not ' + str(ver))
@@ -4643,6 +4653,8 @@ def controller_added():
     controller_prompts.append((short_controller_name(controller.get_name()),
                                True, pygame.time.get_ticks() + 4000))
     play_sound('controller connect')
+    if Debug or Race_debug:
+        print('Controller connected, controllers: {0}'.format(controllers))
 
 
 def controller_removed(instance_id):
@@ -4651,6 +4663,12 @@ def controller_removed(instance_id):
     for controller_id in controllers:
         if controller_id.get_instance_id() == instance_id:
             controller = controllers[controllers.index(controller_id)]
+            break
+    if type(controller) == int:
+        print('ERR: controller_removed() | controller not found!')
+        print('Controllers: {0}'.format(controllers))
+        return
+
     controller_prompts.append((short_controller_name(controller.get_name()),
                                False, pygame.time.get_ticks() + 4000))
     for player in Players:
@@ -4662,6 +4680,9 @@ def controller_removed(instance_id):
     if controller in controls:
         controls.remove(controller)
     play_sound('controller disconnect')
+
+    if Debug or Race_debug:
+        print('Controller disconnected, controllers: {0}'.format(controllers))
 
 
 def short_controller_name(name: str):
@@ -4915,7 +4936,7 @@ def game():  # All variables that are not constant
                         fade_to_black(paused=True, speed=15)
                     Window_sleep = True
 
-            if event.type == pygame.WINDOWFOCUSGAINED:
+            elif event.type == pygame.WINDOWFOCUSGAINED:
                 Window_sleep = False
 
             elif event.type == pygame.KEYDOWN:
@@ -4944,37 +4965,52 @@ def game():  # All variables that are not constant
                             fade_from_black(paused=True, speed=15, window=current_window)
                             current_window = ''
 
-                elif event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:  # DEBUGGING
+                elif event.key == pygame.K_DELETE:  # DEBUGGING
                     print(get_mouse_pos())
-                    print(recorded_keys)
                     if music_thread.is_alive():
                         music_thread_event.set()
                         music_thread.join(timeout=0.25)
                     pygame.quit()
                     quit()
 
+            elif event.type == pygame.JOYDEVICEREMOVED:
+                controller = None
+                for controller_id in controllers:
+                    if controller_id.get_instance_id() == event.__dict__['instance_id']:
+                        controller = controllers[controllers.index(controller_id)]
+                        break
+                for player in player_list:
+                    if player.controller == controller and not game_countdown:
+                        Window_screenshot = Window.copy()
+                        Window_screenshot.set_alpha(80)
+                        Game_paused = True
+                        pygame.mouse.set_visible(True)
+                        current_window = 'controls'
+                        break
+
+                controller_removed(event.__dict__['instance_id'])
+
+            elif event.type == pygame.JOYDEVICEADDED:
+                controller_added()
+
         for player in player_list:
             if player.controller:
-                if player.controller.get_button(7):
-                    if not game_countdown:
-                        if not Game_paused:
-                            Game_paused = True
-                            play_sound('pause out')
-                            Music_volume -= 0.05 if Music_volume >= 0.06 else 0
-                            pygame.mixer.music.set_volume(Music_volume)
-                            pygame.mouse.set_visible(True)
-                            Window_screenshot = Window.copy()
-                            Window_screenshot.set_alpha(80)
-                            fade_to_black(paused=True, speed=15)
-                        else:
-                            Game_paused = False
-                            play_sound('pause in')
-                            Music_volume += 0.05 if Music_volume >= 0.06 else 0
-                            pygame.mixer.music.set_volume(Music_volume)
-                            if not Debug:
-                                pygame.mouse.set_visible(False)
-                            fade_from_black(paused=True, speed=15)
-                    break
+                if player.controller.get_init():
+                    if player.controller.get_button(7):
+                        if not game_countdown:
+                            if not Game_paused:
+                                Game_paused = True
+                                play_sound('pause out')
+                                Music_volume -= 0.05 if Music_volume >= 0.06 else 0
+                                pygame.mixer.music.set_volume(Music_volume)
+                                pygame.mouse.set_visible(True)
+                                Window_screenshot = Window.copy()
+                                Window_screenshot.set_alpha(80)
+                                current_window = 'controls'
+                                fade_to_black(paused=True, speed=15)
+                            else:
+                                current_window = 'controls'
+                        break
 
         if Game_paused:
             mouse_pos = get_mouse_pos()  # Get current mouse position and scale between display and virtual display
@@ -5000,7 +5036,7 @@ def game():  # All variables that are not constant
                         pygame.mixer.music.set_volume(Music_volume)
                         if not Debug:
                             pygame.mouse.set_visible(False)
-                        fade_from_black(paused=True, speed=9)
+                        fade_from_black(window=current_window, speed=9)
 
                     elif not buttons[0] and button_trigger:
                         button_trigger = False
@@ -5395,7 +5431,11 @@ def game():  # All variables that are not constant
                     elif not buttons[0] and button_trigger:
                         button_trigger = False
 
-            if Game_paused:
+            elif current_window == 'controls':
+                Secondary_window.fill(BLACK)
+                controls_window()
+
+            if Game_paused:  # Check again to avoid overwriting fade animation
                 update_screen(surf=Secondary_window)
 
         else:  # If game playing
@@ -5410,14 +5450,14 @@ def game():  # All variables that are not constant
             if len(power_ups) < 15 * Player_amount and powerups:  # Spawn random power-ups
                 rand = randint(0, 1000 // (10 + Player_amount + Npc_amount))
                 if not rand:
-                    rand = randint(0, 3)
-                    if not rand:
+                    rand = randint(0, 5)
+                    if not rand or rand == 1:
                         ver = 'repair'
-                    elif rand == 1:
-                        ver = 'boost'
                     elif rand == 2:
+                        ver = 'boost'
+                    elif rand == 3 or rand == 4:
                         ver = 'bullet'
-                    elif rand == 3:
+                    elif rand == 5:
                         ver = 'lightning'
                     else:
                         raise ValueError('game() [ver] Incorrect value: ' + str(rand))
@@ -5520,6 +5560,8 @@ def game():  # All variables that are not constant
             gameplay_gui(player_list, game_countdown_timer, lap_timer)  # Draw GUI
             update_screen(full_screen=True)  # Update entire screen
 
+        controller_popup()
+
         if Window_sleep:
             sleep(0.5)
 
@@ -5585,7 +5627,7 @@ def main():
         Total_laps = 1
         Debug = True
         powerups = True
-        Map = maps.TBone()
+        Map = maps.Overhang()
         current_window = 'race settings'
         game_quit = game()
         pygame.time.wait(1000)
@@ -8783,8 +8825,6 @@ if __name__ == '__main__':
                 Display.blit(pygame.font.Font(None, 50).render(str(error), True, WHITE, 50), (0, 50))
             pygame.display.update()
             pygame.time.wait(3000)
-            pygame.quit()
-            quit()
 
         finally:
             Music_loop = False

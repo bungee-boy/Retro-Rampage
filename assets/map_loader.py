@@ -280,7 +280,7 @@ class TBone:
 
     def layer(self, layer: int):
         """
-        Returns a layer of the Pinch track
+        Returns a layer of the track
         0 = Background (img)
         1 = Objects (img)
         2 = Track (img)
@@ -297,11 +297,11 @@ class TBone:
                     (1556, 675, 215, 27), (1440, 773, 32, 183), (960, 773, 32, 183), (416, 773, 32, 183),
                     (148, 675, 215, 27), (448, 449, 32, 183))
         else:
-            raise ValueError("Pinch.layer(layer) | 'layer' must be between 0 and 3 not " + str(layer))
+            raise ValueError("TBone.layer(layer) | 'layer' must be between 0 and 3 not " + str(layer))
 
     def start_pos(self, pos: int):
         """
-        Returns the start position and rotation for each position on Pinch (1 - 6)
+        Returns the start position and rotation for each position (1 - 6)
         [0] = Pos X
         [1] = Pos Y
         [2] = Rotation
@@ -319,8 +319,115 @@ class TBone:
         elif pos == 6:
             return self._start[0] - 307, self._start[1] + 122, 270
         else:
-            raise ValueError("Pinch.start_pos(pos) | 'pos' must be between 1 and 6 not " + str(pos))
+            raise ValueError("TBone.start_pos(pos) | 'pos' must be between 1 and 6 not " + str(pos))
 
 
-index = ('racetrack', 'snake', 'dog bone', 'hairpin', 'pinch', 'tbone')
-objs = (Racetrack, Snake, DogBone, Hairpin, Pinch, TBone)
+class Bridge:
+    def __init__(self):
+        self.name = 'bridge'
+        self._file_dir = 'assets/maps/bridge/'
+        self._bg = 'bg.png'
+        self._obj = 'obj.png'
+        self._trk = 'trk.png'
+        self._start = 1444, 125
+
+    def layer(self, layer: int):
+        """
+        Returns a layer of the track
+        0 = Background (img)
+        1 = Objects (img)
+        2 = Track (img)
+        3 = Checkpoints (2d array / tuples)
+        """
+        if layer == 0:
+            return self._file_dir + self._bg
+        elif layer == 1:
+            return self._file_dir + self._obj
+        elif layer == 2:
+            return self._file_dir + self._trk
+        elif layer == 3:
+            return ((1444, 125, 32, 183), (1556, 432, 215, 27), (1556, 702, 215, 27), (1440, 773, 32, 183),
+                    (1172, 675, 215, 27), (1056, 449, 32, 183), (788, 675, 215, 27), (704, 773, 32, 183),
+                    (416, 773, 32, 183), (148, 675, 215, 27), (416, 449, 31, 183), (532, 378, 215, 27),
+                    (768, 125, 32, 183), (992, 125, 32, 183))
+        else:
+            raise ValueError("Bridge.layer(layer) | 'layer' must be between 0 and 3 not " + str(layer))
+
+    def start_pos(self, pos: int):
+        """
+        Returns the start position and rotation for each position (1 - 6)
+        [0] = Pos X
+        [1] = Pos Y
+        [2] = Rotation
+        """
+        if pos == 1:
+            return self._start[0] - 77, self._start[1] + 52, 270
+        elif pos == 2:
+            return self._start[0] - 77, self._start[1] + 122, 270
+        elif pos == 3:
+            return self._start[0] - 192, self._start[1] + 52, 270
+        elif pos == 4:
+            return self._start[0] - 192, self._start[1] + 122, 270
+        elif pos == 5:
+            return self._start[0] - 307, self._start[1] + 52, 270
+        elif pos == 6:
+            return self._start[0] - 307, self._start[1] + 122, 270
+        else:
+            raise ValueError("Bridge.start_pos(pos) | 'pos' must be between 1 and 6 not " + str(pos))
+
+
+class Overhang:
+    def __init__(self):
+        self.name = 'overhang'
+        self._file_dir = 'assets/maps/overhang/'
+        self._bg = 'bg.png'
+        self._obj = 'obj.png'
+        self._trk = 'trk.png'
+        self._start = 1060, 125
+
+    def layer(self, layer: int):
+        """
+        Returns a layer of the track
+        0 = Background (img)
+        1 = Objects (img)
+        2 = Track (img)
+        3 = Checkpoints (2d array / tuples)
+        """
+        if layer == 0:
+            return self._file_dir + self._bg
+        elif layer == 1:
+            return self._file_dir + self._obj
+        elif layer == 2:
+            return self._file_dir + self._trk
+        elif layer == 3:
+            return ((1060, 125, 32, 183), (1172, 351, 215, 27), (1440, 449, 32, 183), (1556, 675, 215, 27),
+                    (1472, 773, 32, 183), (1184, 773, 32, 183), (916, 675, 215, 27), (832, 449, 32, 183),
+                    (416, 449, 32, 183), (148, 351, 215, 27), (416, 125, 32, 183), (672, 125, 32, 183))
+        else:
+            raise ValueError("Overhang.layer(layer) | 'layer' must be between 0 and 3 not " + str(layer))
+
+    def start_pos(self, pos: int):
+        """
+        Returns the start position and rotation for each position (1 - 6)
+        [0] = Pos X
+        [1] = Pos Y
+        [2] = Rotation
+        """
+        if pos == 1:
+            return self._start[0] - 77, self._start[1] + 52, 270
+        elif pos == 2:
+            return self._start[0] - 77, self._start[1] + 122, 270
+        elif pos == 3:
+            return self._start[0] - 192, self._start[1] + 52, 270
+        elif pos == 4:
+            return self._start[0] - 192, self._start[1] + 122, 270
+        elif pos == 5:
+            return self._start[0] - 307, self._start[1] + 52, 270
+        elif pos == 6:
+            return self._start[0] - 307, self._start[1] + 122, 270
+        else:
+            raise ValueError("Overhang.start_pos(pos) | 'pos' must be between 1 and 6 not " + str(pos))
+
+
+index = ('racetrack', 'snake', 'dog bone', 'hairpin', 'pinch', 'tbone', 'bridge', 'overhang')
+objs = (Racetrack, Snake, DogBone, Hairpin, Pinch, TBone, Bridge, Overhang)

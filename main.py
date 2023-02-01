@@ -207,6 +207,7 @@ Total_laps = 3
 Current_lap = 0
 Race_time = 0
 Player_positions = []
+Player_list = []
 All_vehicles = []
 Npc_names = [['John', False], ['Mark', False], ['Lilly', False], ['Jessica', False], ['Matthew', False],
              ['James', False], ['Jack', False], ['Holly', False], ['Aimee', False], ['Harrison', False],
@@ -619,13 +620,13 @@ class Car(pygame.sprite.Sprite):
 
     def set_controls(self, control: str or pygame.joystick.Joystick):  # Set controls to appropriate keys
         if control == 'wasd':
-            self.input_type = 'keyboard'
+            self.input_type = 'wasd'
             self._up = pygame.K_w
             self._down = pygame.K_s
             self._left = pygame.K_a
             self._right = pygame.K_d
         elif control == 'arrows':
-            self.input_type = 'keyboard'
+            self.input_type = 'arrows'
             self._up = pygame.K_UP
             self._down = pygame.K_DOWN
             self._left = pygame.K_LEFT
@@ -894,7 +895,7 @@ class Car(pygame.sprite.Sprite):
                 self.controller.rumble(0.3, 0.5, 700)
 
     def check_inputs(self):  # Check all inputs and take action
-        if self.input_type == 'keyboard':
+        if self.input_type == 'wasd' or self.input_type == 'arrows':
             self._pressed_keys = pygame.key.get_pressed()  # Get all pressed keys on keyboard
 
             if self._pressed_keys[self._up] and self._pressed_keys[self._down]:  # If up and down pressed at same time
@@ -3672,27 +3673,68 @@ def paused_window():
 
 
 def controls_window():
-    Secondary_window.fill(BLACK)
-    Secondary_window.blit(Window_screenshot, (0, 0))
+    surf = Secondary_window
+    surf.fill(BLACK)
+    surf.blit(Window_screenshot, (0, 0))
 
-    draw_text(CENTRE[0], 115, 'Controls', WHITE, 100, bar=True, surf=Secondary_window)  # Title
+    draw_text(CENTRE[0], 115, 'Controls', WHITE, 100, bar=True, surf=surf)  # Title
 
-    # P1 controls
-    player = Players[0]
-    x = CENTRE[0]
-    y = 240
-    draw_text(x, y, 'P1 controls', WHITE, 50, bar=True)
-    rect = draw_controls(x, y + 140, player.controls, return_rect=True)
-    if player.controls == 'controller':
-        rect_2 = draw_text(x - 16, y + rect.height + rect.centerx + 42, 'Press ', WHITE, 32, return_rect=True)
-        Window.blit(pygame.transform.scale(pygame.image.load(assets.controller_button('a')), (34, 34)),
-                    (x + rect_2.centerx - 16, y + rect.height + rect.centerx + 41))
-    elif player.controls in controllers:
-        draw_text(x, y + rect.height + rect.centerx + 42,
-                  short_controller_name(player.controls.get_name()), WHITE, 32)
-    if type(player.controls) == str:
-        draw_triangle((x - 120, y + 140), 'left', width=25, height=50)
-        draw_triangle((x + 120, y + 140), 'right', width=25, height=50)
+    x = 332
+    y = HEIGHT - 170
+    tile(x, y, 'dirt road', 76, grid=False, surf=Secondary_window)  # Quit button
+    tile(x + 128, y, 'dirt road', 60, grid=False, surf=Secondary_window)
+    draw_text(x + 130, y + 20, 'Quit', WHITE, 70, surf=Secondary_window)
+
+    bound_players = 0
+    for player in Player_list:
+        if player.input_type == 'wasd' or player.input_type == 'arrows' or (player.input_type == 'controller' and player.controller):
+            bound_players += 1
+    if bound_players == len(Player_list):
+        x = 1268
+        y = HEIGHT - 170
+        tile(x, y, 'dirt road', 76, grid=False, surf=Secondary_window)  # Resume button
+        tile(x + 128, y, 'dirt road', 1, grid=False, surf=Secondary_window)
+        tile(x + 256, y, 'dirt road', 60, grid=False, surf=Secondary_window)
+        draw_text(x + 193, y + 20, 'Resume', WHITE, 70, surf=Secondary_window)
+
+    # Player controls
+    for index in range(0, 6):
+        player = Player_list[index]
+        if index == 0:
+            x = CENTRE[0] - 500
+            y = 310
+        elif index == 1:
+            x = CENTRE[0]
+            y = 310
+        elif index == 2:
+            x = CENTRE[0] + 500
+            y = 310
+        elif index == 3:
+            x = CENTRE[0] - 500
+            y = 600
+        elif index == 4:
+            x = CENTRE[0]
+            y = 600
+        elif index == 5:
+            x = CENTRE[0] + 500
+            y = 600
+        else:
+            x, y = CENTRE
+        good = True
+        rect = draw_controls(x, y + 140, player.input_type, return_rect=True, surface=surf)
+        # print(player.input_type, player.controller)
+        if player.input_type == 'controller' and not player.controller:
+            rect_2 = draw_text(x - 16, y + rect.height + rect.centerx + 42, 'Press ',
+                               WHITE, 32, return_rect=True, surf=surf)
+            surf.blit(pygame.transform.scale(pygame.image.load(assets.controller_button('a')), (34, 34)),
+                      (x + rect_2.centerx - 16, y + rect.height + rect.centerx + 41))
+            good = False
+        elif player.controller in controllers:
+            draw_text(x, y + rect.height + rect.centerx + 42,
+                      short_controller_name(player.controller.get_name()), WHITE, 32, surf=surf)
+        draw_text(x, y, 'P{0} controls'.format(index + 1), GREEN_CAR if good else RED_CAR, 50, bar=True, surf=surf)
+        # draw_triangle((x - 120, y + 140), 'left', width=25, height=50, surface=surf)
+        # draw_triangle((x + 120, y + 140), 'right', width=25, height=50, surface=surf)
 
 
 def menu_background(top=False, right=False, bottom=False, left=False):
@@ -4733,13 +4775,15 @@ def get_mouse_pos():
 def game():  # All variables that are not constant
     global Track_mask, Player_positions, Race_time, Countdown, Window_screenshot, button_trigger, \
         Debug, Screen, Animations, Mute_volume, Music_volume, Sfx_volume, loaded_assets, loaded_sounds, \
-        Current_lap, Window_sleep, Game_end, music_thread, current_window, Game_paused, loading_thread, All_vehicles
+        Current_lap, Window_sleep, Game_end, music_thread, current_window, Game_paused, loading_thread, All_vehicles, \
+        Player_list
     layers = []
     Game_paused = False
     current_window = ''
     game_countdown = 0
     game_countdown_timer = 0
     Player_positions = []
+    Player_list = []
     power_ups = []
     triggered_power_ups = []
     Race_time = pygame.time.get_ticks()
@@ -4792,9 +4836,8 @@ def game():  # All variables that are not constant
     if not Debug:  # Hide mouse when not in debug mode
         pygame.mouse.set_visible(False)
 
-    player_list = []
     for player in range(0, Player_amount):
-        player_list.append(Car(Players[player]))
+        Player_list.append(Car(Players[player]))
 
     npc_list = []
     if Npc_amount != 0:
@@ -4817,12 +4860,12 @@ def game():  # All variables that are not constant
             npc_pos += 1
 
     All_vehicles = []
-    for player in player_list:
+    for player in Player_list:
         All_vehicles.append(player)
     for npc in npc_list:
         All_vehicles.append(npc)
 
-    if not player_list and not npc_list:
+    if not Player_list and not npc_list:
         raise ValueError("There are no players or NPCs!")
     pygame.time.wait(1000)
     if Animations:
@@ -4830,11 +4873,11 @@ def game():  # All variables that are not constant
         if loading_thread.is_alive():
             loading_thread.join()  # !! Must stop animation first as can only blit from one thread at a time !!
     Window.blit(full_map, (0, 0))  # Draw everything to new screen
-    for player in player_list:
+    for player in Player_list:
         player.draw()
     for npc in npc_list:
         npc.draw()
-    gameplay_gui(player_list, 0, 0)
+    gameplay_gui(Player_list, 0, 0)
     fade_from_black(show_loading=True)  # Reveal new screen
 
     if Countdown and not Debug:
@@ -4844,7 +4887,7 @@ def game():  # All variables that are not constant
             if Debug:
                 pygame.draw.rect(Window, WHITE, (822, pos_y, 276, 108), 1)
             screen_updates.append((822, pos_y, 276, 108))
-            for player in player_list:
+            for player in Player_list:
                 player.draw()
             for npc in npc_list:
                 npc.draw()
@@ -4896,7 +4939,7 @@ def game():  # All variables that are not constant
                     play_sound('traffic light advance')
                     tl_stage = 1
 
-            for player in player_list:
+            for player in Player_list:
                 player.draw()
             for npc in npc_list:
                 npc.draw()
@@ -4961,7 +5004,7 @@ def game():  # All variables that are not constant
                     pygame.display.toggle_fullscreen()
                     update_screen(full_screen=True)
 
-                elif event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                elif event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN and current_window != 'controls':
                     if not game_countdown:
                         if not Game_paused:
                             Game_paused = True
@@ -4996,21 +5039,24 @@ def game():  # All variables that are not constant
                     if controller_id.get_instance_id() == event.__dict__['instance_id']:
                         controller = controllers[controllers.index(controller_id)]
                         break
-                for player in player_list:
-                    if player.controller == controller and not game_countdown:
+                for player in Player_list:
+                    if player.controller == controller and not game_countdown and current_window != 'controls':
                         Window_screenshot = Window.copy()
                         Window_screenshot.set_alpha(80)
                         Game_paused = True
                         pygame.mouse.set_visible(True)
+                        player.controller = None
                         current_window = 'controls'
                         break
+                    elif player.controller == controller and current_window == 'controls':
+                        player.controller = None
 
                 controller_removed(event.__dict__['instance_id'])
 
             elif event.type == pygame.JOYDEVICEADDED:
                 controller_added()
 
-        for player in player_list:
+        for player in Player_list:
             if player.controller:
                 if player.controller.get_init():
                     if player.controller.get_button(7):
@@ -5451,6 +5497,115 @@ def game():  # All variables that are not constant
             elif current_window == 'controls':
                 Secondary_window.fill(BLACK)
                 controls_window()
+                mouse_pos = get_mouse_pos()  # Get current mouse position
+
+                # QUIT BUTTON
+                if 332 <= mouse_pos[0] <= 587 and 910 <= mouse_pos[1] <= 1017:
+                    x = 332
+                    y = HEIGHT - 170
+                    tile(x, y, 'sand road', 73, grid=False, surf=Secondary_window)  # Quit button
+                    tile(x + 128, y, 'sand road', 57, grid=False, surf=Secondary_window)
+                    draw_text(x + 130, y + 20, 'Quit', BLACK, 70, surf=Secondary_window)
+
+                    buttons = pygame.mouse.get_pressed()
+                    if buttons[0] and not button_trigger:
+                        button_trigger = True
+                        play_sound('menu button')
+                        current_window = 'controls quit'
+                        Secondary_window.fill(BLACK)
+                        confirm_quit_window(Window_screenshot, surf=Secondary_window)
+
+                    elif not buttons[0] and button_trigger:
+                        button_trigger = False
+
+                bound_players = 0
+                for player in Player_list:
+                    if player.input_type == 'wasd' or player.input_type == 'arrows' or (
+                            player.input_type == 'controller' and player.controller):
+                        bound_players += 1
+                if bound_players == len(Player_list):
+                    # RESUME BUTTON
+                    if 1268 <= mouse_pos[0] <= 1651 and 910 <= mouse_pos[1] <= 1017:  # Check resume button co-ords
+                        x = 1268
+                        y = HEIGHT - 170
+                        tile(x, y, 'sand road', 73, grid=False, surf=Secondary_window)  # Resume button
+                        tile(x + 128, y, 'sand road', 88, grid=False, surf=Secondary_window)
+                        tile(x + 256, y, 'sand road', 57, grid=False, surf=Secondary_window)
+                        draw_text(x + 193, y + 20, 'Resume', BLACK, 70, surf=Secondary_window)
+
+                        buttons = pygame.mouse.get_pressed()
+                        if buttons[0] and not button_trigger:
+                            button_trigger = True
+                            Game_paused = False
+                            play_sound('pause in')
+                            Music_volume += 0.05 if Music_volume >= 0.06 else 0
+                            pygame.mixer.music.set_volume(Music_volume)
+                            current_window = ''
+                            if not Debug:
+                                pygame.mouse.set_visible(False)
+                            fade_from_black(window=current_window, speed=9)
+
+                        elif not buttons[0] and button_trigger:
+                            button_trigger = False
+
+                for player in Player_list:
+                    if player.input_type == 'controller':
+                        if not player.controller:
+                            for controller in controllers:
+                                if controller not in controls and controller.get_button(0):
+                                    player.controller = controller  # Scan all controllers to bind
+                                    controls.append(controller)
+                                    player.set_controls(controller)
+                        elif player.controller in controls:
+                            if player.controller.get_button(1):  # Remove controller from bound list to bind again
+                                controls.remove(player.controller)
+                                player.controller = None
+
+            elif current_window == 'controls quit':
+                Secondary_window.fill(BLACK)
+                confirm_quit_window(Window_screenshot, surf=Secondary_window)
+                draw_text(CENTRE[0], 300, 'All progress will be lost!', WHITE, 50, surf=Secondary_window)
+                mouse_pos = get_mouse_pos()  # Get current mouse position
+
+                # YES BUTTON
+                if 347 <= mouse_pos[0] <= 642 and 486 <= mouse_pos[1] <= 593:
+                    pos_x = 347
+                    pos_y = CENTRE[1] - (tile_scale[1] // 2)
+                    tile(pos_x, pos_y, 'sand road', 73, grid=False, surf=Secondary_window)  # Yes button
+                    tile(pos_x + 85, pos_y, 'sand road', 88, grid=False, surf=Secondary_window)
+                    tile(pos_x + 168, pos_y, 'sand road', 57, grid=False, surf=Secondary_window)
+                    draw_text(pos_x + 153, pos_y + 20, 'Yes', BLACK, 70, surf=Secondary_window)
+
+                    buttons = pygame.mouse.get_pressed()
+                    if buttons[0] and not button_trigger:
+                        button_trigger = True
+                        Music_volume += 0.05 if Music_volume >= 0.06 else 0
+                        play_sound('menu button')  # Play button click sounds
+                        game_quit = True
+
+                    elif not buttons[0] and button_trigger:
+                        button_trigger = False
+
+                # NO BUTTON
+                elif 1307 <= mouse_pos[0] <= 1602 and 486 <= mouse_pos[1] <= 593:
+                    pos_x = CENTRE[0] + 347
+                    pos_y = CENTRE[1] - (tile_scale[1] // 2)
+                    tile(pos_x, pos_y, 'sand road', 73, grid=False, surf=Secondary_window)  # No button
+                    tile(pos_x + 85, pos_y, 'sand road', 88, grid=False, surf=Secondary_window)
+                    tile(pos_x + 168, pos_y, 'sand road', 57, grid=False, surf=Secondary_window)
+                    draw_text(pos_x + 153, pos_y + 20, 'No', BLACK, 70, surf=Secondary_window)
+
+                    buttons = pygame.mouse.get_pressed()
+                    if buttons[0] and not button_trigger:
+                        button_trigger = True
+                        play_sound('menu button')  # Play button click sounds
+                        current_window = 'controls'
+                        controls_window()
+
+                    elif not buttons[0] and button_trigger:
+                        button_trigger = False
+
+            controller_popup(surf=Secondary_window)
 
             if Game_paused:  # Check again to avoid overwriting fade animation
                 update_screen(surf=Secondary_window)
@@ -5574,10 +5729,9 @@ def game():  # All variables that are not constant
                     Game_end = True
 
             Player_positions = get_car_positions()  # Update player positions
-            gameplay_gui(player_list, game_countdown_timer, lap_timer)  # Draw GUI
+            gameplay_gui(Player_list, game_countdown_timer, lap_timer)  # Draw GUI
+            controller_popup()
             update_screen(full_screen=True)  # Update entire screen
-
-        controller_popup()
 
         if Window_sleep:
             sleep(0.5)
@@ -5604,7 +5758,7 @@ def game():  # All variables that are not constant
     if music_thread.is_alive():
         music_thread_event.set()
         music_thread.join()
-    for player in player_list:
+    for player in Player_list:
         if player.controller:
             player.controller.stop_rumble()
     fade_to_black(show_loading=True)
@@ -5634,7 +5788,7 @@ def main():
     loading_thread = Thread(name='loading_thread', target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
 
     Players.append(Player(0))
-    Player_amount = 1
+    Player_amount = 6
 
     if Race_debug:
         # Debug = True
@@ -5642,10 +5796,21 @@ def main():
         Players[0].veh_name = 'Race Car'
         Npc_amount = 0
         Total_laps = 1
+        Players.append(Player(1))
+        Players.append(Player(2))
+        Players.append(Player(3))
+        Players.append(Player(4))
+        Players.append(Player(5))
+        Players[1].name = 'b'
+        Players[2].name = 'c'
+        Players[3].name = 'd'
+        Players[4].name = 'e'
+        Players[5].name = 'f'
         Debug = True
         powerups = True
         Map = maps.Overhang()
-        current_window = 'race settings'
+        current_window = 'choose players 2'
+        '''
         game_quit = game()
         pygame.time.wait(1000)
         if Animations:
@@ -5667,6 +5832,7 @@ def main():
             pygame.mouse.set_visible(True)
         menu_loop = True
         music_thread_event.clear()
+        '''
 
     if Intro_screen and not Debug:
         intro_bg = menu_background()

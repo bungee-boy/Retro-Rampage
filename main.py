@@ -3687,7 +3687,8 @@ def controls_window():
 
     bound_players = 0
     for player in Player_list:
-        if player.input_type == 'wasd' or player.input_type == 'arrows' or (player.input_type == 'controller' and player.controller):
+        if player.input_type == 'wasd' or player.input_type == 'arrows' or \
+                (player.input_type == 'controller' and player.controller):
             bound_players += 1
     if bound_players == len(Player_list):
         x = 1268

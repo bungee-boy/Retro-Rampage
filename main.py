@@ -3677,6 +3677,23 @@ def controls_window():
 
     draw_text(CENTRE[0], 115, 'Controls', WHITE, 100, bar=True, surf=Secondary_window)  # Title
 
+    # P1 controls
+    player = Players[0]
+    x = CENTRE[0]
+    y = 240
+    draw_text(x, y, 'P1 controls', WHITE, 50, bar=True)
+    rect = draw_controls(x, y + 140, player.controls, return_rect=True)
+    if player.controls == 'controller':
+        rect_2 = draw_text(x - 16, y + rect.height + rect.centerx + 42, 'Press ', WHITE, 32, return_rect=True)
+        Window.blit(pygame.transform.scale(pygame.image.load(assets.controller_button('a')), (34, 34)),
+                    (x + rect_2.centerx - 16, y + rect.height + rect.centerx + 41))
+    elif player.controls in controllers:
+        draw_text(x, y + rect.height + rect.centerx + 42,
+                  short_controller_name(player.controls.get_name()), WHITE, 32)
+    if type(player.controls) == str:
+        draw_triangle((x - 120, y + 140), 'left', width=25, height=50)
+        draw_triangle((x + 120, y + 140), 'right', width=25, height=50)
+
 
 def menu_background(top=False, right=False, bottom=False, left=False):
     # Function to generate background as single surface

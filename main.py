@@ -1984,6 +1984,13 @@ def choose_map_window(curr_bg, pad_x=0, pad_y=0):
     tile(x + 190, y, 'dirt road', 60, grid=False)
     draw_text(x + 160, y + 20, 'Select', WHITE, 70)
 
+    x = pad_x + 1450
+    y = pad_y + 890
+    tile(x, y, 'dirt road', 76, grid=False)  # Random button
+    tile(x + 128, y, 'dirt road', 1, grid=False)
+    tile(x + 256, y, 'dirt road', 60, grid=False)
+    draw_text(x + 193, y + 20, 'Random', WHITE, 70)
+
     # Draw map preview with border
     Window.blit(map_preview[1], (pad_x + map_preview_pos[0], pad_y + map_preview_pos[1]))
     pygame.draw.rect(Window, WHITE, (pad_x + map_preview_pos[0], pad_y + map_preview_pos[1], *map_preview_size), 4)
@@ -6066,7 +6073,7 @@ def main():
                         update_screen(full_screen=True)
 
                     elif event.key == pygame.K_ESCAPE:  # DEBUGGING
-                        # print(get_mouse_pos())
+                        print(get_mouse_pos())
                         if music_thread.is_alive():
                             music_thread_event.set()
                             music_thread.join(timeout=0.25)
@@ -6331,6 +6338,26 @@ def main():
                             car.rotate(0)
                             car.move(*CENTRE)
                             update_screen(full_screen=True)
+
+                    elif not buttons[0] and button_trigger:
+                        button_trigger = False
+
+                # RANDOM BUTTON
+                elif 1450 <= mouse_pos[0] <= 1833 and 890 <= mouse_pos[1] <= 997:
+                    x = 1450
+                    y = 890
+                    tile(x, y, 'sand road', 73, grid=False)  # Random button
+                    tile(x + 128, y, 'sand road', 88, grid=False)
+                    tile(x + 256, y, 'sand road', 57, grid=False)
+                    draw_text(x + 193, y + 20, 'Random', BLACK, 70)
+
+                    buttons = pygame.mouse.get_pressed()  # Get current mouse button state(s)
+                    if buttons[0] and not button_trigger:  # If any mouse button is pressed while over start button...
+                        button_trigger = True
+                        play_sound('menu button')  # Play button click sounds
+                        Map = maps.objs[randint(0, len(maps.index) - 1)]()
+                        get_map_preview()
+                        update_screen(full_screen=True)
 
                     elif not buttons[0] and button_trigger:
                         button_trigger = False

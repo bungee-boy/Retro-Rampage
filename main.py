@@ -634,6 +634,8 @@ class Car(pygame.sprite.Sprite):
         elif control in controllers:
             self.input_type = 'controller'
             self.controller = control
+            if not self.controller.get_init():
+                self.controller.init()
         else:
             raise ValueError("Car | controls is not == 'wasd' or 'arrows'"
                              " or controller : {0} as {1}".format(control, type(control)))
@@ -950,6 +952,9 @@ class Car(pygame.sprite.Sprite):
 
                 elif self.controller.get_axis(0) > 0.6:  # If right key is pressed
                     self.rotate(self.rotation + self._rotation_speed)
+
+        elif self.controller and not self.controller.get_init():
+            self.controller.init()
 
     def draw(self, surf=Window):
         surf.blit(self.image, (self.rect.left, self.rect.top))  # Car image
@@ -3665,8 +3670,15 @@ def paused_window():
     tile(x + 256, y, 'dirt road', 60, grid=False, surf=Secondary_window)
     draw_text(x + 190, y + 20, 'Settings', WHITE, 70, surf=Secondary_window)
 
-    x = CENTRE[0] - 128
+    x = CENTRE[0] - 192
     y = CENTRE[1] + 120
+    tile(x, y, 'dirt road', 76, grid=False, surf=Secondary_window)  # Controls button
+    tile(x + 128, y, 'dirt road', 1, grid=False, surf=Secondary_window)
+    tile(x + 256, y, 'dirt road', 60, grid=False, surf=Secondary_window)
+    draw_text(x + 193, y + 20, 'Controls', WHITE, 70, surf=Secondary_window)
+
+    x = CENTRE[0] - 128
+    y = CENTRE[1] + 270
     tile(x, y, 'dirt road', 76, grid=False, surf=Secondary_window)  # Quit button
     tile(x + 128, y, 'dirt road', 60, grid=False, surf=Secondary_window)
     draw_text(x + 130, y + 20, 'Quit', WHITE, 70, surf=Secondary_window)
@@ -3693,13 +3705,13 @@ def controls_window():
     if bound_players == len(Player_list):
         x = 1268
         y = HEIGHT - 170
-        tile(x, y, 'dirt road', 76, grid=False, surf=Secondary_window)  # Resume button
+        tile(x, y, 'dirt road', 76, grid=False, surf=Secondary_window)  # Confirm button
         tile(x + 128, y, 'dirt road', 1, grid=False, surf=Secondary_window)
         tile(x + 256, y, 'dirt road', 60, grid=False, surf=Secondary_window)
-        draw_text(x + 193, y + 20, 'Resume', WHITE, 70, surf=Secondary_window)
+        draw_text(x + 193, y + 20, 'Confirm', WHITE, 70, surf=Secondary_window)
 
     # Player controls
-    for index in range(0, 6):
+    for index in range(0, len(Player_list)):
         player = Player_list[index]
         if index == 0:
             x = CENTRE[0] - 500
@@ -3734,8 +3746,8 @@ def controls_window():
             draw_text(x, y + rect.height + rect.centerx + 42,
                       short_controller_name(player.controller.get_name()), WHITE, 32, surf=surf)
         draw_text(x, y, 'P{0} controls'.format(index + 1), GREEN_CAR if good else RED_CAR, 50, bar=True, surf=surf)
-        # draw_triangle((x - 120, y + 140), 'left', width=25, height=50, surface=surf)
-        # draw_triangle((x + 120, y + 140), 'right', width=25, height=50, surface=surf)
+        draw_triangle((x - 120, y + 140), 'left', width=25, height=50, surface=surf)
+        draw_triangle((x + 120, y + 140), 'right', width=25, height=50, surface=surf)
 
 
 def menu_background(top=False, right=False, bottom=False, left=False):
@@ -5127,10 +5139,30 @@ def game():  # All variables that are not constant
                     elif not buttons[0] and button_trigger:
                         button_trigger = False
 
-                # QUIT BUTTON
-                elif 832 <= mouse_pos[0] <= 1087 and 660 <= mouse_pos[1] <= 767:
-                    x = CENTRE[0] - 128
+                # CONTROLS BUTTON
+                elif 768 <= mouse_pos[0] <= 1151 and 660 <= mouse_pos[1] <= 767:
+                    x = CENTRE[0] - 192
                     y = CENTRE[1] + 120
+                    tile(x, y, 'sand road', 73, grid=False, surf=Secondary_window)  # Resume button
+                    tile(x + 128, y, 'sand road', 88, grid=False, surf=Secondary_window)
+                    tile(x + 256, y, 'sand road', 57, grid=False, surf=Secondary_window)
+                    draw_text(x + 193, y + 20, 'Controls', BLACK, 70, surf=Secondary_window)
+
+                    buttons = pygame.mouse.get_pressed()
+                    if buttons[0] and not button_trigger:
+                        button_trigger = True
+                        play_sound('menu button')
+                        current_window = 'controls'
+                        Secondary_window.fill(BLACK)
+                        controls_window()
+
+                    elif not buttons[0] and button_trigger:
+                        button_trigger = False
+
+                # QUIT BUTTON
+                elif 832 <= mouse_pos[0] <= 1087 and 810 <= mouse_pos[1] <= 917:
+                    x = CENTRE[0] - 128
+                    y = CENTRE[1] + 270
                     tile(x, y, 'sand road', 73, grid=False, surf=Secondary_window)  # Quit button
                     tile(x + 128, y, 'sand road', 57, grid=False, surf=Secondary_window)
                     draw_text(x + 130, y + 20, 'Quit', BLACK, 70, surf=Secondary_window)
@@ -5499,6 +5531,8 @@ def game():  # All variables that are not constant
                 Secondary_window.fill(BLACK)
                 controls_window()
                 mouse_pos = get_mouse_pos()  # Get current mouse position
+                player = None
+                direction = None
 
                 # QUIT BUTTON
                 if 332 <= mouse_pos[0] <= 587 and 910 <= mouse_pos[1] <= 1017:
@@ -5519,32 +5553,175 @@ def game():  # All variables that are not constant
                     elif not buttons[0] and button_trigger:
                         button_trigger = False
 
+                # PLAYER 1 CONTROLS LEFT
+                elif 328 <= mouse_pos[0] <= 352 and 425 <= mouse_pos[1] <= 475 and not Player_list[0].controller:
+                    if not cycle_controls_left(Player_list[0].input_type):
+                        draw_triangle((340, 450), 'left', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((340, 450), 'left', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[0]
+                        direction = 'left'
+
+                # PLAYER 1 CONTROLS RIGHT
+                elif 568 <= mouse_pos[0] <= 592 and 425 <= mouse_pos[1] <= 475 and not Player_list[0].controller:
+                    if not cycle_controls_right(Player_list[0].input_type):
+                        draw_triangle((580, 450), 'right', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((580, 450), 'right', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[0]
+                        direction = 'right'
+
+                # PLAYER 2 CONTROLS LEFT
+                elif Player_amount >= 2 and not Player_list[1].controller and \
+                        828 <= mouse_pos[0] <= 852 and 425 <= mouse_pos[1] <= 475:
+                    if not cycle_controls_left(Player_list[1].input_type):
+                        draw_triangle((840, 450), 'left', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((840, 450), 'left', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[1]
+                        direction = 'left'
+
+                # PLAYER 2 CONTROLS RIGHT
+                elif Player_amount >= 2 and not Player_list[1].controller and \
+                        1068 <= mouse_pos[0] <= 1092 and 425 <= mouse_pos[1] <= 475:
+                    if not cycle_controls_right(Player_list[1].input_type):
+                        draw_triangle((1080, 450), 'right', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((1080, 450), 'right', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[1]
+                        direction = 'right'
+
+                # PLAYER 3 CONTROLS LEFT
+                elif Player_amount >= 3 and not Player_list[2].controller and \
+                        1328 <= mouse_pos[0] <= 1352 and 425 <= mouse_pos[1] <= 475:
+                    if not cycle_controls_left(Player_list[2].input_type):
+                        draw_triangle((1340, 450), 'left', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((1340, 450), 'left', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[2]
+                        direction = 'left'
+
+                # PLAYER 3 CONTROLS RIGHT
+                elif Player_amount >= 3 and not Player_list[2].controller and \
+                        1568 <= mouse_pos[0] <= 1592 and 425 <= mouse_pos[1] <= 475:
+                    if not cycle_controls_right(Player_list[2].input_type):
+                        draw_triangle((1580, 450), 'right', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((1580, 450), 'right', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[2]
+                        direction = 'right'
+
+                # PLAYER 4 CONTROLS LEFT
+                elif Player_amount >= 4 and not Player_list[3].controller and \
+                        328 <= mouse_pos[0] <= 352 and 715 <= mouse_pos[1] <= 765:
+                    if not cycle_controls_left(Player_list[3].input_type):
+                        draw_triangle((340, 740), 'left', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((340, 740), 'left', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[3]
+                        direction = 'left'
+
+                # PLAYER 4 CONTROLS RIGHT
+                elif Player_amount >= 4 and not Player_list[3].controller and \
+                        568 <= mouse_pos[0] <= 592 and 715 <= mouse_pos[1] <= 765:
+                    if not cycle_controls_right(Player_list[3].input_type):
+                        draw_triangle((580, 740), 'right', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((580, 740), 'right', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[3]
+                        direction = 'right'
+
+                # PLAYER 5 CONTROLS LEFT
+                elif Player_amount >= 5 and not Player_list[4].controller and \
+                        828 <= mouse_pos[0] <= 852 and 715 <= mouse_pos[1] <= 765:
+                    if not cycle_controls_left(Player_list[4].input_type):
+                        draw_triangle((840, 740), 'left', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((840, 740), 'left', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[4]
+                        direction = 'left'
+
+                # PLAYER 5 CONTROLS RIGHT
+                elif Player_amount >= 5 and not Player_list[4].controller and \
+                        1068 <= mouse_pos[0] <= 1092 and 715 <= mouse_pos[1] <= 765:
+                    if not cycle_controls_right(Player_list[4].input_type):
+                        draw_triangle((1080, 740), 'right', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((1080, 740), 'right', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[4]
+                        direction = 'right'
+
+                # PLAYER 6 CONTROLS LEFT
+                elif Player_amount == 6 and not Player_list[5].controller and \
+                        1328 <= mouse_pos[0] <= 1352 and 715 <= mouse_pos[1] <= 765:
+                    if not cycle_controls_left(Player_list[5].input_type):
+                        draw_triangle((1340, 740), 'left', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((1340, 740), 'left', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[5]
+                        direction = 'left'
+
+                # PLAYER 6 CONTROLS RIGHT
+                elif Player_amount == 6 and not Player_list[5].controller and \
+                        1568 <= mouse_pos[0] <= 1592 and 715 <= mouse_pos[1] <= 765:
+                    if not cycle_controls_right(Player_list[5].input_type):
+                        draw_triangle((1580, 740), 'right', border=RED, width=25, height=50, surface=Secondary_window)
+                    else:
+                        draw_triangle((1580, 740), 'right', border=GREY, width=25, height=50, surface=Secondary_window)
+                        player = Player_list[5]
+                        direction = 'right'
+
+                if player and direction == 'left':  # Cycle player controls left
+                    buttons = pygame.mouse.get_pressed()
+                    if buttons[0] and not button_trigger:
+                        button_trigger = True
+                        if player.input_type != 'controller':
+                            controls.remove(player.input_type)
+                        player.input_type = cycle_controls_left(player.input_type)
+                        if player.input_type != 'controller':
+                            controls.append(player.input_type)
+                    elif button_trigger and not buttons[0]:
+                        button_trigger = False
+
+                elif player and direction == 'right':  # Cycle player controls right
+                    buttons = pygame.mouse.get_pressed()
+                    if buttons[0] and not button_trigger:
+                        button_trigger = True
+                        if player.input_type != 'controller':
+                            controls.remove(player.input_type)
+                        player.input_type = cycle_controls_right(player.input_type)
+                        if player.input_type != 'controller':
+                            controls.append(player.input_type)
+                    elif button_trigger and not buttons[0]:
+                        button_trigger = False
+
                 bound_players = 0
                 for player in Player_list:
                     if player.input_type == 'wasd' or player.input_type == 'arrows' or (
                             player.input_type == 'controller' and player.controller):
                         bound_players += 1
                 if bound_players == len(Player_list):
-                    # RESUME BUTTON
+                    # CONFIRM BUTTON
                     if 1268 <= mouse_pos[0] <= 1651 and 910 <= mouse_pos[1] <= 1017:  # Check resume button co-ords
                         x = 1268
                         y = HEIGHT - 170
-                        tile(x, y, 'sand road', 73, grid=False, surf=Secondary_window)  # Resume button
+                        tile(x, y, 'sand road', 73, grid=False, surf=Secondary_window)  # Confirm button
                         tile(x + 128, y, 'sand road', 88, grid=False, surf=Secondary_window)
                         tile(x + 256, y, 'sand road', 57, grid=False, surf=Secondary_window)
-                        draw_text(x + 193, y + 20, 'Resume', BLACK, 70, surf=Secondary_window)
+                        draw_text(x + 193, y + 20, 'Confirm', BLACK, 70, surf=Secondary_window)
 
                         buttons = pygame.mouse.get_pressed()
                         if buttons[0] and not button_trigger:
+                            for player in Player_list:
+                                if player.input_type == 'controller' and player.controller:
+                                    player.set_controls(player.controller)
+                                else:
+                                    player.set_controls(player.input_type)
                             button_trigger = True
-                            Game_paused = False
-                            play_sound('pause in')
-                            Music_volume += 0.05 if Music_volume >= 0.06 else 0
-                            pygame.mixer.music.set_volume(Music_volume)
+                            play_sound('menu button')
                             current_window = ''
-                            if not Debug:
-                                pygame.mouse.set_visible(False)
-                            fade_from_black(window=current_window, speed=9)
+                            Secondary_window.fill(BLACK)
+                            paused_window()
 
                         elif not buttons[0] and button_trigger:
                             button_trigger = False
@@ -5609,7 +5786,7 @@ def game():  # All variables that are not constant
             controller_popup(surf=Secondary_window)
 
             if Game_paused:  # Check again to avoid overwriting fade animation
-                update_screen(surf=Secondary_window)
+                update_screen(full_screen=True, surf=Secondary_window)
 
         else:  # If game playing
             Window.blit(full_map, (0, 0))
@@ -5789,7 +5966,7 @@ def main():
     loading_thread = Thread(name='loading_thread', target=loading_animation, args=(CENTRE[0], CENTRE[1] + 300))
 
     Players.append(Player(0))
-    Player_amount = 6
+    Player_amount = 1
 
     if Race_debug:
         # Debug = True
@@ -5797,21 +5974,9 @@ def main():
         Players[0].veh_name = 'Race Car'
         Npc_amount = 0
         Total_laps = 1
-        Players.append(Player(1))
-        Players.append(Player(2))
-        Players.append(Player(3))
-        Players.append(Player(4))
-        Players.append(Player(5))
-        Players[1].name = 'b'
-        Players[2].name = 'c'
-        Players[3].name = 'd'
-        Players[4].name = 'e'
-        Players[5].name = 'f'
         Debug = True
         powerups = True
         Map = maps.Overhang()
-        current_window = 'choose players 2'
-        '''
         game_quit = game()
         pygame.time.wait(1000)
         if Animations:
@@ -5833,7 +5998,6 @@ def main():
             pygame.mouse.set_visible(True)
         menu_loop = True
         music_thread_event.clear()
-        '''
 
     if Intro_screen and not Debug:
         intro_bg = menu_background()

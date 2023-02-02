@@ -1497,7 +1497,7 @@ class NpcCar(pygame.sprite.Sprite):
         if not self.finished:
             for layer in reversed(self.avoidance_obj):
                 for index in range(len(All_vehicles)):
-                    if index != self.id:
+                    if index != self.id and not All_vehicles[index].finished:  # Don't check if self or veh has finished
                         veh = All_vehicles[index]
                         obj = layer[0]
                         if obj.mask.overlap(veh.mask, (veh.rect.x - obj.rect.x, veh.rect.y - obj.rect.y)):

@@ -68,7 +68,7 @@ BLUE_CAR = 47, 149, 208
 BLACK_CAR = 93, 91, 91
 # Other variables
 Debug = False  # Enables Debug mode for detecting issues. (Changes various things other than visual changes)
-Race_debug = True  # Enables Debug mode and starts game on race settings menu
+Race_debug = False  # Enables Debug mode and starts game on race settings menu
 Force_resolution = []  # Manual window size ([] = Automatic, [width, height] = Forced)
 Screen = 0  # If the user has multiple monitors, sets which monitor to use (starts at 0)
 Animations = False  # Enables animations on the main menu

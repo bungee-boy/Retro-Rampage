@@ -4797,7 +4797,6 @@ def game():  # All variables that are not constant
         Debug, Screen, Animations, Mute_volume, Music_volume, Sfx_volume, loaded_assets, loaded_sounds, \
         Current_lap, Window_sleep, Game_end, music_thread, current_window, Game_paused, loading_thread, All_vehicles, \
         Player_list
-    layers = []
     Game_paused = False
     current_window = ''
     game_countdown = 0
@@ -4813,12 +4812,9 @@ def game():  # All variables that are not constant
     lap_timer = 0
     music_thread = Thread(name='music_thread', target=game_music_loop)
 
-    for layer in range(0, 3):
-        layers.append(pygame.transform.scale(pygame.image.load(Map.layer(layer)), (WIDTH, HEIGHT)))
-
     full_map = pygame.Surface((WIDTH, HEIGHT))
-    for layer in layers:
-        full_map.blit(layer, (0, 0))
+    for layer in range(0, 3):
+        full_map.blit(pygame.transform.scale(pygame.image.load(Map.layer(layer)), (WIDTH, HEIGHT)), (0, 0))
 
     checkpoint_positions = Map.layer(3)  # Checkpoint position loading and rect generation
     checkpoint_rectangles = []
@@ -4830,7 +4826,7 @@ def game():  # All variables that are not constant
             'road', 84)), (50, 80)), Map.start_pos(pos)[2]),
             (Map.start_pos(pos)[0] - 40, Map.start_pos(pos)[1] - 25))
 
-    Track_mask = pygame.mask.from_surface(layers[2])
+    Track_mask = pygame.mask.from_surface(pygame.transform.scale(pygame.image.load(Map.layer(2)), (WIDTH, HEIGHT)))
 
     if Debug:  # If debug outline track mask in red and outline lap triggers
         # CHECKPOINT TRIGGERS
@@ -4848,7 +4844,7 @@ def game():  # All variables that are not constant
 
         # TRACK MASK OUTLINE
         for pos in Track_mask.outline():  # Outline track mask
-            pygame.draw.circle(full_map, RED, (pos[0], pos[1]), 1)
+            pygame.draw.circle(full_map, RED, pos, 1)
     else:
         checkpoint_surfaces = []
 

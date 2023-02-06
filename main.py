@@ -5979,7 +5979,7 @@ def main():
         Total_laps = 1
         Debug = True
         powerups = True
-        Map = maps.Overhang()
+        Map = maps.Crumple()
         game_quit = game()
         pygame.time.wait(1000)
         if Animations:

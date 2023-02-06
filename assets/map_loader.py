@@ -429,5 +429,111 @@ class Overhang:
             raise ValueError("Overhang.start_pos(pos) | 'pos' must be between 1 and 6 not " + str(pos))
 
 
-index = ('racetrack', 'snake', 'dog bone', 'hairpin', 'pinch', 'tbone', 'bridge', 'overhang')
-objs = (Racetrack, Snake, DogBone, Hairpin, Pinch, TBone, Bridge, Overhang)
+class Fernando:
+    def __init__(self):
+        self.name = 'fernando'
+        self._file_dir = 'assets/maps/fernando/'
+        self._bg = 'trk.png'
+        self._obj = 'trk.png'
+        self._trk = 'trk.png'
+        self._start = 1316, 125
+
+    def layer(self, layer: int):
+        """
+        Returns a layer of the track
+        0 = Background (img)
+        1 = Objects (img)
+        2 = Track (img)
+        3 = Checkpoints (2d array / tuples)
+        """
+        if layer == 0:
+            return self._file_dir + self._bg
+        elif layer == 1:
+            return self._file_dir + self._obj
+        elif layer == 2:
+            return self._file_dir + self._trk
+        elif layer == 3:
+            return ((1316, 125, 32, 183), (1556, 324, 215, 27), (1300, 648, 215, 27), (1215, 773, 32, 183),
+                    (916, 675, 215, 27), (800, 449, 32, 183), (532, 676, 215, 27), (448, 773, 32, 183),
+                    (148, 675, 215, 27), (148, 351, 215, 27), (448, 125, 32, 183), (864, 125, 32, 183))
+        else:
+            raise ValueError("Fernando.layer(layer) | 'layer' must be between 0 and 3 not " + str(layer))
+
+    def start_pos(self, pos: int):
+        """
+        Returns the start position and rotation for each position (1 - 6)
+        [0] = Pos X
+        [1] = Pos Y
+        [2] = Rotation
+        """
+        if pos == 1:
+            return self._start[0] - 77, self._start[1] + 52, 270
+        elif pos == 2:
+            return self._start[0] - 77, self._start[1] + 122, 270
+        elif pos == 3:
+            return self._start[0] - 192, self._start[1] + 52, 270
+        elif pos == 4:
+            return self._start[0] - 192, self._start[1] + 122, 270
+        elif pos == 5:
+            return self._start[0] - 307, self._start[1] + 52, 270
+        elif pos == 6:
+            return self._start[0] - 307, self._start[1] + 122, 270
+        else:
+            raise ValueError("Fernando.start_pos(pos) | 'pos' must be between 1 and 6 not " + str(pos))
+
+
+class Crumple:
+    def __init__(self):
+        self.name = 'crumple'
+        self._file_dir = 'assets/maps/crumple/'
+        self._bg = 'trk.png'
+        self._obj = 'trk.png'
+        self._trk = 'trk.png'
+        self._start = 1218, 773
+
+    def layer(self, layer: int):
+        """
+        Returns a layer of the track
+        0 = Background (img)
+        1 = Objects (img)
+        2 = Track (img)
+        3 = Checkpoints (2d array / tuples)
+        """
+        if layer == 0:
+            return self._file_dir + self._bg
+        elif layer == 1:
+            return self._file_dir + self._obj
+        elif layer == 2:
+            return self._file_dir + self._trk
+        elif layer == 3:
+            return ((1218, 773, 32, 183), (864, 557, 32, 183), (480, 773, 32, 183), (148, 702, 215, 27),
+                    (148, 540, 215, 27), (416, 341, 32, 183), (768, 125, 32, 183), (1137, 341, 32, 183),
+                    (1408, 125, 32, 183), (1556, 351, 215, 27), (1556, 648, 215, 27))
+        else:
+            raise ValueError("Crumple.layer(layer) | 'layer' must be between 0 and 3 not " + str(layer))
+
+    def start_pos(self, pos: int):
+        """
+        Returns the start position and rotation for each position (1 - 6)
+        [0] = Pos X
+        [1] = Pos Y
+        [2] = Rotation
+        """
+        if pos == 1:
+            return self._start[0] + 109, self._start[1] + 52, 90
+        elif pos == 2:
+            return self._start[0] + 109, self._start[1] + 122, 90
+        elif pos == 3:
+            return self._start[0] + 224, self._start[1] + 52, 90
+        elif pos == 4:
+            return self._start[0] + 224, self._start[1] + 122, 90
+        elif pos == 5:
+            return self._start[0] + 339, self._start[1] + 52, 90
+        elif pos == 6:
+            return self._start[0] + 339, self._start[1] + 122, 90
+        else:
+            raise ValueError("Crumple.start_pos(pos) | 'pos' must be between 1 and 6 not " + str(pos))
+
+
+index = ('racetrack', 'snake', 'dog bone', 'hairpin', 'pinch', 'tbone', 'bridge', 'overhang', 'fernando', 'crumple')
+objs = (Racetrack, Snake, DogBone, Hairpin, Pinch, TBone, Bridge, Overhang, Fernando, Crumple)

@@ -17,7 +17,7 @@
 95,102,103,97,94,101,94,94,101,94,101,101,94,94,94
 </data>
  </layer>
- <layer id="1" name="trk" width="15" height="10" visible="0">
+ <layer id="1" name="trk" width="15" height="10">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,8,9,4,4,4,4,4,87,10,11,0,0,0,0,
@@ -31,7 +31,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup id="3" name="obj" visible="0">
+ <objectgroup id="3" name="obj">
   <object id="1" gid="110" x="787.875" y="808.924" width="311.766" height="152.637" rotation="180"/>
   <object id="2" gid="115" x="1413.91" y="206.037" width="141" height="141"/>
   <object id="3" gid="115" x="1783.3" y="699.111" width="112.492" height="109.491" rotation="21.6139"/>

@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="15" height="10" tilewidth="128" tileheight="128" infinite="0" nextlayerid="4" nextobjectid="1">
+<map version="1.8" tiledversion="1.8.5" orientation="orthogonal" renderorder="right-down" width="15" height="10" tilewidth="128" tileheight="128" infinite="0" nextlayerid="4" nextobjectid="22">
  <tileset firstgid="1" source="Grass.tsx"/>
  <tileset firstgid="17" source="Road.tsx"/>
+ <tileset firstgid="107" source="Objects.tsx"/>
  <layer id="1" name="bg" width="15" height="10">
   <data encoding="csv">
-4,11,4,4,4,11,11,11,4,11,11,4,4,4,11,
-4,11,11,11,11,11,4,11,11,4,4,11,4,4,11,
-4,4,11,4,11,11,11,11,4,11,4,11,11,11,11,
-4,4,4,11,11,4,11,4,4,11,4,4,11,4,11,
+4,11,4,5,3,11,11,11,4,11,11,4,4,4,11,
+4,11,1,10,3,11,4,11,11,4,4,11,4,4,11,
+9,9,10,15,3,4,11,11,4,11,4,11,11,11,11,
+13,13,13,13,7,4,11,4,4,11,4,4,11,4,11,
 11,4,4,11,11,11,4,4,4,4,4,4,11,11,4,
-11,4,4,4,11,4,11,11,4,11,11,4,4,4,4,
-4,4,11,11,11,11,4,4,11,4,4,11,4,11,11,
-11,11,11,11,4,4,4,4,4,11,4,4,4,4,11,
-4,11,11,4,11,4,11,11,4,11,11,11,11,4,11,
-4,4,4,4,11,11,11,4,4,11,4,4,4,11,4
+11,4,4,4,11,4,11,11,4,11,4,11,4,4,4,
+4,4,11,11,11,11,4,1,9,9,9,9,3,11,11,
+11,11,11,11,4,4,4,6,13,14,15,16,3,4,11,
+4,11,11,4,11,4,11,11,4,5,15,15,8,9,9,
+4,4,4,4,11,11,11,4,4,6,13,13,13,13,13
 </data>
  </layer>
  <layer id="2" name="trk" width="15" height="10">
@@ -30,5 +31,26 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup id="3" name="obj"/>
+ <objectgroup id="3" name="obj">
+  <object id="2" gid="110" x="1184.09" y="847.093" width="311.766" height="152.637"/>
+  <object id="3" gid="110" x="268.002" y="374.186" width="311.766" height="152.637" rotation="323.114"/>
+  <object id="4" gid="109" x="108.241" y="299.351" width="73.1492" height="58.6895" rotation="19.6539"/>
+  <object id="5" gid="109" x="608.207" y="160.098" width="69.9031" height="61.1836" rotation="326.663"/>
+  <object id="6" gid="109" x="1161.81" y="1256.86" width="87" height="67" rotation="18.7361"/>
+  <object id="7" gid="108" x="1450.98" y="468.194" width="63.127" height="55.2159" rotation="296.369"/>
+  <object id="8" gid="108" x="386.006" y="882.755" width="73" height="68" rotation="7.37388"/>
+  <object id="9" gid="108" x="130.409" y="975.724" width="68.9383" height="63.9855" rotation="169.024"/>
+  <object id="10" gid="107" x="114.632" y="647.742" width="103.86" height="93.6006" rotation="260.492"/>
+  <object id="11" gid="107" x="426.554" y="19.2326" width="66.753" height="56.2629" rotation="179.737"/>
+  <object id="12" gid="107" x="1831.81" y="494.38" width="76.5368" height="57.3044" rotation="310.237"/>
+  <object id="13" gid="107" x="873.141" y="593.537" width="80.4064" height="64.8177" rotation="41.9819"/>
+  <object id="14" gid="114" x="115.812" y="1304.88" width="183.055" height="187.834" rotation="328.211"/>
+  <object id="15" gid="114" x="892.058" y="1299.62" width="190.927" height="192.421" rotation="304.307"/>
+  <object id="16" gid="114" x="1196.92" y="4.93982" width="164.899" height="151.812" rotation="145.852"/>
+  <object id="17" gid="114" x="10.2557" y="15.95" width="217.433" height="223.008" rotation="88.6253"/>
+  <object id="18" gid="115" x="372.296" y="686.607" width="141" height="141" rotation="67.2387"/>
+  <object id="19" gid="115" x="1407.44" y="505.077" width="141" height="141" rotation="122.408"/>
+  <object id="20" gid="115" x="1708.18" y="126.74" width="141" height="141" rotation="34.2864"/>
+  <object id="21" gid="114" x="1797.54" y="1079.46" width="123.718" height="121.718" rotation="351.067"/>
+ </objectgroup>
 </map>

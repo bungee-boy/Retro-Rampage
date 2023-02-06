@@ -486,8 +486,8 @@ class Crumple:
     def __init__(self):
         self.name = 'crumple'
         self._file_dir = 'assets/maps/crumple/'
-        self._bg = 'trk.png'
-        self._obj = 'trk.png'
+        self._bg = 'bg.png'
+        self._obj = 'obj.png'
         self._trk = 'trk.png'
         self._start = 1218, 773
 

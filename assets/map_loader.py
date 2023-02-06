@@ -433,8 +433,8 @@ class Fernando:
     def __init__(self):
         self.name = 'fernando'
         self._file_dir = 'assets/maps/fernando/'
-        self._bg = 'trk.png'
-        self._obj = 'trk.png'
+        self._bg = 'bg.png'
+        self._obj = 'obj.png'
         self._trk = 'trk.png'
         self._start = 1316, 125
 

@@ -5868,7 +5868,7 @@ def game():  # All variables that are not constant
 
                 for power_up in power_ups:  # For every power up and every player
                     if veh.mask.overlap(power_up.mask, (power_up.rect.left - veh.rect.left,
-                                                        power_up.rect.top - veh.rect.top)):  # Check collision
+                                                        power_up.rect.top - veh.rect.top)) and not veh.finished:
                         if power_up.ver == 'lightning':  # If power up is lightning
                             for vehicle in Player_positions:  # For every vehicle (sorted 1st to last)
                                 if not vehicle.bullet_penalty:  # If not hit

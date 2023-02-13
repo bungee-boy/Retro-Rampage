@@ -600,7 +600,7 @@ class Car(pygame.sprite.Sprite):
         self.laps = 0
         # CHECKPOINT variables
         self.checkpoint_count = -1
-        self.checkpoint_time = 0
+        self.checkpoint_time = 99999999999
         # SOUND variables
         self._collision_sound = False
         # Move car to starting position
@@ -8406,7 +8406,7 @@ def main():
                                 if buttons[0] and not button_trigger:
                                     button_trigger = True
                                     play_sound('option down')
-                                    if Players[0].start_pos + 1 == Players[1].start_pos and Player_amount == 2:
+                                    if Players[0].start_pos + 1 == Players[1].start_pos:
                                         Players[0].start_pos += 2
                                     else:
                                         Players[0].start_pos += 1
@@ -8438,7 +8438,7 @@ def main():
                             if buttons[0] and not button_trigger:
                                 button_trigger = True
                                 play_sound('option down')
-                                if Players[1].start_pos - 1 == Players[0].start_pos and Player_amount == 2:
+                                if Players[1].start_pos - 1 == Players[0].start_pos:
                                     Players[1].start_pos -= 2
                                 else:
                                     Players[1].start_pos -= 1
@@ -8457,7 +8457,7 @@ def main():
                             if buttons[0] and not button_trigger:
                                 button_trigger = True
                                 play_sound('option down')
-                                if Players[1].start_pos + 1 == Players[0].start_pos and Player_amount == 2:
+                                if Players[1].start_pos + 1 == Players[0].start_pos:
                                     Players[1].start_pos += 2
                                 else:
                                     Players[1].start_pos += 1

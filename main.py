@@ -1013,6 +1013,7 @@ class Car(pygame.sprite.Sprite):
                     self._bullet_damage = self.damage
                     self.bullet_penalty = pygame.time.get_ticks() + 3000 + \
                         (self._move_speed - global_car_move_speed) * 1000
+                    self._smoke_ani_frame = 0  # Start smoke animation
                     self.damage = self.durability
                     self.rotate(self.rotation + 1)  # Reloads image for damage
                     self.rotate(self.rotation - 1)
@@ -1733,6 +1734,7 @@ class NpcCar(pygame.sprite.Sprite):
                     self._bullet_damage = self.damage
                     self.bullet_penalty = pygame.time.get_ticks() + 3000 + \
                         (self._move_speed - global_car_move_speed) * 1000
+                    self._smoke_ani_frame = 0  # Start smoke animation
                     self.damage = self.durability
                     self.rotate(self.rotation + 1)  # Reloads image for damage
                     self.rotate(self.rotation - 1)
@@ -5800,8 +5802,8 @@ def game():  # All variables that are not constant
                     pygame.draw.rect(Window, WHITE, (822, Countdown * 2, 276, 108), 1)
                 Countdown -= 2
 
-            if len(power_ups) < 15 * Player_amount and powerups:  # Spawn random power-ups
-                rand = randint(0, 1000 // (10 + Player_amount + Npc_amount))
+            if powerups and len(power_ups) < 15 * Player_amount:  # Spawn random power-ups
+                rand = randint(0, 900 // (10 + Player_amount + Npc_amount))
                 if not rand:
                     rand = randint(0, 5)
                     if not rand or rand == 1:

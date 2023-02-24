@@ -3,7 +3,7 @@ import main as game
 from time import sleep
 
 
-class TestLibrary(unittest.TestCase):
+class TestLib(unittest.TestCase):
     def test_audio_loader(self):
         err_msg = 'Audio loader test failed!'
         self.assertEqual(game.sounds.menu_track(0), game.sounds.menu_music + 'chiptune_racer.mp3', err_msg)

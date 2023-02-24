@@ -271,7 +271,7 @@ class Pinch:
 
 class TBone:
     def __init__(self):
-        self.name = 'tbone'
+        self.name = 't bone'
         self._file_dir = 'assets/maps/t_bone/'
         self._bg = 'bg.png'
         self._obj = 'obj.png'
@@ -535,5 +535,5 @@ class Crumple:
             raise ValueError("Crumple.start_pos(pos) | 'pos' must be between 1 and 6 not " + str(pos))
 
 
-index = ('racetrack', 'snake', 'dog bone', 'hairpin', 'pinch', 'tbone', 'bridge', 'overhang', 'fernando', 'crumple')
+index = ('racetrack', 'snake', 'dog bone', 'hairpin', 'pinch', 't bone', 'bridge', 'overhang', 'fernando', 'crumple')
 objs = (Racetrack, Snake, DogBone, Hairpin, Pinch, TBone, Bridge, Overhang, Fernando, Crumple)

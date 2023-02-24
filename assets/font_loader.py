@@ -10,7 +10,6 @@ def load(bold=False, bar=False, three_d=False):
         path += 'no_bar'
     if three_d:
         path += '3D'
-
     if bold:
         path += 'bold' if path == assets else '_bold'
 

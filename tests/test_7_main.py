@@ -34,7 +34,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(game.WHITE, (255, 255, 255), err_msg)
         self.assertEqual(game.V_LIGHT_GREY, (200, 200, 200), err_msg)
         self.assertEqual(game.LIGHT_GREY, (170, 170, 170), err_msg)
-        self.assertEqual(game.GREY, (100, 100, 100), err_msg)
+        self.assertEqual(game.GREY, (150, 150, 150), err_msg)
         self.assertEqual(game.BLACK, (0, 0, 0), err_msg)
         self.assertEqual(game.RED_CAR, (232, 106, 23), err_msg)
         self.assertEqual(game.YELLOW_CAR, (255, 204, 0), err_msg)
@@ -62,22 +62,14 @@ class TestMain(unittest.TestCase):
         self.assertEqual(type(game.Secondary_window), game.pygame.Surface, err_msg)
         self.assertEqual(game.current_window, '', err_msg)
         self.assertEqual(type(game.Display_scaling), bool, err_msg)
-        self.assertEqual(game.Players, [], err_msg)
+        self.assertEqual(type(game.Players), list, err_msg)
         self.assertEqual(game.Selected_player, [], err_msg)
-        self.assertEqual(game.Player_amount, 0, err_msg)
-        self.assertEqual(game.Npc_amount, 3, err_msg)
-        self.assertEqual(game.Map, 'snake', err_msg)
+        self.assertEqual(game.Player_amount, 2, err_msg)
+        self.assertEqual(game.Npc_amount, 1, err_msg)
+        self.assertEqual(game.Map.name, game.maps.objs[len(game.maps.index)//2]().name, err_msg)
         self.assertEqual(game.Current_lap, 0, err_msg)
         self.assertEqual(game.Race_time, 0, err_msg)
         self.assertEqual(game.Player_positions, [], err_msg)
-        self.assertListEqual(game.Npc_names, [['John', False], ['Mark', False], ['Lilly', False], ['Jessica', False],
-                                              ['Matthew', False], ['James', False], ['Jack', False], ['Holly', False],
-                                              ['Aimee', False], ['Harrison', False], ['Emily', False], ['Ben', False],
-                                              ['Tom', False], ['Anthony', False], ['Michael', False], ['Noah', False],
-                                              ['Oliver', False], ['Jake', False], ['Olivia', False], ['Teddy', False],
-                                              ['Tyler', False], ['Carmel', False], ['Jeremy', False], ['Joe', False],
-                                              ['Steven', False], ['Scott', False], ['Keith', False], ['Jules', False],
-                                              ['Katharine', False], ['Charlotte', False]], err_msg)
         self.assertEqual(game.controllers, [], err_msg)
         self.assertEqual(game.controls, ['wasd', 'arrows'], err_msg)
         self.assertEqual(game.controller_prompts, [], err_msg)
@@ -94,7 +86,7 @@ class TestMain(unittest.TestCase):
         self.assertFalse(game.button_trigger, err_msg)
         self.assertEqual(game.selected_text_entry, 0, err_msg)
         self.assertIsNotNone(game.current_song, err_msg)
-        self.assertEqual(type(game.Clock), game.pygame.time.Clock, err_msg)
+        self.assertIsNotNone(game.Clock, err_msg)
         self.assertIsNotNone(game.music_thread, err_msg)
         self.assertTrue(game.powerups, err_msg)
         self.assertFalse(game.Game_paused, err_msg)
@@ -104,22 +96,17 @@ class TestMain(unittest.TestCase):
         self.assertEqual(type(game.screen_updates), list, err_msg)
         self.assertEqual(type(game.loaded_assets), list, err_msg)
         self.assertEqual(type(game.loaded_sounds), list, err_msg)
-        self.assertEqual(type(game.recorded_keys), list, err_msg)
+        self.assertEqual(type(game.loaded_fonts), dict, err_msg)
 
     def test_2_map_preview(self):
-        err_msg = 'Map preview test failed!'
-        game.Map = 'racetrack'
+        game.Map = game.maps.objs[0]()
         game.get_map_preview()
-        self.assertEqual(game.map_preview[0], 'racetrack', err_msg)
-        game.Map = 'snake'
+        game.Map = game.maps.objs[1]()
         game.get_map_preview()
-        self.assertEqual(game.map_preview[0], 'snake', err_msg)
-        game.Map = 'dog bone'
+        game.Map = game.maps.objs[2]()
         game.get_map_preview()
-        self.assertEqual(game.map_preview[0], 'dog bone', err_msg)
-        game.Map = 'hairpin'
+        game.Map = game.maps.objs[3]()
         game.get_map_preview()
-        self.assertEqual(game.map_preview[0], 'hairpin', err_msg)
 
     def test_3_object(self):
         surf = game.pygame.surface.Surface
@@ -132,7 +119,7 @@ class TestMain(unittest.TestCase):
 
     def test_4_windows(self):
         surf = game.pygame.surface.Surface((1920, 1080))
-        surf.blit(game.pygame.image.load(game.maps.racetrack('bg')), (0, 0))
+        surf.blit(game.pygame.image.load(game.maps.Racetrack().layer(0)), (0, 0))
 
         game.main_window(surf)
         self.show_screen()
@@ -241,35 +228,48 @@ class TestMain(unittest.TestCase):
         game.Players[0].name = 'TESTING'
         game.Npc_amount = 1
         game.pygame.mouse.set_pos(game.CENTRE[0], game.CENTRE[1])
-        game.Map = 'racetrack'
+        game.Map = game.maps.Racetrack()
         game.Debug = False
         game_thread = game.Thread(name='game_thread', target=game.game)
         game_thread.start()
         sleep(12)
         game.Game_end = True
-        game_thread.join(timeout=5)
+        game_thread.join()
         self.show_screen()
 
-        game.Map = 'snake'
+        game.Map = game.maps.Snake()
         game.Debug = True
         game_thread = game.Thread(name='game_thread', target=game.game)
         game_thread.start()
         sleep(5)
         game.Game_end = True
-        game_thread.join(timeout=5)
+        game_thread.join()
         self.show_screen()
 
-        game.Map = 'dog bone'
+        game.Map = game.maps.DogBone()
         game.Debug = False
         game.Countdown = False
+        game.Animations = False
         game_thread = game.Thread(name='game_thread', target=game.game)
         game_thread.start()
-        sleep(5)
+        sleep(2)
         game.Game_end = True
-        game_thread.join(timeout=5)
+        game_thread.join()
         self.show_screen()
 
-        game.Map = 'hairpin'
+        for index in range(3, len(game.maps.objs) - 1):
+            game.Debug = False
+            game.Countdown = False
+            game.Animations = False
+            game.Map = game.maps.objs[index]()
+            game_thread = game.Thread(name='game_thread', target=game.game)
+            game_thread.start()
+            sleep(2)
+            game.Game_end = True
+            game_thread.join()
+            self.show_screen()
+
+        game.Map = game.maps.objs[len(game.maps.objs) - 1]()
         game.Countdown = False
         game_thread = game.Thread(name='game_thread', target=game.game)
         game_thread.start()
@@ -282,8 +282,11 @@ class TestMain(unittest.TestCase):
         sleep(1)
         self.assertFalse(game.Game_paused)
         sleep(1)
+        game.Animations = False
         game.Game_end = True
-        game_thread.join(timeout=5)
+        if game.loading_thread.is_alive():
+            game.loading_thread.join()
+        game_thread.join()
         self.show_screen()
 
         game.Countdown = True

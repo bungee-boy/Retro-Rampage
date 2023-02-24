@@ -256,7 +256,6 @@ screen_updates = []
 loaded_assets = []
 loaded_sounds = []
 loaded_fonts = {}
-recorded_keys = []  # Empty list for creating NPC paths
 
 
 # -------- CLASSES -------- #
@@ -4216,6 +4215,7 @@ def loading_animation(x: int, y: int):
     dot_size = 18  # Dot diameter
     speed = 8  # Speed of animation
 
+    debug_surf = None
     prev_frame_timestamp = pygame.time.get_ticks()
     dots = []  # Create dots
     for dot in range(0, 8):
@@ -4234,14 +4234,6 @@ def loading_animation(x: int, y: int):
     dots[5][1].center = x - size[0] / 3, y + size[1] / 3
     dots[6][1].center = x - size[0] / 2, y
     dots[7][1].center = x - size[0] / 3, y - size[1] / 3
-
-    if Debug:
-        debug_surf = pygame.surface.Surface((size[0] + dot_size, size[1] + dot_size))
-        debug_surf.fill((1, 1, 1, 1))
-        debug_surf.set_colorkey((1, 1, 1, 1))
-        pygame.draw.rect(debug_surf, WHITE, (0, 0, size[0] + dot_size, size[1] + dot_size), width=1)
-    else:
-        debug_surf = None
 
     try:
         while not loading_thread_event.is_set():  # While loading...
@@ -4275,6 +4267,11 @@ def loading_animation(x: int, y: int):
             Secondary_window.blit(dots[5][0], dots[5][1].topleft)
             Secondary_window.blit(dots[6][0], dots[6][1].topleft)
             Secondary_window.blit(dots[7][0], dots[7][1].topleft)
+            if Debug and not debug_surf:
+                debug_surf = pygame.surface.Surface((size[0] + dot_size, size[1] + dot_size))
+                debug_surf.fill((1, 1, 1, 1))
+                debug_surf.set_colorkey((1, 1, 1, 1))
+                pygame.draw.rect(debug_surf, WHITE, (0, 0, size[0] + dot_size, size[1] + dot_size), width=1)
             if Debug:
                 Secondary_window.blit(debug_surf, (x - dot_size / 2 - size[0] / 2, y - dot_size / 2 - size[1] / 2))
             Display.blit(pygame.transform.scale(Secondary_window, Display_resolution), (0, 0))

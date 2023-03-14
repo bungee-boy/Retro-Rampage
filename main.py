@@ -4028,7 +4028,7 @@ def draw_slider(pos: tuple[int, int], size: tuple[int, int],
     surf.set_colorkey(BLACK)
 
     ratio = round((size[0] - border_width - 1) / max_value * value)
-    if value > min_value:
+    if value > min_value and ratio > border_width:
         pygame.draw.line(surf, fill_color, (border_width, (size[1] / 2) - 1),
                          (ratio, (size[1] / 2) - 1), size[1] - border_width * 2)
 

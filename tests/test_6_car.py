@@ -133,7 +133,7 @@ class TestCar(unittest.TestCase):
                 car.set_controls(self.controller)  # Bind car to dummy controller
                 self.assertEqual(car.controller, self.controller, 'Binding controller failed!')
                 print(self.controller.get_axis())
-            except game.pygame.error:
+            except game.pygame.log_err:
                 print('\n** Connect a controller to run controller tests **')
         else:
             print('\n** Run tests on windows to check controller inputs **')

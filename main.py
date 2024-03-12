@@ -113,7 +113,7 @@ def load_settings():
     if Load_settings:
         global Debug, Force_resolution, Screen, Animations, Mute_volume, Music_volume, Sfx_volume
         try:
-            with open('settings.json', 'r') as file:
+            with open('settings.json') as file:
                 file = json.load(file)
                 Debug = file['Debug']
                 Force_resolution = file['Resolution']
@@ -1599,7 +1599,7 @@ class NpcCar(pygame.sprite.Sprite):
 
             # print('Trk: f={0} l={1} r={2} Veh: f={0} l={1} r={2}'.format(
             #       self.allow_forward, self.allow_left, self.allow_right,
-            #       self.move_forward, self.move_left, self.move_right))
+            #       self.move_forward, self.move_left, self.move_right
 
     def take_movement(self):  # Check allowed movements and desired action
         # MANUAL MOVEMENT
